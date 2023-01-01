@@ -130,21 +130,22 @@ def determine_win_rate_weight():
 # eg counts = [1,1,1]
 # arranged as arrays for compute efficiency of large data
 # event type may be needed to weigh factors
-def predict_outcome(features):
-    print("\n===Predict Outcome===\n")
+def determine_probability(event_info):
+    print("\n===Determine Probability===\n")
 
-    outcome = ''
+    probabilities = []
+    probability = 0 #0-1
 
     data_type = "game data"
     input_type = "all games"
     raw_data = reader.extract_data(data_type, input_type)
     all_games = isolator.isolate_games(raw_data)
 
-    team1_info = { 'mistake_score': 1, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
-    team2_info = { 'mistake_score': 1, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
-    current_game = [team1_info, team2_info]
+    # team1_info = { 'mistake_score': 1, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
+    # team2_info = { 'mistake_score': 1, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
+    # current_game = [team1_info, team2_info] switched to param event info bc this is user input to fcn
     
-    win_advantage = determine_win_advantage(current_game, all_games)
+    win_advantage = determine_win_advantage(event_info, all_games)
 
     # take feature data collected from sample
     feature_data = [] #[team1_feature_data, etc.]
@@ -157,25 +158,76 @@ def predict_outcome(features):
     # weigh importance of scores to determine final score
     # degree of belief of outcome
 
-    # if team 1 mistake score is significantly x higher than team 2's and all other factors are equal, 
-    # then team 1 will lose by a significant y margin
-    signicant_mistake_differential = 5 # based on absolute value of average mistake score
-    team1_mistake_score = 0
-    team2_mistake_score = 0
-    mistake_difference = team1_mistake_score - team2_mistake_score
-    if mistake_difference > signicant_mistake_differential: # significant difference in no. mistakes
-        min_final_score_differential = 11 # points
-        outcome = 'Team 2 will win by ' + min_final_score_differential + '+ points. '
 
-    print("Outcome: " + outcome)
-    return outcome
+    for team_idx in range(len(event_info)):
+        team = event_info[team_idx]
+        team_name = team['name']
+        print("\nTeam 1: " + team_name)
+        # p(a|b) = (p(b|a)p(a))/p(b) # a=team1 wins, b=team1 mistake score less than that of team2
+        # prob that team1 mistake score less than that of team2 given team1 wins. look at winning teams mistake score and see rate of less. then can narrow down to teams with similar records for more accuracy. 
+        p_of_b_given_a = 0.8 # winning team should have less mistake score most often almost 95% of the time if calculated correctly
+        wins = team['wins']
+        losses = team['losses']
+        p_a = wins / ( wins + losses) #0.6 # prob that team1 wins, based on record. narrow down to prob that team1 wins against teams with this win record?
+        # determine p_b by seeing teams with similar win rates and mistake scores, not just the current team in question
+        p_b = p_a # prob that team1 mistake score is less than their opponents, no matter if win or loss. should mostly align with their wins if mistake score computed correctly. 
+
+        # if team 1 mistake score is significantly x higher than team 2's and all other factors are equal, 
+        # then team 1 will lose by a significant y margin
+        signicant_mistake_differential = 5 # based on absolute value of average mistake score
+        team1_mistake_score = team['mistake_score']
+        print("team1_mistake_score: " + str(team1_mistake_score))
+        for opponent_idx in range(len(event_info)):
+            if opponent_idx != team_idx:
+                opponent = event_info[opponent_idx]
+                opponent_name = opponent['name']
+                print("Team 2: " + opponent_name)
+                team2_mistake_score = opponent['mistake_score']
+                print("team2_mistake_score: " + str(team2_mistake_score))
+                mistake_difference = team1_mistake_score - team2_mistake_score
+                print("mistake_difference: " + str(mistake_difference))
+                # team1 mistake much more than team2 so team1 loses
+                if mistake_difference > signicant_mistake_differential: # significant difference in no. mistakes
+                    print("team1 made much more mistakes")
+                    min_final_score_differential = 11 # points
+                    outcome = 'Team 1 will lose by ' + str(min_final_score_differential) + '+ points. '
+
+                    p_of_b_given_a = 0.2 # winning team should have less mistake score most often almost 95% of the time if calculated correctly
+                    # if big difference in mistake scores, 80% chance team with less mistakes wins
+                    probability = p_of_b_given_a * p_a / p_b #0.8 # p(a|b) = (p(b|a)p(a))/p(b) # a=team1 wins, b=team1 mistake score less than that of team2
+                    
+                # team1 mistake much less than team2 so team1 wins
+                elif mistake_difference < -signicant_mistake_differential:
+                    print("team1 made much less mistakes")
+                    min_final_score_differential = 11 # points
+                    outcome = 'Team 1 will win by ' + str(min_final_score_differential) + '+ points. '
+
+                    p_of_b_given_a = 0.8 # winning team should have less mistake score most often almost 95% of the time if calculated correctly
+                    # if big difference in mistake scores, 80% chance team with less mistakes wins
+                    probability = p_of_b_given_a * p_a / p_b #0.8 # p(a|b) = (p(b|a)p(a))/p(b) # a=team1 wins, b=team1 mistake score less than that of team2
+                    
+                elif mistake_difference == 0:
+                    probability = 0.5
+                else:
+                    probability = 0.5
+
+                #print("probability: " + str(probability))
+                print("Chance " + team_name + " Wins: " + str(int(probability * 100)) + "%")
+                probabilities.append(probability)
+
+
+    return probabilities
 
 
 
 
 #features = [mistake_scores, win_advantage, point_advantage]
 
-outcome = predict_outcome(all_team_data)
+team1_info = { 'name':'CHI', 'mistake_score': 17, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
+team2_info = { 'name':'NOP', 'mistake_score': 1, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
+event_info = [team1_info, team2_info]
+
+outcome = determine_probability(event_info)
 
 
 
