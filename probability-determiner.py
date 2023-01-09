@@ -125,6 +125,9 @@ def determine_win_advantage(current_game, all_games):
 def determine_win_rate_weight():
     print("\n===Determine Win Rate Weight===\n")
 
+def determine_final_score_probability(current_game, all_sample_games):
+    print("\n===Determine Final Score Probability===\n")
+
 # features are important factors, unweighted
 # eg features = [turnovers, bad shots, missed layups]
 # eg counts = [1,1,1]
@@ -133,19 +136,128 @@ def determine_win_rate_weight():
 def determine_probability(event_info):
     print("\n===Determine Probability===\n")
 
-    probabilities = []
-    probability = 0 #0-1
+    probabilities = [] # one probability for each competitor winning the competition
+    probability = 0 # 0-1
 
+    # read samples
     data_type = "game data"
     input_type = "all games"
     raw_data = reader.extract_data(data_type, input_type)
-    all_games = isolator.isolate_games(raw_data)
+    all_sample_games = isolator.isolate_games(raw_data)
+
+    # example sample
+    game_date = '12/28/22'
+    away_team = 'UTA'
+    home_team = 'GSW'
+    game_data = { 'game_date': game_date, 'away_team': away_team, 'home_team': home_team } #[game_date, away_team, home_team]
+    away_team_wins = 10
+    away_team_losses = 10
+    away_team_mistake_score = 5
+    away_team_q1_score = 25
+    away_team_final_score = 110
+    away_team_data = { 'wins': away_team_wins, 'losses': away_team_losses, 'mistake_score': away_team_mistake_score, 'q1_score': away_team_q1_score, 'final_score': away_team_final_score } #[away_team_wins, away_team_losses, away_team_mistake_score, away_team_q1_score, away_team_final_score]
+    home_team_wins = 10
+    home_team_losses = 10
+    home_team_mistake_score = 10
+    home_team_q1_score = 25
+    home_team_final_score = 100
+    home_team_data = { 'wins': home_team_wins, 'losses': home_team_losses, 'mistake_score': home_team_mistake_score, 'q1_score': home_team_q1_score, 'final_score': home_team_final_score } #[home_team_wins, home_team_losses, home_team_mistake_score, home_team_q1_score, home_team_final_score]
+    team_data = { 'away_team_data': away_team_data, 'home_team_data': home_team_data }
+    sample_game = { 'game_data': game_data, 'team_data': team_data } 
+    # all_sample_games.append(sample_game)
+
+    print("\n===Sample Game Input===\n")
+    #print("Date: " + game_data['game_date'])
+    input_headers = ['','Away','Home']
+    wins = ['Wins', str(away_team_wins), str(home_team_wins)]
+    losses = ['Losses', str(away_team_losses), str(home_team_losses)]
+    mistake_scores = ['Mistakes', str(away_team_mistake_score), str(home_team_mistake_score)]
+    q1_scores = ['Q1', str(away_team_q1_score), str(home_team_q1_score)]
+    final_scores = ['Final', str(away_team_final_score), str(home_team_final_score)]
+    table = [input_headers, wins, losses, mistake_scores, q1_scores, final_scores]
+    print(tabulate(table))
+
+    #print("\n===Sample Game Calculations===\n")
+    away_team_win_rate = away_team_wins / ( away_team_wins + away_team_losses )
+    home_team_win_rate = home_team_wins / ( home_team_wins + home_team_losses )
+    win_weight = 1 # 0-1, based on no. samples, current roster injuries, and point of season/time of year
+
+
+    print("\n===Current Game Q1 Input===\n")
+    # example current game
+    game_date = '01/08/23'
+    away_team = 'UTA'
+    home_team = 'GSW'
+    game_data = { 'game_date': game_date, 'away_team': away_team, 'home_team': home_team } #[game_date, away_team, home_team]
+    away_team_wins = 10
+    away_team_losses = 10
+    away_team_mistake_score = 5
+    away_team_q1_score = 25
+    away_team_final_score = 100
+    away_team_data = { 'wins': away_team_wins, 'losses': away_team_losses, 'mistake_score': away_team_mistake_score, 'q1_score': away_team_q1_score } #[away_team_wins, away_team_losses, away_team_mistake_score, away_team_q1_score, away_team_final_score]
+    home_team_wins = 10
+    home_team_losses = 10
+    home_team_mistake_score = 10
+    home_team_q1_score = 25
+    home_team_final_score = 100
+    home_team_data = { 'wins': home_team_wins, 'losses': home_team_losses, 'mistake_score': home_team_mistake_score, 'q1_score': home_team_q1_score } #[home_team_wins, home_team_losses, home_team_mistake_score, home_team_q1_score, home_team_final_score]
+    team_data = { 'away_team_data': away_team_data, 'home_team_data': home_team_data }
+    current_game = { 'game_data': game_data, 'team_data': team_data } 
+
+    #print("Date: " + game_data['game_date'])
+    wins = ['Wins', str(away_team_wins), str(home_team_wins)]
+    losses = ['Losses', str(away_team_losses), str(home_team_losses)]
+    mistake_scores = ['Mistakes', str(away_team_mistake_score), str(home_team_mistake_score)]
+    q1_scores = ['Q1', str(away_team_q1_score), str(home_team_q1_score)]
+    current_game_table = [input_headers, wins, losses, mistake_scores, q1_scores]
+    print(tabulate(current_game_table))
+
+
+    print("\n===Current Game Calculations===\n")
+    #final_score_probability = determine_final_score_probability(current_game, all_sample_games)
+
+    # if all features equal for all teams, then equally likely for all teams to win
+    all_features_equal = True
+    #print("away_team_feature, home_team_feature ")
+    for key, val in away_team_data.items():
+        #print(str(val) + ", " + str(home_team_data[key]))
+        if val != home_team_data[key]:
+            all_features_equal = False
+            break
+
+    if all_features_equal:
+        print("All features equal for all teams, so equally likely to win, except home court advantage. ")
+    
+    # see if identical sample game
+    #print('current_game[\'team_data\']: ' + str(current_game['team_data']))
+    #print('sample_game[\'team_data\']: ' + str(sample_game['team_data']))
+    sample_away_team_data = sample_game['team_data']['away_team_data']
+    sample_home_team_data = sample_game['team_data']['home_team_data']
+    sample_away_team_q1 = { 'wins': sample_away_team_data['wins'], 'losses': sample_away_team_data['losses'], 'mistake_score': sample_away_team_data['mistake_score'], 'q1_score': sample_away_team_data['q1_score'] }
+    sample_home_team_q1 = { 'wins': sample_home_team_data['wins'], 'losses': sample_home_team_data['losses'], 'mistake_score': sample_home_team_data['mistake_score'], 'q1_score': sample_home_team_data['q1_score'] }
+    sample_q1_team_data = { 'away_team_data': sample_away_team_q1, 'home_team_data': sample_home_team_q1 }
+    
+    if current_game['team_data'] == sample_q1_team_data:
+        print("Current Game matches Sample Game")
+    
+    # see if similar sample game
+    # see if sample game with team with identical record
+    if away_team_data['wins'] == sample_away_team_data['wins']:
+        print("Current Away Team Wins matches Sample Away Team Wins")
+        # look for exact record match
+        if away_team_data['losses'] == sample_away_team_data['losses']:
+            print("Current Away Team Losses matches Sample Away Team Losses")
+            print("Thus, exact match records. ")
+    elif away_team_data['wins'] == sample_home_team_data['wins']:
+        print("Current Away Team Wins matches Sample Home Team Wins")
+
+
 
     # team1_info = { 'mistake_score': 1, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
     # team2_info = { 'mistake_score': 1, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
     # current_game = [team1_info, team2_info] switched to param event info bc this is user input to fcn
     
-    win_advantage = determine_win_advantage(event_info, all_games)
+    win_advantage = determine_win_advantage(event_info, all_sample_games)
 
     # take feature data collected from sample
     feature_data = [] #[team1_feature_data, etc.]
@@ -223,8 +335,8 @@ def determine_probability(event_info):
 
 #features = [mistake_scores, win_advantage, point_advantage]
 
-team1_info = { 'name':'CHI', 'mistake_score': 17, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
-team2_info = { 'name':'NOP', 'mistake_score': 1, 'wins': 1, 'losses': 1, 'q1_score': 1, 'final_score': 1 }
+team1_info = { 'name':'CHI', 'mistake_score': 2, 'wins': 18, 'losses': 18, 'q1_score': 31 }
+team2_info = { 'name':'NOP', 'mistake_score': 1, 'wins': 19, 'losses': 19, 'q1_score': 33 }
 event_info = [team1_info, team2_info]
 
 outcome = determine_probability(event_info)
