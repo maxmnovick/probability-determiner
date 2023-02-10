@@ -3,6 +3,7 @@
 # eg isolate one game from all games and isolate all games with certain scores
 
 import re
+from tabulate import tabulate # display output
 
 def isolate_games(raw_data):
     print("\n===Isolate Games===\n")
@@ -27,3 +28,25 @@ def isolate_games(raw_data):
 
     print("all_games: " + str(all_games))
     return all_games
+
+
+def isolate_player_game_data(player_data, player_name=''):
+    player_game_data = []
+
+    for row in player_data:
+        if not row[0].isupper():
+            player_game_data.append(row)
+
+    # display player game data in formatted table for observation
+    print("player_game_data: " + str(player_game_data))
+
+    header_row = player_data[0]
+
+    table = [header_row]
+    for row in player_game_data:
+        table.append(row)
+
+    print("\n===" + player_name + "===\n")
+    print(tabulate(table))
+
+    return player_game_data

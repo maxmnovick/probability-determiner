@@ -5,6 +5,7 @@ import re
 
 # get data from a file and format into a list (same as generator version of this fcn but more general)
 # input such as Game Data - All Games
+# or Game Log - All Players
 def extract_data(data_type, input_type, extension='csv'):
 	catalog_filename = "data/" + data_type.title() + " - " + input_type.title() + "." + extension
 
