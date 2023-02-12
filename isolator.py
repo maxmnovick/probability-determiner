@@ -30,23 +30,28 @@ def isolate_games(raw_data):
     return all_games
 
 
+# game data has headers and each month is separated by monthly averages
+# which happen to be differentiated by uppercase letters
 def isolate_player_game_data(player_data, player_name=''):
     player_game_data = []
 
-    for row in player_data:
-        if not row[0].isupper():
-            player_game_data.append(row)
+    if len(player_data) > 0:
+        for row in player_data:
+            if not row[0].isupper():
+                player_game_data.append(row)
 
-    # display player game data in formatted table for observation
-    print("player_game_data: " + str(player_game_data))
+        # display player game data in formatted table for observation
+        #print("player_game_data: " + str(player_game_data))
 
-    header_row = player_data[0]
+        header_row = player_data[0]
 
-    table = [header_row]
-    for row in player_game_data:
-        table.append(row)
+        table = [header_row]
+        for row in player_game_data:
+            table.append(row)
 
-    print("\n===" + player_name + "===\n")
-    print(tabulate(table))
+        print("\n===" + player_name + "===\n")
+        print(tabulate(table))
+    else:
+        print("Warning: No Player Data from file.")
 
     return player_game_data
