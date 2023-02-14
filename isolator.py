@@ -55,3 +55,22 @@ def isolate_player_game_data(player_data, player_name=''):
         print("Warning: No Player Data from file.")
 
     return player_game_data
+
+# assuming header row to find keyword to find idx of desired field
+def isolate_data_field(desired_field_name, data_table):
+    data_field = []
+
+    # given header row find keyword to find idx
+    header_row = data_table[0]
+
+    desired_field_idx = 0
+    for field_idx in range(len(header_row)):
+        field_name = header_row[field_idx]
+        if re.search(desired_field_name.lower(), field_name.lower()):
+            desired_field_idx = field_idx
+
+    for row in data_table[1:]:
+        data_field.append(row[desired_field_idx])
+
+
+    return data_field

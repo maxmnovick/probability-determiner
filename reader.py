@@ -5,11 +5,12 @@ import re
 import pandas as pd # read html results from webpage
 from urllib.request import Request, urlopen # request website, open webpage given req
 from bs4 import BeautifulSoup # read html from webpage
+from tabulate import tabulate # display output, which for the reader is input files to confirm and review their contents
 
 # get data from a file and format into a list (same as generator version of this fcn but more general)
 # input such as Game Data - All Games
 # or Game Log - All Players
-def extract_data(data_type, input_type, extension='csv'):
+def extract_data(data_type, input_type, extension='csv', header=False):
 	catalog_filename = "data/" + data_type.title() + " - " + input_type.title() + "." + extension
 
 	lines = []
@@ -28,7 +29,11 @@ def extract_data(data_type, input_type, extension='csv'):
 			catalog_file.close()
 
 		# skip header line
-		for line in lines[1:]:
+		read_lines = lines
+		if not header:
+			read_lines = lines[1:]
+
+		for line in read_lines:
 			if len(line) > 0:
 				if extension == "csv":
 					data = line.split(",")
@@ -100,14 +105,14 @@ def read_player_game_log(player_name):
 	#try:
 
 	html_results = pd.read_html(player_url)
-	print("html_results: " + str(html_results))
+	#print("html_results: " + str(html_results))
 
 	parts_of_season = [] # pre season, regular season, post season
 
 	len_html_results = len(html_results)
 
 	for order in range(len_html_results):
-		print("order: " + str(order))
+		#print("order: " + str(order))
 
 		if len(html_results[order].columns.tolist()) == 17:
 
@@ -152,11 +157,29 @@ def read_player_game_log(player_name):
 
 			].astype(float)
 
+	# display player game log in readable format
+	#pd.set_option('display.max_columns', 100)
+	pd.set_option('display.max_columns', None)
 	print("player_game_log_df:\n" + str(player_game_log_df))
 
 	# except Exception as e:
 	# 	print("Error reading game log " + str(e))
 	# 	pass
 
+	# if we want to format table in 1 window we can get df elements in lists and then print lists in table
+	# header_row = ['Date', 'OPP', 'Result', 'MIN', 'FG', 'FG%', '3P', '3P%', 'FT', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS']
+
+	# table = [header_row]
+	# for row in player_game_data:
+	# 	table.append(row)
+
+	# print("\n===" + player_name + "===\n")
+	# print(tabulate(table))
 	#print("player_game_log: " + str(player_game_log))
 	return player_game_log_df # can return this df directly or first arrange into list but seems simpler and more intuitive to keep df so we can access elements by keyword
+
+
+def read_projected_lines(date):
+	lines = []
+
+	return lines
