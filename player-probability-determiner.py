@@ -8,6 +8,7 @@ from scipy import stats # calculate mode
 from tabulate import tabulate # display output
 import isolator # isolate player game data which exludes headers and monthly averages
 import re # split result data into score data
+import determiner # determine consistent streak
 
 # input: game log
 # player name
@@ -36,7 +37,7 @@ s_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 
 data_type = "Game Lines"
-input_type = '2_14' # date as mth_day
+input_type = ''#'2_14' # date as mth_day
 projected_lines = reader.extract_data(data_type, input_type, header=True)
 if input_type != '': # for testing we make input type blank ''
 #projected_lines = reader.read_projected_lines(date)
@@ -369,6 +370,9 @@ for player_idx in range(len(all_player_game_logs)):
         # all_pts_min_dict = { 'all':0, 'home':0, 'away':0 }
         # all_pts_max_dict = { 'all':0, 'home':0, 'away':0 }
 
+        all_stats_counts_dict = { 'all': [], 'home': [], 'away': [] }
+        all_streak_tables = { 'all': [], 'home': [], 'away': [] }
+
         print("all_pts_dict: " + str(all_pts_dict))
         for key in all_pts_dict.keys():
             pts_mean = round(numpy.mean(all_pts_dict[key]), 1)
@@ -621,6 +625,11 @@ for player_idx in range(len(all_player_game_logs)):
                 all_stls_counts.append(s_count)
                 all_tos_counts.append(to_count)
 
+            # make stats counts to find consistent streaks
+            all_stats_counts_dict[key] = [ all_pts_counts, all_rebs_counts, all_asts_counts, all_threes_counts, all_blks_counts, all_stls_counts, all_tos_counts ]
+
+            stats_counts = [ all_pts_counts, all_rebs_counts, all_asts_counts, all_threes_counts, all_blks_counts, all_stls_counts, all_tos_counts ]
+
             header_row = ['Games']
             over_pts_line = 'Points ' + str(pts_lines[player_idx]) + "+"
             over_rebs_line = 'Rebounds ' + str(r_lines[player_idx]) + "+"
@@ -670,6 +679,9 @@ for player_idx in range(len(all_player_game_logs)):
                 prob_over_tos_line = str(to_count) + "/" + current_total
                 prob_tos_row.append(prob_over_tos_line)
 
+
+            
+
             #total = str(len(all_pts))
             #probability_over_line = str(count) + "/" + total
             #total_games = total + " Games"
@@ -701,4 +713,23 @@ for player_idx in range(len(all_player_game_logs)):
             prob_tos_table = [prob_tos_row]
             print(tabulate(prob_tos_table))
 
+
+            all_prob_stat_tables = [prob_pts_table, prob_rebs_table, prob_asts_table, prob_threes_table, prob_blks_table, prob_stls_table, prob_tos_table]
+
+            for stat_idx in range(len(stats_counts)):
+                stat_counts = stats_counts[stat_idx]
+                prob_table = all_prob_stat_tables[stat_idx]
+                if determiner.determine_consistent_streak(stat_counts):
+                    all_streak_tables[key].append(prob_table)
+
     
+# display streak tables separately
+print("\n===Consistent Streaks===\n")
+for key, streak_tables in all_streak_tables.items():
+    print(str(key).title())
+    for streak_table in streak_tables:
+        print(tabulate(streak_table))
+
+#streaks = isolator.isolate_consistent_streaks(all_stats_counts_dict)
+
+# get matchup data for streaks to see if likely to continue streak

@@ -86,7 +86,7 @@ def isolate_data_field(desired_field_name, data_table):
 # if unclear, it is better to keep for review
 # start by isolating positive streaks
 # start from most to least recent
-def isolate_consistent_streaks(stats_counts):
+def isolate_consistent_streaks(all_stats_counts_dict):
 
     # did they hit last game?
     # either way, continue to next game to assess streak but conditions for passing have changed
@@ -94,5 +94,17 @@ def isolate_consistent_streaks(stats_counts):
     # if missed most recent, then 1/2 will need to check next 2 games at least to see if 3/4 bc 2/3 is not likely enough
 
     consistent_streaks = []
+
+    # start simple, create group of 7/10 streaks
+    for stats_counts in stats_counts.values():
+        print("stats_counts: " + str(stats_counts))
+        for stat_counts in stats_counts:
+            print("stat_counts: " + str(stat_counts))
+
+            pt_counts = stat_counts[0]
+            if stat_counts[9] >= 7:
+                consistent_streaks.append(streak)
+
+
 
     return consistent_streaks
