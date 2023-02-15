@@ -74,3 +74,25 @@ def isolate_data_field(desired_field_name, data_table):
 
 
     return data_field
+
+
+# isolate likely outcomes using stats to find consistent streaks
+# ie isolate consistent streaks
+# stats_counts = [ pts_counts, rebs_counts, ... ]
+# pts_counts = [ 1/1, 2/2, 2/3, ... ]
+# make rules to eliminate bad options and isolate good options
+# eg dont always rule out 0/1 if they are 9/10
+# and dont rule out 0/2 if they are 10/12?
+# if unclear, it is better to keep for review
+# start by isolating positive streaks
+# start from most to least recent
+def isolate_consistent_streaks(stats_counts):
+
+    # did they hit last game?
+    # either way, continue to next game to assess streak but conditions for passing have changed
+    # if hit most recent, then 2/2 will increase likelihood
+    # if missed most recent, then 1/2 will need to check next 2 games at least to see if 3/4 bc 2/3 is not likely enough
+
+    consistent_streaks = []
+
+    return consistent_streaks
