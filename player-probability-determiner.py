@@ -39,23 +39,31 @@ to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 data_type = "Game Lines"
 input_type = ''#'2_14' # date as mth_day
 projected_lines = reader.extract_data(data_type, input_type, header=True)
-if input_type != '': # for testing we make input type blank ''
+if input_type == '': # for testing we make input type blank ''
 #projected_lines = reader.read_projected_lines(date)
-    projected_lines = reader.extract_data(data_type, input_type, header=True)
-else:
-    projected_lines = [['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO'], ['Giannis Antetokounmpo', '34', '13', '6', '1', '1', '1', '1']]
+    projected_lines = [['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP'], ['Giannis Antetokounmpo', '34', '13', '6', '1', '1', '1', '1', 'Home', 'ATL']]
 print("projected_lines: " + str(projected_lines))
+
+projected_lines_dict = {}
+player_lines_dict = {}
+header_row = projected_lines[0]
+for player_lines in projected_lines[1:]:
+    player_name = player_lines[0]
+    projected_lines_dict[player_name] = dict(zip(header_row[1:],player_lines[1:]))
+print("projected_lines_dict: " + str(projected_lines_dict))
 
 player_names = isolator.isolate_data_field("name",projected_lines)
 pts_lines = isolator.isolate_data_field("pts",projected_lines)
 r_lines = isolator.isolate_data_field("reb",projected_lines)
 a_lines = isolator.isolate_data_field("ast",projected_lines)
 threes_lines = isolator.isolate_data_field("3",projected_lines)
-print("threes_lines: " + str(threes_lines))
+#print("threes_lines: " + str(threes_lines))
 b_lines = isolator.isolate_data_field("blk",projected_lines)
-print("b_lines: " + str(b_lines))
+#print("b_lines: " + str(b_lines))
 s_lines = isolator.isolate_data_field("stl",projected_lines)
 to_lines = isolator.isolate_data_field("to",projected_lines)
+locations = isolator.isolate_data_field("loc",projected_lines) # home/away
+opponents = isolator.isolate_data_field("opp",projected_lines) # format OKC
 
 for p_name in player_names:
 
@@ -119,6 +127,8 @@ for player_idx in range(len(all_player_game_logs)):
     if len(player_game_log) > 0:
         print("player_game_log:\n" + str(player_game_log))
         # we pulled game log from internet
+
+        opponent = projected_lines_dict[player_name]['OPP'].lower() # collect data against opponent to see previous matchups
         
         # first loop thru all regular season games, then thru subset of games such as home/away
         # or just append to subset array predefined such as all_home_pts = []
@@ -260,6 +270,53 @@ for player_idx in range(len(all_player_game_logs)):
                     all_fs_dict['away'].append(fs)
                     all_tos_dict['away'].append(tos)
 
+                # matchup against opponent
+                if re.search(opponent,player_game_log.loc[game_idx, 'OPP'].lower()):
+                    if opponent in all_pts_dict.keys():
+                        all_pts_dict[opponent].append(pts)
+                        #print("all_pts_dict: " + str(all_pts_dict))
+                        all_rebs_dict[opponent].append(rebs)
+                        all_asts_dict[opponent].append(asts)
+                        all_winning_scores_dict[opponent].append(winning_score)
+                        all_losing_scores_dict[opponent].append(losing_score)
+                        all_minutes_dict[opponent].append(minutes)
+                        all_fgms_dict[opponent].append(fgm)
+                        all_fgas_dict[opponent].append(fga)
+                        all_fg_rates_dict[opponent].append(fg_rate)
+                        all_threes_made_dict[opponent].append(threes_made)
+                        all_threes_attempts_dict[opponent].append(threes_attempts)
+                        all_threes_rates_dict[opponent].append(three_rate)
+                        all_ftms_dict[opponent].append(ftm)
+                        all_ftas_dict[opponent].append(fta)
+                        all_ft_rates_dict[opponent].append(ft_rate)
+                        all_bs_dict[opponent].append(bs)
+                        all_ss_dict[opponent].append(ss)
+                        all_fs_dict[opponent].append(fs)
+                        all_tos_dict[opponent].append(tos)
+                    else:
+                        all_pts_dict[opponent] = [pts]
+                        all_rebs_dict[opponent] = [rebs]
+                        all_asts_dict[opponent] = [asts]
+                        all_winning_scores_dict[opponent] = [winning_score]
+                        all_losing_scores_dict[opponent] = [losing_score]
+                        all_minutes_dict[opponent] = [minutes]
+                        all_fgms_dict[opponent] = [fgm]
+                        all_fgas_dict[opponent] = [fga]
+                        all_fg_rates_dict[opponent] = [fg_rate]
+                        all_threes_made_dict[opponent] = [threes_made]
+                        all_threes_attempts_dict[opponent] = [threes_attempts]
+                        all_threes_rates_dict[opponent] = [three_rate]
+                        all_ftms_dict[opponent] = [ftm]
+                        all_ftas_dict[opponent] = [fta]
+                        all_ft_rates_dict[opponent] = [ft_rate]
+                        all_bs_dict[opponent] = [bs]
+                        all_ss_dict[opponent] = [ss]
+                        all_fs_dict[opponent] = [fs]
+                        all_tos_dict[opponent] = [tos]
+
+
+                    
+
     else:
         # if getting data from file
         player_data = reader.extract_data(data_type, player_name, 'tsv')
@@ -371,7 +428,7 @@ for player_idx in range(len(all_player_game_logs)):
         # all_pts_max_dict = { 'all':0, 'home':0, 'away':0 }
 
         all_stats_counts_dict = { 'all': [], 'home': [], 'away': [] }
-        all_streak_tables = { 'all': [], 'home': [], 'away': [] }
+        all_streak_tables = { } # { 'player name': { 'all': [], 'home':[], 'away':[] } }
 
         print("all_pts_dict: " + str(all_pts_dict))
         for key in all_pts_dict.keys():
@@ -720,15 +777,33 @@ for player_idx in range(len(all_player_game_logs)):
                 stat_counts = stats_counts[stat_idx]
                 prob_table = all_prob_stat_tables[stat_idx]
                 if determiner.determine_consistent_streak(stat_counts):
-                    all_streak_tables[key].append(prob_table)
+                    if player_name in all_streak_tables.keys():
+                        player_streak_tables = all_streak_tables[player_name]
+                        if key in player_streak_tables.keys():
+                            player_streak_tables[key].append(prob_table) # append all stats for given key
+                        else:
+                            player_streak_tables[key] = [prob_table]
+                    else:
+                        all_streak_tables[player_name] = {}
+                        player_streak_tables = all_streak_tables[player_name]
+                        player_streak_tables[key] = [prob_table]
 
+                    # if key in player_streak_tables.keys():
+                    #     player_streak_tables[key].append(prob_table) # append all stats for given key
+                    # else:
+                    #     player_streak_tables[key] = [prob_table]
     
 # display streak tables separately
 print("\n===Consistent Streaks===\n")
-for key, streak_tables in all_streak_tables.items():
-    print(str(key).title())
-    for streak_table in streak_tables:
-        print(tabulate(streak_table))
+for p_name, p_streak_tables in all_streak_tables.items():
+    print("")
+    print("\n===" + p_name + "===\n")
+    for key, streak_table in p_streak_tables.items():
+        player_lines = projected_lines_dict[player_name]
+        print("player_lines: " + str(player_lines))
+        if str(key) == 'all' or str(key) == player_lines['LOC'].lower() or str(key) == player_lines['OPP'].lower():
+            print(str(key).title())
+            print(tabulate(streak_table))
 
 #streaks = isolator.isolate_consistent_streaks(all_stats_counts_dict)
 

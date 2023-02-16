@@ -75,6 +75,25 @@ def isolate_data_field(desired_field_name, data_table):
 
     return data_field
 
+# assuming header row to find keyword to find idx of desired field
+# def isolate_data_element(desired_field_name, header, data_row):
+#     data_field = []
+
+#     # given header row find keyword to find idx
+#     header_row = data_table[0]
+
+#     desired_field_idx = 0
+#     for field_idx in range(len(header_row)):
+#         field_name = header_row[field_idx]
+#         if re.search(desired_field_name.lower(), field_name.lower()):
+#             desired_field_idx = field_idx
+
+#     for row in data_table[1:]:
+#         data_field.append(row[desired_field_idx])
+
+
+#     return data_field
+
 
 # isolate likely outcomes using stats to find consistent streaks
 # ie isolate consistent streaks

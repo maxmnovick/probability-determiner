@@ -7,6 +7,9 @@ from urllib.request import Request, urlopen # request website, open webpage give
 from bs4 import BeautifulSoup # read html from webpage
 from tabulate import tabulate # display output, which for the reader is input files to confirm and review their contents
 
+import csv
+import json # we need projected lines table to be json so we can refer to player when analyzing stats
+
 # get data from a file and format into a list (same as generator version of this fcn but more general)
 # input such as Game Data - All Games
 # or Game Log - All Players
@@ -183,3 +186,57 @@ def read_projected_lines(date):
 	lines = []
 
 	return lines
+
+
+def extract_json_from_file(data_type, input_type, extension='csv'):
+	catalog_filename = "data/" + data_type.title() + " - " + input_type.title() + "." + extension
+
+	# create a dictionary
+	data_dict = {}
+	
+	lines = []
+	#data = []
+	all_data = []
+
+	try: 
+
+		with open(catalog_filename, encoding="UTF8") as catalog_file:
+
+			csvReader  =csv.DictReader(catalog_file)
+
+			# Convert each row into a dictionary
+			# and add it to data
+			for rows in csvReader:
+				
+				# Assuming a column named 'No' to
+				# be the primary key
+				key = rows['Name']
+				data_dict[key] = rows
+
+		# 	current_line = ""
+		# 	for catalog_info in catalog_file:
+		# 		current_line = catalog_info.strip()
+		# 		lines.append(current_line)
+
+		# 	catalog_file.close()
+
+		# # skip header line
+		# read_lines = lines
+		# if not header:
+		# 	read_lines = lines[1:]
+
+		# for line in read_lines:
+		# 	if len(line) > 0:
+		# 		if extension == "csv":
+		# 			data = line.split(",")
+		# 		else:
+		# 			data = line.split("\t")
+		# 	all_data.append(data)
+
+	except Exception as e:
+		print("Error opening file. ")
+	
+	print("data_dict: " + str(data_dict))
+
+
+	return data_dict
