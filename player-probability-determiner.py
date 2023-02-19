@@ -688,14 +688,14 @@ for player_idx in range(len(all_player_game_logs)):
             stats_counts = [ all_pts_counts, all_rebs_counts, all_asts_counts, all_threes_counts, all_blks_counts, all_stls_counts, all_tos_counts ]
 
             header_row = ['Games']
-            over_pts_line = 'Points ' + str(pts_lines[player_idx]) + "+"
-            over_rebs_line = 'Rebounds ' + str(r_lines[player_idx]) + "+"
-            over_asts_line = 'Assists ' + str(a_lines[player_idx]) + "+"
+            over_pts_line = 'PTS ' + str(pts_lines[player_idx]) + "+"
+            over_rebs_line = 'REB ' + str(r_lines[player_idx]) + "+"
+            over_asts_line = 'AST ' + str(a_lines[player_idx]) + "+"
             
-            over_threes_line = '3P ' + str(threes_lines[player_idx]) + "+"
-            over_blks_line = 'Blocks ' + str(b_lines[player_idx]) + "+"
-            over_stls_line = 'Steals ' + str(s_lines[player_idx]) + "+"
-            over_tos_line = 'Turnovers ' + str(to_lines[player_idx]) + "+"
+            over_threes_line = '3PM ' + str(threes_lines[player_idx]) + "+"
+            over_blks_line = 'BLK ' + str(b_lines[player_idx]) + "+"
+            over_stls_line = 'STL ' + str(s_lines[player_idx]) + "+"
+            over_tos_line = 'TO ' + str(to_lines[player_idx]) + "+"
             
             prob_pts_row = [over_pts_line]
             prob_rebs_row = [over_rebs_line]
@@ -775,7 +775,7 @@ for player_idx in range(len(all_player_game_logs)):
 
             for stat_idx in range(len(stats_counts)):
                 stat_counts = stats_counts[stat_idx]
-                prob_table = all_prob_stat_tables[stat_idx]
+                prob_table = all_prob_stat_tables[stat_idx][0] # only need first element bc previously formatted for table display
                 if determiner.determine_consistent_streak(stat_counts):
                     if player_name in all_streak_tables.keys():
                         player_streak_tables = all_streak_tables[player_name]
@@ -793,18 +793,76 @@ for player_idx in range(len(all_player_game_logs)):
                     # else:
                     #     player_streak_tables[key] = [prob_table]
     
-# display streak tables separately
-print("\n===Consistent Streaks===\n")
-for p_name, p_streak_tables in all_streak_tables.items():
-    print("")
-    print("\n===" + p_name + "===\n")
-    for key, streak_table in p_streak_tables.items():
-        player_lines = projected_lines_dict[player_name]
-        print("player_lines: " + str(player_lines))
-        if str(key) == 'all' or str(key) == player_lines['LOC'].lower() or str(key) == player_lines['OPP'].lower():
-            print(str(key).title())
-            print(tabulate(streak_table))
 
-#streaks = isolator.isolate_consistent_streaks(all_stats_counts_dict)
+# get matchup data before looping thru consistent streaks bc we will present matchup data alongside consistent streaks for comparison
+fantasy_pros_url = 'https://www.fantasypros.com/daily-fantasy/nba/fanduel-defense-vs-position.php' #'https://www.fantasypros.com/nba/defense-vs-position.php' #alt 2: betting_pros_url = 'https://www.bettingpros.com/nba/defense-vs-position/'
+hashtag_bball_url = 'https://hashtagbasketball.com/nba-defense-vs-position'
+swish_analytics_url = 'https://swishanalytics.com/optimus/nba/daily-fantasy-team-defensive-ranks-position'
+draft_edge_url = 'https://draftedge.com/nba-defense-vs-position/'
+
 
 # get matchup data for streaks to see if likely to continue streak
+matchup_data_sources = [hashtag_bball_url] #, hashtag_bball_url, swish_analytics_url, betting_pros_url, draft_edge_url] # go thru each source so we can compare conflicts
+# first read all matchup data from internet and then loop through tables
+all_matchup_data = reader.read_all_matchup_data(matchup_data_sources)
+
+
+# display streak tables separately
+#streaks = isolator.isolate_consistent_streaks(all_stats_counts_dict)
+print("\n===Consistent Streaks===\n")
+for p_name, p_streak_tables in all_streak_tables.items():
+    print("\n===" + p_name + "===\n")
+    for key, streak_tables in p_streak_tables.items():
+        player_lines = projected_lines_dict[p_name]
+        #print("player_lines: " + str(player_lines))
+
+        opponent = player_lines['OPP'].lower()
+
+        if str(key) == 'all' or str(key) == player_lines['LOC'].lower() or str(key) == opponent: # current conditions we are interested in
+            print(str(key).title())
+            
+            print(tabulate(streak_tables))
+
+            # determine matchup for opponent and stat. we need to see all position matchups to see relative ease
+            # display matchup tables with consistent streaks (later look at easiest matchups for all current games, not just consistent streaks bc we may find an exploit)
+            
+            #print("streak_tables: " + str(streak_tables))
+            for streak in streak_tables:
+
+                print("\n===Matchups===\n")
+
+                print(streak)
+
+                stat = streak[0].split(' ')[0]#'pts'
+                #print("stat: " + stat)
+                #all_matchup_ratings = { 'all':{}, 'pg':{}, 'sg':{}, 'sf':{}, 'pf':{}, 'c':{} } # { 'pg': { 'values': [source1,source2,..], 'ranks': [source1,source2,..] }, 'sg': {}, ... }
+                #position_matchup_rating = { 'values':[], 'ranks':[] } # comparing results from different sources
+                current_matchup_data = determiner.determine_matchup_rating(opponent, stat, all_matchup_data) # first show matchups from easiest to hardest position for stat. 
+
+                #sources_results={values:[],ranks:[]}
+                
+                for pos, sources_results in current_matchup_data.items():
+                    print("Position: " + pos.upper())
+
+                    
+
+                    matchup_table_header_row = ['Sources'] # [source1, source2, ..]
+                    num_sources = len(sources_results['averages']) #len(source_vals)
+
+                    for source_idx in range(num_sources):
+                        source_num = source_idx + 1
+                        source_header = 'Source ' + str(source_num)
+                        matchup_table_header_row.append(source_header)
+
+                    matchup_table = [matchup_table_header_row]
+                    for result, source_vals in sources_results.items():
+                        source_vals.insert(0, result.title())
+                        matchup_table.append(source_vals)
+
+                    #source_matchup_ratings={ source1: {position:'', average:'', rank:''}, source2...}
+                    avg_source_matchup_ratings = {} # so we can sort by average rank
+                    source_matchup_ratings = {}
+
+
+                    print(tabulate(matchup_table))
+

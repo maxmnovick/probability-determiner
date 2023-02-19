@@ -7,6 +7,11 @@ from urllib.request import Request, urlopen # request website, open webpage give
 from bs4 import BeautifulSoup # read html from webpage
 from tabulate import tabulate # display output, which for the reader is input files to confirm and review their contents
 
+from selenium import webdriver # need to read html5 webpages
+from webdriver_manager.chrome import ChromeDriverManager # need to access dynamic webpages
+import time # need to read dynamic webpages
+from selenium.webdriver.chrome.options import Options # block ads
+
 import csv
 import json # we need projected lines table to be json so we can refer to player when analyzing stats
 
@@ -112,7 +117,7 @@ def read_player_game_log(player_name):
 
 	parts_of_season = [] # pre season, regular season, post season
 
-	len_html_results = len(html_results)
+	len_html_results = len(html_results) # each element is a dataframe/table so we loop thru each table
 
 	for order in range(len_html_results):
 		#print("order: " + str(order))
@@ -121,6 +126,7 @@ def read_player_game_log(player_name):
 
 			part_of_season = html_results[order]
 
+			# look at the formatting to figure out how to separate table and elements in table
 			if len_html_results - 2 == order:
 				part_of_season['Type'] = 'Preseason'
 
@@ -181,6 +187,160 @@ def read_player_game_log(player_name):
 	#print("player_game_log: " + str(player_game_log))
 	return player_game_log_df # can return this df directly or first arrange into list but seems simpler and more intuitive to keep df so we can access elements by keyword
 
+# show matchup data against each position so we can see which position has easiest matchup
+def read_matchup_data(source_url):
+
+	print("\n===Read Matchup Data===\n")
+
+	matchup_data = [] 
+
+	# swish source which uses html 5 is default for now bc we need to define df outside if statement
+	
+	matchup_df = pd.DataFrame()
+	
+	
+
+	if re.search('swish|fantasypro|hashtag',source_url): # swish analytics uses html5
+		
+
+		#chop = webdriver.ChromeOptions()
+		#chop.add_extension('adblock_5_4_1_0.crx')
+		#driver = webdriver.Chrome(chrome_options = chop)
+
+		driver = webdriver.Chrome(ChromeDriverManager().install())
+		driver.implicitly_wait(3)
+
+		driver.get(source_url) # Open the URL on a google chrome window
+		
+		#time.sleep(3) # As this is a dynamic html web-page, wait for 3 seconds for everything to be loaded
+
+		# if needed, Accept the cookies policy
+		# driver.find_element_by_xpath('//*[@id="onetrust-accept-btn-handler"]').click()
+		#time.sleep(3)
+
+		# click on the pagination elements to select not only the page 1 but all pages
+		#position_btn_path = '/html/body/div' #main/div/div/div/div/div/ul/li[1]/a'
+		#driver.find_element('xpath', '/html/body/div').click()
+
+		#position_btn = (driver.find_element('xpath', '/html/body/div').text())
+		#print("position_btn: " + str(position_btn))
+		#driver.find_element_by_xpath(position_btn_path).click()
+		#time.sleep(3)
+
+		#ad = driver.find_element('id', 'div-gpt-ad-1556117653136-0').find_element('xpath','div/iframe')
+		#print("ad: " + ad.get_attribute('outerHTML'))
+
+		# click x on advertisement so we can click btns below it
+		#ad_close = driver.find_element('xpath','//*[@id="closebutton"]')
+		#print("ad_close: " + ad_close.get_attribute('outerHTML'))
+		#ad_close.click(); #Close Ad
+		#time.sleep(3)
+
+		if re.search('fantasypro',source_url):
+			driver.switch_to.frame(driver.find_element("id", "google_ads_iframe_/2705664/fantasypros_interstitial_1_0"))
+			#l = driver.find_element('xpath', 'html/body/div')
+			l = driver.find_element('id', 'closebutton')
+			h1= driver.execute_script("return arguments[0].outerHTML;",l)
+			print("h1: " + str(h1))
+			# driver.switch_to.frame(driver.find_element("tag name", "iframe"))
+			# l = driver.find_element('xpath', 'html/body')
+			# h2= driver.execute_script("return arguments[0].innerHTML;",l)
+			# print("h2: " + str(h2))
+			l.click(); #Close Ad
+
+			driver.switch_to.default_content()
+
+			# get the defense matchup table as text
+
+			#defense_table_path = 'html/body/' #main/div/div/div/div[6]/data-table/tbody'
+			#matchup_table = driver.find_element('id', 'data-table')
+			#print("matchup_table: " + str(matchup_table))
+
+
+			position_btn = driver.find_element('class name','main-content').find_element('xpath','div/div[4]/div/ul/li[1]/a')
+			print("position_btn: " + position_btn.get_attribute('innerHTML'))
+			position_btn.click()
+			#time.sleep(3)
+
+			team_matchup_df=pd.read_html(driver.find_element('id', "data-table").get_attribute('outerHTML'))[0]
+			print("team_matchup_df\n" + str(team_matchup_df))
+
+
+			pg_btn = driver.find_element('class name','main-content').find_element('xpath','div/div[4]/div/ul/li[2]/a')
+			print("pg_btn: " + pg_btn.get_attribute('innerHTML'))
+			pg_btn.click()
+			#time.sleep(3)
+
+			pg_matchup_df=pd.read_html(driver.find_element('id', "data-table").get_attribute('outerHTML'))[0]
+			print("pg_matchup_df\n" + str(pg_matchup_df))
+
+
+			sg_btn = driver.find_element('class name','main-content').find_element('xpath','div/div[4]/div/ul/li[3]/a')
+			print("sg_btn: " + sg_btn.get_attribute('innerHTML'))
+			sg_btn.click()
+			#time.sleep(3)
+
+			sg_matchup_df=pd.read_html(driver.find_element('id', "data-table").get_attribute('outerHTML'))[0]
+			print("sg_matchup_df\n" + str(sg_matchup_df))
+
+
+			sf_btn = driver.find_element('class name','main-content').find_element('xpath','div/div[4]/div/ul/li[4]/a')
+			print("sf_btn: " + sf_btn.get_attribute('innerHTML'))
+			sf_btn.click()
+			#time.sleep(3)
+
+			sf_matchup_df=pd.read_html(driver.find_element('id', "data-table").get_attribute('outerHTML'))[0]
+			print("sf_matchup_df\n" + str(sf_matchup_df))
+
+
+			pf_btn = driver.find_element('class name','main-content').find_element('xpath','div/div[4]/div/ul/li[5]/a')
+			print("pf_btn: " + pf_btn.get_attribute('innerHTML'))
+			pf_btn.click()
+			#time.sleep(3)
+
+			pf_matchup_df=pd.read_html(driver.find_element('id', "data-table").get_attribute('outerHTML'))[0]
+			print("pf_matchup_df\n" + str(pf_matchup_df))
+
+
+			c_btn = driver.find_element('class name','main-content').find_element('xpath','div/div[4]/div/ul/li[6]/a')
+			print("c_btn: " + c_btn.get_attribute('innerHTML'))
+			c_btn.click()
+			#time.sleep(3)
+
+			c_matchup_df=pd.read_html(driver.find_element('id', "data-table").get_attribute('outerHTML'))[0]
+			print("c_matchup_df\n" + str(c_matchup_df))
+
+			matchup_data = [team_matchup_df, pg_matchup_df, sg_matchup_df, sf_matchup_df, pf_matchup_df, c_matchup_df]
+
+		else:
+			team_matchup_df=pd.read_html(driver.find_element('id', "ContentPlaceHolder1_GridView1").get_attribute('outerHTML'))[0]
+			print("team_matchup_df\n" + str(team_matchup_df))
+
+		# close the google chrome window
+		driver.quit()
+
+		
+	else:
+		# first get the html as a pandas dataframe format
+		html_results = pd.read_html(source_url)
+		print("html_results: " + str(html_results))
+
+	return matchup_data
+
+# sources disagree so we need to find consensus or just be aware of the risk of inaccurate data
+# show all 5 sources so we can see the conflicts and therefore risk of inaccurate data
+def read_all_matchup_data(matchup_data_sources):
+
+	print("\n===Read All Matchup Data===\n")
+
+	all_matchup_data = []
+
+	for source in matchup_data_sources:
+		
+		source_matchup_data = read_matchup_data(source)
+		all_matchup_data.append(source_matchup_data)
+
+	return all_matchup_data
 
 def read_projected_lines(date):
 	lines = []
@@ -240,3 +400,6 @@ def extract_json_from_file(data_type, input_type, extension='csv'):
 
 
 	return data_dict
+
+
+
