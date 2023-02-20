@@ -140,13 +140,15 @@ for player_idx in range(len(all_player_game_logs)):
         
         # first loop thru all regular season games, then thru subset of games such as home/away
         # or just append to subset array predefined such as all_home_pts = []
+        next_game_date_obj = datetime.today() # need to see if back to back games 1 day apart
+        
         for game_idx, row in player_game_log.iterrows():
             
             #game = player_game_log[game_idx, row]
             #print("game:\n" + str(game))
             #print("player_game_log.loc[game_idx, 'Type']: " + player_game_log.loc[game_idx, 'Type'])
 
-            prev_game_date_string = '' # need to see if back to back games 1 day apart
+            
             if player_game_log.loc[game_idx, 'Type'] == 'Regular':
                 #print("Current Game Num: " + str(game_idx))
 
@@ -323,34 +325,129 @@ for player_idx in range(len(all_player_game_logs)):
                         all_fs_dict[opponent] = [fs]
                         all_tos_dict[opponent] = [tos]
 
+
                 # see if this game is 1st or 2nd night of back to back bc we want to see if pattern for those conditions
                 game_date_string = player_game_log.loc[game_idx, 'Date'].lower().split()[1] + "/" + season_year
                 print("game_date_string: " + str(game_date_string))
-                date_time_obj = datetime.strptime(game_date_string, '%m/%d/%y')
-                print("date_time_obj: " + str(date_time_obj))
+                game_date_obj = datetime.strptime(game_date_string, '%m/%d/%y')
+                print("game_date_obj: " + str(game_date_obj))
 
                 # if current loop is most recent game (idx 0) then today's game is the next game
-                if game_idx == 0: # see how many days after last game is date of today's projected lines
+                if game_idx == 0: # see how many days after prev game is date of today's projected lines
                     todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
                     print("todays_games_date_obj: " + str(todays_games_date_obj))
+                    next_game_date_obj = todays_games_date_obj # today's game is the next game relative to the previous game
+                print("next_game_date_obj: " + str(next_game_date_obj))
+                # no need to get next game date like this bc we can see last loop
+                # else: # if not most recent game then we can see the following game in the game log at prev idx
+                #     next_game_date_string = player_game_log.loc[game_idx-1, 'Date'].lower().split()[1] + "/" + season_year
+                #     print("next_game_date_string: " + str(next_game_date_string))
+                #     next_game_date_obj = datetime.strptime(next_game_date_string, '%m/%d/%y')
+                #     print("next_game_date_obj: " + str(next_game_date_obj))
 
-                else: # if not most recent game then we can see the following game in the game log at prev idx
-                    next_game_date_string = player_game_log.loc[game_idx-1, 'Date'].lower().split()[1] + "/" + season_year
-                    print("next_game_date_string: " + str(next_game_date_string))
-                    next_game_date_obj = datetime.strptime(next_game_date_string, '%m/%d/%y')
-                    print("next_game_date_obj: " + str(next_game_date_obj))
-
-                next_day = todays_games_date_obj + timedelta(days = 1)
-                print("next_day: " + str(next_day))
-                if next_game_date_string == next_day:
-                    print("1of2")
+                prev_game_date_string = player_game_log.loc[game_idx+1, 'Date'].lower().split()[1] + "/" + season_year
+                print("prev_game_date_string: " + str(prev_game_date_string))
+                prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%y')
+                print("prev_game_date_obj: " + str(prev_game_date_obj))
                 
-                prev_day = todays_games_date_obj - timedelta(days = 1)
+
+                next_day = game_date_obj + timedelta(days = 1)
+                print("next_day: " + str(next_day))
+                if next_game_date_obj == next_day:
+                    print("1of2")
+
+                    if '1of2' in all_pts_dict.keys():
+                        all_pts_dict['1of2'].append(pts)
+                        #print("all_pts_dict: " + str(all_pts_dict))
+                        all_rebs_dict['1of2'].append(rebs)
+                        all_asts_dict['1of2'].append(asts)
+                        all_winning_scores_dict['1of2'].append(winning_score)
+                        all_losing_scores_dict['1of2'].append(losing_score)
+                        all_minutes_dict['1of2'].append(minutes)
+                        all_fgms_dict['1of2'].append(fgm)
+                        all_fgas_dict['1of2'].append(fga)
+                        all_fg_rates_dict['1of2'].append(fg_rate)
+                        all_threes_made_dict['1of2'].append(threes_made)
+                        all_threes_attempts_dict['1of2'].append(threes_attempts)
+                        all_threes_rates_dict['1of2'].append(three_rate)
+                        all_ftms_dict['1of2'].append(ftm)
+                        all_ftas_dict['1of2'].append(fta)
+                        all_ft_rates_dict['1of2'].append(ft_rate)
+                        all_bs_dict['1of2'].append(bs)
+                        all_ss_dict['1of2'].append(ss)
+                        all_fs_dict['1of2'].append(fs)
+                        all_tos_dict['1of2'].append(tos)
+                    else:
+                        all_pts_dict['1of2'] = [pts]
+                        all_rebs_dict['1of2'] = [rebs]
+                        all_asts_dict['1of2'] = [asts]
+                        all_winning_scores_dict['1of2'] = [winning_score]
+                        all_losing_scores_dict['1of2'] = [losing_score]
+                        all_minutes_dict['1of2'] = [minutes]
+                        all_fgms_dict['1of2'] = [fgm]
+                        all_fgas_dict['1of2'] = [fga]
+                        all_fg_rates_dict['1of2'] = [fg_rate]
+                        all_threes_made_dict['1of2'] = [threes_made]
+                        all_threes_attempts_dict['1of2'] = [threes_attempts]
+                        all_threes_rates_dict['1of2'] = [three_rate]
+                        all_ftms_dict['1of2'] = [ftm]
+                        all_ftas_dict['1of2'] = [fta]
+                        all_ft_rates_dict['1of2'] = [ft_rate]
+                        all_bs_dict['1of2'] = [bs]
+                        all_ss_dict['1of2'] = [ss]
+                        all_fs_dict['1of2'] = [fs]
+                        all_tos_dict['1of2'] = [tos]
+
+
+                
+                prev_day = game_date_obj - timedelta(days = 1)
                 print("prev_day: " + str(prev_day))
-                if prev_game_date_string == prev_day:
+                if prev_game_date_obj == prev_day:
                     print("2of2")
 
-                next_game_date_string = game_date_string # next game bc we loop from most to least recent
+                    if '2of2' in all_pts_dict.keys():
+                        all_pts_dict['2of2'].append(pts)
+                        #print("all_pts_dict: " + str(all_pts_dict))
+                        all_rebs_dict['2of2'].append(rebs)
+                        all_asts_dict['2of2'].append(asts)
+                        all_winning_scores_dict['2of2'].append(winning_score)
+                        all_losing_scores_dict['2of2'].append(losing_score)
+                        all_minutes_dict['2of2'].append(minutes)
+                        all_fgms_dict['2of2'].append(fgm)
+                        all_fgas_dict['2of2'].append(fga)
+                        all_fg_rates_dict['2of2'].append(fg_rate)
+                        all_threes_made_dict['2of2'].append(threes_made)
+                        all_threes_attempts_dict['2of2'].append(threes_attempts)
+                        all_threes_rates_dict['2of2'].append(three_rate)
+                        all_ftms_dict['2of2'].append(ftm)
+                        all_ftas_dict['2of2'].append(fta)
+                        all_ft_rates_dict['2of2'].append(ft_rate)
+                        all_bs_dict['2of2'].append(bs)
+                        all_ss_dict['2of2'].append(ss)
+                        all_fs_dict['2of2'].append(fs)
+                        all_tos_dict['2of2'].append(tos)
+                    else:
+                        all_pts_dict['2of2'] = [pts]
+                        all_rebs_dict['2of2'] = [rebs]
+                        all_asts_dict['2of2'] = [asts]
+                        all_winning_scores_dict['2of2'] = [winning_score]
+                        all_losing_scores_dict['2of2'] = [losing_score]
+                        all_minutes_dict['2of2'] = [minutes]
+                        all_fgms_dict['2of2'] = [fgm]
+                        all_fgas_dict['2of2'] = [fga]
+                        all_fg_rates_dict['2of2'] = [fg_rate]
+                        all_threes_made_dict['2of2'] = [threes_made]
+                        all_threes_attempts_dict['2of2'] = [threes_attempts]
+                        all_threes_rates_dict['2of2'] = [three_rate]
+                        all_ftms_dict['2of2'] = [ftm]
+                        all_ftas_dict['2of2'] = [fta]
+                        all_ft_rates_dict['2of2'] = [ft_rate]
+                        all_bs_dict['2of2'] = [bs]
+                        all_ss_dict['2of2'] = [ss]
+                        all_fs_dict['2of2'] = [fs]
+                        all_tos_dict['2of2'] = [tos]
+
+                next_game_date_obj = game_date_obj # next game bc we loop from most to least recent
                     
 
     else:
