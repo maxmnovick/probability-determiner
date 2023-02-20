@@ -10,6 +10,9 @@ import isolator # isolate player game data which exludes headers and monthly ave
 import re # split result data into score data
 import determiner # determine consistent streak
 
+from datetime import datetime # convert date str to date so we can see if games 1 day apart and how many games apart
+from datetime import timedelta
+
 # input: game log
 # player name
 # date, opponent, result, min, fg, fg%, 3pt, 3p%, ft, ft%, reb, ast, blk, stl, pf, to, pts
@@ -37,7 +40,8 @@ s_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 
 data_type = "Game Lines"
-input_type = ''#'2_14' # date as mth_day
+todays_games_date = '2/17/23'
+input_type = ''#'2_17' # date as mth_day
 projected_lines = reader.extract_data(data_type, input_type, header=True)
 if input_type == '': # for testing we make input type blank ''
 #projected_lines = reader.read_projected_lines(date)
@@ -124,7 +128,11 @@ for player_idx in range(len(all_player_game_logs)):
     all_tos_dict = { 'all':[], 'home':[], 'away':[] }
 
 
+    # if getting data from player game logs read from internet
+    # for game log for particular given season/year
+    # for season in all seasons
     if len(player_game_log) > 0:
+        season_year = '23'
         print("player_game_log:\n" + str(player_game_log))
         # we pulled game log from internet
 
@@ -138,6 +146,7 @@ for player_idx in range(len(all_player_game_logs)):
             #print("game:\n" + str(game))
             #print("player_game_log.loc[game_idx, 'Type']: " + player_game_log.loc[game_idx, 'Type'])
 
+            prev_game_date_string = '' # need to see if back to back games 1 day apart
             if player_game_log.loc[game_idx, 'Type'] == 'Regular':
                 #print("Current Game Num: " + str(game_idx))
 
@@ -314,7 +323,34 @@ for player_idx in range(len(all_player_game_logs)):
                         all_fs_dict[opponent] = [fs]
                         all_tos_dict[opponent] = [tos]
 
+                # see if this game is 1st or 2nd night of back to back bc we want to see if pattern for those conditions
+                game_date_string = player_game_log.loc[game_idx, 'Date'].lower().split()[1] + "/" + season_year
+                print("game_date_string: " + str(game_date_string))
+                date_time_obj = datetime.strptime(game_date_string, '%m/%d/%y')
+                print("date_time_obj: " + str(date_time_obj))
 
+                # if current loop is most recent game (idx 0) then today's game is the next game
+                if game_idx == 0: # see how many days after last game is date of today's projected lines
+                    todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
+                    print("todays_games_date_obj: " + str(todays_games_date_obj))
+
+                else: # if not most recent game then we can see the following game in the game log at prev idx
+                    next_game_date_string = player_game_log.loc[game_idx-1, 'Date'].lower().split()[1] + "/" + season_year
+                    print("next_game_date_string: " + str(next_game_date_string))
+                    next_game_date_obj = datetime.strptime(next_game_date_string, '%m/%d/%y')
+                    print("next_game_date_obj: " + str(next_game_date_obj))
+
+                next_day = todays_games_date_obj + timedelta(days = 1)
+                print("next_day: " + str(next_day))
+                if next_game_date_string == next_day:
+                    print("1of2")
+                
+                prev_day = todays_games_date_obj - timedelta(days = 1)
+                print("prev_day: " + str(prev_day))
+                if prev_game_date_string == prev_day:
+                    print("2of2")
+
+                next_game_date_string = game_date_string # next game bc we loop from most to least recent
                     
 
     else:
@@ -415,6 +451,7 @@ for player_idx in range(len(all_player_game_logs)):
             print("Warning: No player games data!")
 
 
+    # no matter how we read data, we should have filled all_pts list
     if len(all_pts) > 0:
         # no matter how we get data, 
         # next we compute relevant results
@@ -430,6 +467,7 @@ for player_idx in range(len(all_player_game_logs)):
         all_stats_counts_dict = { 'all': [], 'home': [], 'away': [] }
         all_streak_tables = { } # { 'player name': { 'all': [], 'home':[], 'away':[] } }
 
+        # at this point we have added all keys to dict eg all_pts_dict = {'1of2':[],'2of2':[]}
         print("all_pts_dict: " + str(all_pts_dict))
         for key in all_pts_dict.keys():
             pts_mean = round(numpy.mean(all_pts_dict[key]), 1)
@@ -692,7 +730,7 @@ for player_idx in range(len(all_player_game_logs)):
             over_rebs_line = 'REB ' + str(r_lines[player_idx]) + "+"
             over_asts_line = 'AST ' + str(a_lines[player_idx]) + "+"
             
-            over_threes_line = '3PM ' + str(threes_lines[player_idx]) + "+"
+            over_threes_line = '3P ' + str(threes_lines[player_idx]) + "+"
             over_blks_line = 'BLK ' + str(b_lines[player_idx]) + "+"
             over_stls_line = 'STL ' + str(s_lines[player_idx]) + "+"
             over_tos_line = 'TO ' + str(to_lines[player_idx]) + "+"
@@ -802,7 +840,7 @@ draft_edge_url = 'https://draftedge.com/nba-defense-vs-position/'
 
 
 # get matchup data for streaks to see if likely to continue streak
-matchup_data_sources = [hashtag_bball_url] #, hashtag_bball_url, swish_analytics_url, betting_pros_url, draft_edge_url] # go thru each source so we can compare conflicts
+matchup_data_sources = [fantasy_pros_url, hashtag_bball_url, swish_analytics_url] #, hashtag_bball_url, swish_analytics_url, betting_pros_url, draft_edge_url] # go thru each source so we can compare conflicts
 # first read all matchup data from internet and then loop through tables
 all_matchup_data = reader.read_all_matchup_data(matchup_data_sources)
 
@@ -859,7 +897,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
                         source_vals.insert(0, result.title())
                         matchup_table.append(source_vals)
 
-                    #source_matchup_ratings={ source1: {position:'', average:'', rank:''}, source2...}
+                    #source_matchup_ratings={ source1: {positions:[], averages:[], ranks:[], avg_ranks:[]}, source2...}
                     avg_source_matchup_ratings = {} # so we can sort by average rank
                     source_matchup_ratings = {}
 

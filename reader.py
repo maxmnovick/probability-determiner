@@ -200,7 +200,7 @@ def read_matchup_data(source_url):
 	
 	
 
-	if re.search('swish|fantasypro|hashtag',source_url): # swish analytics uses html5
+	if re.search('fantasypro|hashtag|swish',source_url): # swish analytics uses html5
 		
 
 		#chop = webdriver.ChromeOptions()
@@ -256,14 +256,14 @@ def read_matchup_data(source_url):
 			#matchup_table = driver.find_element('id', 'data-table')
 			#print("matchup_table: " + str(matchup_table))
 
+			# not all sources have all team defense and not needed yet so add later
+			# position_btn = driver.find_element('class name','main-content').find_element('xpath','div/div[4]/div/ul/li[1]/a')
+			# print("position_btn: " + position_btn.get_attribute('innerHTML'))
+			# position_btn.click()
+			# #time.sleep(3)
 
-			position_btn = driver.find_element('class name','main-content').find_element('xpath','div/div[4]/div/ul/li[1]/a')
-			print("position_btn: " + position_btn.get_attribute('innerHTML'))
-			position_btn.click()
-			#time.sleep(3)
-
-			team_matchup_df=pd.read_html(driver.find_element('id', "data-table").get_attribute('outerHTML'))[0]
-			print("team_matchup_df\n" + str(team_matchup_df))
+			# team_matchup_df=pd.read_html(driver.find_element('id', "data-table").get_attribute('outerHTML'))[0]
+			# print("team_matchup_df\n" + str(team_matchup_df))
 
 
 			pg_btn = driver.find_element('class name','main-content').find_element('xpath','div/div[4]/div/ul/li[2]/a')
@@ -310,8 +310,83 @@ def read_matchup_data(source_url):
 			c_matchup_df=pd.read_html(driver.find_element('id', "data-table").get_attribute('outerHTML'))[0]
 			print("c_matchup_df\n" + str(c_matchup_df))
 
-			matchup_data = [team_matchup_df, pg_matchup_df, sg_matchup_df, sf_matchup_df, pf_matchup_df, c_matchup_df]
+			matchup_data = [pg_matchup_df, sg_matchup_df, sf_matchup_df, pf_matchup_df, c_matchup_df]
 
+		elif re.search('hashtag',source_url):
+			print("Pull data from hastag bball.")
+			all_matchup_df=pd.read_html(driver.find_element('id', "ContentPlaceHolder1_GridView1").get_attribute('outerHTML'))[0]
+			print("all_matchup_df\n" + str(all_matchup_df))
+
+			pg_matchup_df = all_matchup_df[all_matchup_df['Sort: Position'] == 'PG']
+			print("pg_matchup_df\n" + str(pg_matchup_df))
+			sg_matchup_df = all_matchup_df[all_matchup_df['Sort: Position'] == 'SG']
+			print("sg_matchup_df\n" + str(sg_matchup_df))
+			sf_matchup_df = all_matchup_df[all_matchup_df['Sort: Position'] == 'SF']
+			print("sf_matchup_df\n" + str(sf_matchup_df))
+			pf_matchup_df = all_matchup_df[all_matchup_df['Sort: Position'] == 'PF']
+			print("pf_matchup_df\n" + str(pf_matchup_df))
+			c_matchup_df = all_matchup_df[all_matchup_df['Sort: Position'] == 'C']
+			print("c_matchup_df\n" + str(c_matchup_df))
+
+			# they do not give all team defense so we must calculate or remove from other sources if not needed. it is needed bc good to know overall defense in positionless bball
+			# get list of all team names and then make subset tables by team
+			# team_names = all_matchup_df['Sort: Team'].unique
+			# print("team_names: " + str(team_names))
+			# for team_name in team_names:
+			# 	team_matchup_df = all_matchup_df[all_matchup_df['Sort: Team'] == team_name]
+			# 	print("team_matchup_df\n" + str(team_matchup_df))
+
+			# 	pts_mean = team_matchup_df['Sort: PTS'].mean()
+
+			matchup_data = [pg_matchup_df, sg_matchup_df, sf_matchup_df, pf_matchup_df, c_matchup_df]
+			
+		elif re.search('swish',source_url):
+			print("Pull data from Swish.")
+
+			time.sleep(3) #needs to load
+
+			pg_btn = driver.find_element('xpath','html/body/div[3]/div[2]/div[2]/div/ul/li[2]/a')
+			print("pg_btn: " + pg_btn.get_attribute('innerHTML'))
+			pg_btn.click()
+			
+
+			pg_matchup_df=pd.read_html(driver.find_element('id', "stat-table").get_attribute('outerHTML'))[0]
+			print("pg_matchup_df\n" + str(pg_matchup_df))
+
+
+			sg_btn = driver.find_element('xpath','html/body/div[3]/div[2]/div[2]/div/ul/li[3]/a')
+			print("sg_btn: " + sg_btn.get_attribute('innerHTML'))
+			sg_btn.click()
+			
+			sg_matchup_df=pd.read_html(driver.find_element('id', "stat-table").get_attribute('outerHTML'))[0]
+			print("sg_matchup_df\n" + str(sg_matchup_df))
+
+
+			sf_btn = driver.find_element('xpath','html/body/div[3]/div[2]/div[2]/div/ul/li[4]/a')
+			print("sf_btn: " + sf_btn.get_attribute('innerHTML'))
+			sf_btn.click()
+			
+			sf_matchup_df=pd.read_html(driver.find_element('id', "stat-table").get_attribute('outerHTML'))[0]
+			print("sf_matchup_df\n" + str(sf_matchup_df))
+
+
+			pf_btn = driver.find_element('xpath','html/body/div[3]/div[2]/div[2]/div/ul/li[5]/a')
+			print("pf_btn: " + pf_btn.get_attribute('innerHTML'))
+			pf_btn.click()
+			
+			pf_matchup_df=pd.read_html(driver.find_element('id', "stat-table").get_attribute('outerHTML'))[0]
+			print("pf_matchup_df\n" + str(pf_matchup_df))
+
+
+			c_btn = driver.find_element('xpath','html/body/div[3]/div[2]/div[2]/div/ul/li[6]/a')
+			print("c_btn: " + c_btn.get_attribute('innerHTML'))
+			c_btn.click()
+			
+			c_matchup_df=pd.read_html(driver.find_element('id', "stat-table").get_attribute('outerHTML'))[0]
+			print("c_matchup_df\n" + str(c_matchup_df))
+
+			matchup_data = [pg_matchup_df, sg_matchup_df, sf_matchup_df, pf_matchup_df, c_matchup_df]
+			
 		else:
 			team_matchup_df=pd.read_html(driver.find_element('id', "ContentPlaceHolder1_GridView1").get_attribute('outerHTML'))[0]
 			print("team_matchup_df\n" + str(team_matchup_df))
@@ -402,4 +477,11 @@ def extract_json_from_file(data_type, input_type, extension='csv'):
 	return data_dict
 
 
+def format_stat_val(col_val):
+	stat_val = 0.0
+	if re.search('\\s',str(col_val)): # eg '20.3 15' for 'avg rank'
+		stat_val = float(re.split('\\s',col_val)[0])
+	else:
+		stat_val = float(col_val)
 
+	return stat_val
