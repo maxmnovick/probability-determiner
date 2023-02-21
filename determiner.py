@@ -5,6 +5,9 @@
 import re # see if keyword in column name
 import reader # format stat val
 
+from datetime import datetime # convert date str to date so we can see if games 1 day apart and how many games apart
+
+
 def determine_consistent_streak(stat_counts):
     print("\n===Determine Consistent Streak===\n")
     #print("stat_counts: " + str(stat_counts))
@@ -202,3 +205,13 @@ def determine_matchup_rating(opponent, stat, all_matchup_data):
 
     #print("all_matchup_ratings: " + str(all_matchup_ratings))                  
     return all_matchup_ratings
+
+# exclude all star and other special games
+def determine_prev_game_date(player_game_log, season_year):
+    # if not all star
+    prev_game_idx = 0
+    while re.search('\\*', player_game_log.loc[prev_game_idx, 'OPP']):
+        prev_game_idx += 1
+    prev_game_date_string = player_game_log.loc[prev_game_idx, 'Date'].split()[1] + "/" + season_year # eg 'wed 2/15' to '2/15/23'
+    prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%y')
+    return prev_game_date_obj

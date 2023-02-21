@@ -13,6 +13,8 @@ import determiner # determine consistent streak
 from datetime import datetime # convert date str to date so we can see if games 1 day apart and how many games apart
 from datetime import timedelta
 
+import pandas as pd # see when was prev game
+
 # input: game log
 # player name
 # date, opponent, result, min, fg, fg%, 3pt, 3p%, ft, ft%, reb, ast, blk, stl, pf, to, pts
@@ -28,6 +30,7 @@ a_line = 1
 #row1 = ['Tue 2/7','vs OKC','L 133-130', '34','13-20','65.0','4-6','66.7','8-10','80.0','7','3','0','3','3','4','38']
 
 all_player_game_logs = []
+all_player_game_logs_dict = {}
 
 
 player_names = ['Julius Randle', 'Jalen Brunson', 'RJ Barrett', 'Demar Derozan', 'Paolo Banchero', 'Zach Lavine', 'Franz Wagner', 'Nikola Vucevic', 'Wendell Carter Jr', 'Ayo Dosunmu', 'Markelle Fultz', 'Patrick Williams', 'Brandon Ingram', 'Shai Gilgeous Alexander', 'CJ Mccollum', 'Josh Giddey', 'Trey Murphy III', 'Jalen Williams', 'Herbert Jones', 'Anthony Edwards', 'Luka Doncic', 'Rudy Gobert', 'Kyrie Irving', 'Mike Conley', 'Jaden Mcdaniels', 'Jordan Poole', 'Klay Thompson', 'Draymond Green', 'Kevon Looney','Gary Harris'] #['Bojan Bogdanovic', 'Jaden Ivey', 'Killian Hayes', 'Pascal Siakam', 'Fred Vanvleet', 'Gary Trent Jr', 'Scottie Barnes', 'Isaiah Stewart', 'Jalen Duren', 'Chris Boucher'] #['Ja Morant', 'Desmond Bane', 'Jaren Jackson Jr', 'Dillon Brooks', 'Jayson Tatum', 'Derrick White', 'Robert Williams', 'Malcolm Brogdon', 'Al Horford', 'Xavier Tillman', 'Brandon Clarke']
@@ -40,7 +43,8 @@ s_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 
 data_type = "Game Lines"
-todays_games_date = '2/17/23'
+todays_games_date = '2/21/23'
+todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
 input_type = ''#'2_17' # date as mth_day
 projected_lines = reader.extract_data(data_type, input_type, header=True)
 if input_type == '': # for testing we make input type blank ''
@@ -75,16 +79,16 @@ for p_name in player_names:
 
     all_player_game_logs.append(player_game_log) # could continue to process in this loop or save all player game logs to process in next loop
 
-
+    all_player_game_logs_dict[p_name] = player_game_log
 
 
 print("\n===All Players===\n")
 
-player_game_log = all_player_game_logs[0]
+player_game_log = all_player_game_logs[0] # init
 # player game log from espn
 for player_idx in range(len(all_player_game_logs)):
     player_game_log = all_player_game_logs[player_idx]
-    player_name = player_names[player_idx]
+    player_name = player_names[player_idx] # player names must be aligned with player game logs
 
     all_pts = []
     all_rebs = []
@@ -148,10 +152,14 @@ for player_idx in range(len(all_player_game_logs)):
             #print("game:\n" + str(game))
             #print("player_game_log.loc[game_idx, 'Type']: " + player_game_log.loc[game_idx, 'Type'])
 
+            if re.search('\\*',player_game_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
+                #print("game excluded")
+                continue
             
             if player_game_log.loc[game_idx, 'Type'] == 'Regular':
                 #print("Current Game Num: " + str(game_idx))
 
+                
                 
 
                 pts = int(player_game_log.loc[game_idx, 'PTS'])
@@ -327,15 +335,21 @@ for player_idx in range(len(all_player_game_logs)):
 
 
                 # see if this game is 1st or 2nd night of back to back bc we want to see if pattern for those conditions
-                game_date_string = player_game_log.loc[game_idx, 'Date'].lower().split()[1] + "/" + season_year
+                init_game_date_string = player_game_log.loc[game_idx, 'Date'].lower().split()[1] # 'wed 2/15'
+                game_mth = init_game_date_string.split('/')[0]
+                final_season_year = season_year
+                if int(game_mth) in range(10,12):
+                    final_season_year = str(int(season_year) - 1)
+                game_date_string = init_game_date_string + "/" + final_season_year
                 print("game_date_string: " + str(game_date_string))
                 game_date_obj = datetime.strptime(game_date_string, '%m/%d/%y')
                 print("game_date_obj: " + str(game_date_obj))
 
                 # if current loop is most recent game (idx 0) then today's game is the next game
                 if game_idx == 0: # see how many days after prev game is date of today's projected lines
-                    todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
-                    print("todays_games_date_obj: " + str(todays_games_date_obj))
+                    # already defined or passed todays_games_date_obj
+                    # todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
+                    # print("todays_games_date_obj: " + str(todays_games_date_obj))
                     next_game_date_obj = todays_games_date_obj # today's game is the next game relative to the previous game
                 print("next_game_date_obj: " + str(next_game_date_obj))
                 # no need to get next game date like this bc we can see last loop
@@ -345,14 +359,110 @@ for player_idx in range(len(all_player_game_logs)):
                 #     next_game_date_obj = datetime.strptime(next_game_date_string, '%m/%d/%y')
                 #     print("next_game_date_obj: " + str(next_game_date_obj))
 
-                prev_game_date_string = player_game_log.loc[game_idx+1, 'Date'].lower().split()[1] + "/" + season_year
+                days_before_next_game_int = (next_game_date_obj - game_date_obj).days
+                days_before_next_game = str(days_before_next_game_int) + ' before'
+                print("days_before_next_game: " + days_before_next_game)
+                if days_before_next_game in all_pts_dict.keys():
+                    all_pts_dict[days_before_next_game].append(pts)
+                    #print("all_pts_dict: " + str(all_pts_dict))
+                    all_rebs_dict[days_before_next_game].append(rebs)
+                    all_asts_dict[days_before_next_game].append(asts)
+                    all_winning_scores_dict[days_before_next_game].append(winning_score)
+                    all_losing_scores_dict[days_before_next_game].append(losing_score)
+                    all_minutes_dict[days_before_next_game].append(minutes)
+                    all_fgms_dict[days_before_next_game].append(fgm)
+                    all_fgas_dict[days_before_next_game].append(fga)
+                    all_fg_rates_dict[days_before_next_game].append(fg_rate)
+                    all_threes_made_dict[days_before_next_game].append(threes_made)
+                    all_threes_attempts_dict[days_before_next_game].append(threes_attempts)
+                    all_threes_rates_dict[days_before_next_game].append(three_rate)
+                    all_ftms_dict[days_before_next_game].append(ftm)
+                    all_ftas_dict[days_before_next_game].append(fta)
+                    all_ft_rates_dict[days_before_next_game].append(ft_rate)
+                    all_bs_dict[days_before_next_game].append(bs)
+                    all_ss_dict[days_before_next_game].append(ss)
+                    all_fs_dict[days_before_next_game].append(fs)
+                    all_tos_dict[days_before_next_game].append(tos)
+                else:
+                    all_pts_dict[days_before_next_game] = [pts]
+                    all_rebs_dict[days_before_next_game] = [rebs]
+                    all_asts_dict[days_before_next_game] = [asts]
+                    all_winning_scores_dict[days_before_next_game] = [winning_score]
+                    all_losing_scores_dict[days_before_next_game] = [losing_score]
+                    all_minutes_dict[days_before_next_game] = [minutes]
+                    all_fgms_dict[days_before_next_game] = [fgm]
+                    all_fgas_dict[days_before_next_game] = [fga]
+                    all_fg_rates_dict[days_before_next_game] = [fg_rate]
+                    all_threes_made_dict[days_before_next_game] = [threes_made]
+                    all_threes_attempts_dict[days_before_next_game] = [threes_attempts]
+                    all_threes_rates_dict[days_before_next_game] = [three_rate]
+                    all_ftms_dict[days_before_next_game] = [ftm]
+                    all_ftas_dict[days_before_next_game] = [fta]
+                    all_ft_rates_dict[days_before_next_game] = [ft_rate]
+                    all_bs_dict[days_before_next_game] = [bs]
+                    all_ss_dict[days_before_next_game] = [ss]
+                    all_fs_dict[days_before_next_game] = [fs]
+                    all_tos_dict[days_before_next_game] = [tos]
+                
+
+                init_prev_game_date_string = player_game_log.loc[game_idx+1, 'Date'].lower().split()[1]
+                prev_game_mth = init_prev_game_date_string.split('/')[0]
+                final_season_year = season_year
+                if int(prev_game_mth) in range(10,12):
+                    final_season_year = str(int(season_year) - 1)
+                prev_game_date_string = init_prev_game_date_string + "/" + final_season_year
                 print("prev_game_date_string: " + str(prev_game_date_string))
                 prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%y')
                 print("prev_game_date_obj: " + str(prev_game_date_obj))
+
+                days_after_prev_game_int = (game_date_obj - prev_game_date_obj).days
+                days_after_prev_game = str(days_after_prev_game_int) + ' after'
+                print("days_after_prev_game: " + days_after_prev_game)
+                if days_after_prev_game in all_pts_dict.keys():
+                    all_pts_dict[days_after_prev_game].append(pts)
+                    #print("all_pts_dict: " + str(all_pts_dict))
+                    all_rebs_dict[days_after_prev_game].append(rebs)
+                    all_asts_dict[days_after_prev_game].append(asts)
+                    all_winning_scores_dict[days_after_prev_game].append(winning_score)
+                    all_losing_scores_dict[days_after_prev_game].append(losing_score)
+                    all_minutes_dict[days_after_prev_game].append(minutes)
+                    all_fgms_dict[days_after_prev_game].append(fgm)
+                    all_fgas_dict[days_after_prev_game].append(fga)
+                    all_fg_rates_dict[days_after_prev_game].append(fg_rate)
+                    all_threes_made_dict[days_after_prev_game].append(threes_made)
+                    all_threes_attempts_dict[days_after_prev_game].append(threes_attempts)
+                    all_threes_rates_dict[days_after_prev_game].append(three_rate)
+                    all_ftms_dict[days_after_prev_game].append(ftm)
+                    all_ftas_dict[days_after_prev_game].append(fta)
+                    all_ft_rates_dict[days_after_prev_game].append(ft_rate)
+                    all_bs_dict[days_after_prev_game].append(bs)
+                    all_ss_dict[days_after_prev_game].append(ss)
+                    all_fs_dict[days_after_prev_game].append(fs)
+                    all_tos_dict[days_after_prev_game].append(tos)
+                else:
+                    all_pts_dict[days_after_prev_game] = [pts]
+                    all_rebs_dict[days_after_prev_game] = [rebs]
+                    all_asts_dict[days_after_prev_game] = [asts]
+                    all_winning_scores_dict[days_after_prev_game] = [winning_score]
+                    all_losing_scores_dict[days_after_prev_game] = [losing_score]
+                    all_minutes_dict[days_after_prev_game] = [minutes]
+                    all_fgms_dict[days_after_prev_game] = [fgm]
+                    all_fgas_dict[days_after_prev_game] = [fga]
+                    all_fg_rates_dict[days_after_prev_game] = [fg_rate]
+                    all_threes_made_dict[days_after_prev_game] = [threes_made]
+                    all_threes_attempts_dict[days_after_prev_game] = [threes_attempts]
+                    all_threes_rates_dict[days_after_prev_game] = [three_rate]
+                    all_ftms_dict[days_after_prev_game] = [ftm]
+                    all_ftas_dict[days_after_prev_game] = [fta]
+                    all_ft_rates_dict[days_after_prev_game] = [ft_rate]
+                    all_bs_dict[days_after_prev_game] = [bs]
+                    all_ss_dict[days_after_prev_game] = [ss]
+                    all_fs_dict[days_after_prev_game] = [fs]
+                    all_tos_dict[days_after_prev_game] = [tos]
                 
 
                 next_day = game_date_obj + timedelta(days = 1)
-                print("next_day: " + str(next_day))
+                #print("next_day: " + str(next_day))
                 if next_game_date_obj == next_day:
                     print("1of2")
 
@@ -401,7 +511,7 @@ for player_idx in range(len(all_player_game_logs)):
 
                 
                 prev_day = game_date_obj - timedelta(days = 1)
-                print("prev_day: " + str(prev_day))
+                #print("prev_day: " + str(prev_day))
                 if prev_game_date_obj == prev_day:
                     print("2of2")
 
@@ -928,32 +1038,52 @@ for player_idx in range(len(all_player_game_logs)):
                     # else:
                     #     player_streak_tables[key] = [prob_table]
     
-
-# get matchup data before looping thru consistent streaks bc we will present matchup data alongside consistent streaks for comparison
-fantasy_pros_url = 'https://www.fantasypros.com/daily-fantasy/nba/fanduel-defense-vs-position.php' #'https://www.fantasypros.com/nba/defense-vs-position.php' #alt 2: betting_pros_url = 'https://www.bettingpros.com/nba/defense-vs-position/'
-hashtag_bball_url = 'https://hashtagbasketball.com/nba-defense-vs-position'
-swish_analytics_url = 'https://swishanalytics.com/optimus/nba/daily-fantasy-team-defensive-ranks-position'
-draft_edge_url = 'https://draftedge.com/nba-defense-vs-position/'
-
-
-# get matchup data for streaks to see if likely to continue streak
-matchup_data_sources = [fantasy_pros_url, hashtag_bball_url, swish_analytics_url] #, hashtag_bball_url, swish_analytics_url, betting_pros_url, draft_edge_url] # go thru each source so we can compare conflicts
-# first read all matchup data from internet and then loop through tables
-all_matchup_data = reader.read_all_matchup_data(matchup_data_sources)
+find_matchups = False
+if find_matchups:
+    print("\n===Find Matchups===\n")
+    # get matchup data before looping thru consistent streaks bc we will present matchup data alongside consistent streaks for comparison
+    fantasy_pros_url = 'https://www.fantasypros.com/daily-fantasy/nba/fanduel-defense-vs-position.php' #'https://www.fantasypros.com/nba/defense-vs-position.php' #alt 2: betting_pros_url = 'https://www.bettingpros.com/nba/defense-vs-position/'
+    hashtag_bball_url = 'https://hashtagbasketball.com/nba-defense-vs-position'
+    swish_analytics_url = 'https://swishanalytics.com/optimus/nba/daily-fantasy-team-defensive-ranks-position'
+    draft_edge_url = 'https://draftedge.com/nba-defense-vs-position/'
 
 
-# display streak tables separately
-#streaks = isolator.isolate_consistent_streaks(all_stats_counts_dict)
+    # get matchup data for streaks to see if likely to continue streak
+    matchup_data_sources = [fantasy_pros_url, hashtag_bball_url, swish_analytics_url] #, hashtag_bball_url, swish_analytics_url, betting_pros_url, draft_edge_url] # go thru each source so we can compare conflicts
+    # first read all matchup data from internet and then loop through tables
+    all_matchup_data = reader.read_all_matchup_data(matchup_data_sources)
+
+
+    # display streak tables separately
+    # only pull matchup data for streaks bc too much uncertainty without streak, until we get ml to analyze full pattern
+    #streaks = isolator.isolate_consistent_streaks(all_stats_counts_dict)
+
 print("\n===Consistent Streaks===\n")
+
 for p_name, p_streak_tables in all_streak_tables.items():
     print("\n===" + p_name + "===\n")
+
+    # we need to get schedule to get next game date to see how many days until next game
+    # but we can get prev game from player game log we already have
+    # todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
+    # print("todays_games_date_obj: " + str(todays_games_date_obj))
+    player_game_log = all_player_game_logs_dict[p_name]
+    prev_game_date_obj = determiner.determine_prev_game_date(player_game_log, season_year) # exclude all star and other special games
+    # prev_game_date_string = player_game_log.loc[prev_game_idx, 'Date'].split()[1] + "/" + season_year # eg 'wed 2/15' to '2/15/23'
+    # prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%y')
+    days_after_prev_game = (todays_games_date_obj - prev_game_date_obj).days
+    print("days_after_prev_game: " + str(days_after_prev_game))
+
     for key, streak_tables in p_streak_tables.items():
         player_lines = projected_lines_dict[p_name]
         #print("player_lines: " + str(player_lines))
 
         opponent = player_lines['OPP'].lower()
 
-        if str(key) == 'all' or str(key) == player_lines['LOC'].lower() or str(key) == opponent: # current conditions we are interested in
+       
+        
+        #days_before_next_game = 1
+        if str(key) == 'all' or str(key) == player_lines['LOC'].lower() or str(key) == opponent or str(key) == str(days_after_prev_game) + ' after': # current conditions we are interested in
             print(str(key).title())
             
             print(tabulate(streak_tables))
@@ -962,42 +1092,43 @@ for p_name, p_streak_tables in all_streak_tables.items():
             # display matchup tables with consistent streaks (later look at easiest matchups for all current games, not just consistent streaks bc we may find an exploit)
             
             #print("streak_tables: " + str(streak_tables))
-            for streak in streak_tables:
+            if find_matchups:
+                for streak in streak_tables:
 
-                print("\n===Matchups===\n")
+                    print("\n===Matchups===\n")
 
-                print(streak)
+                    print(streak)
 
-                stat = streak[0].split(' ')[0]#'pts'
-                #print("stat: " + stat)
-                #all_matchup_ratings = { 'all':{}, 'pg':{}, 'sg':{}, 'sf':{}, 'pf':{}, 'c':{} } # { 'pg': { 'values': [source1,source2,..], 'ranks': [source1,source2,..] }, 'sg': {}, ... }
-                #position_matchup_rating = { 'values':[], 'ranks':[] } # comparing results from different sources
-                current_matchup_data = determiner.determine_matchup_rating(opponent, stat, all_matchup_data) # first show matchups from easiest to hardest position for stat. 
+                    stat = streak[0].split(' ')[0]#'pts'
+                    #print("stat: " + stat)
+                    #all_matchup_ratings = { 'all':{}, 'pg':{}, 'sg':{}, 'sf':{}, 'pf':{}, 'c':{} } # { 'pg': { 'values': [source1,source2,..], 'ranks': [source1,source2,..] }, 'sg': {}, ... }
+                    #position_matchup_rating = { 'values':[], 'ranks':[] } # comparing results from different sources
+                    current_matchup_data = determiner.determine_matchup_rating(opponent, stat, all_matchup_data) # first show matchups from easiest to hardest position for stat. 
 
-                #sources_results={values:[],ranks:[]}
-                
-                for pos, sources_results in current_matchup_data.items():
-                    print("Position: " + pos.upper())
-
+                    #sources_results={values:[],ranks:[]}
                     
+                    for pos, sources_results in current_matchup_data.items():
+                        print("Position: " + pos.upper())
 
-                    matchup_table_header_row = ['Sources'] # [source1, source2, ..]
-                    num_sources = len(sources_results['averages']) #len(source_vals)
+                        
 
-                    for source_idx in range(num_sources):
-                        source_num = source_idx + 1
-                        source_header = 'Source ' + str(source_num)
-                        matchup_table_header_row.append(source_header)
+                        matchup_table_header_row = ['Sources'] # [source1, source2, ..]
+                        num_sources = len(sources_results['averages']) #len(source_vals)
 
-                    matchup_table = [matchup_table_header_row]
-                    for result, source_vals in sources_results.items():
-                        source_vals.insert(0, result.title())
-                        matchup_table.append(source_vals)
+                        for source_idx in range(num_sources):
+                            source_num = source_idx + 1
+                            source_header = 'Source ' + str(source_num)
+                            matchup_table_header_row.append(source_header)
 
-                    #source_matchup_ratings={ source1: {positions:[], averages:[], ranks:[], avg_ranks:[]}, source2...}
-                    avg_source_matchup_ratings = {} # so we can sort by average rank
-                    source_matchup_ratings = {}
+                        matchup_table = [matchup_table_header_row]
+                        for result, source_vals in sources_results.items():
+                            source_vals.insert(0, result.title())
+                            matchup_table.append(source_vals)
+
+                        #source_matchup_ratings={ source1: {positions:[], averages:[], ranks:[], avg_ranks:[]}, source2...}
+                        avg_source_matchup_ratings = {} # so we can sort by average rank
+                        source_matchup_ratings = {}
 
 
-                    print(tabulate(matchup_table))
+                        print(tabulate(matchup_table))
 
