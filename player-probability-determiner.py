@@ -849,7 +849,15 @@ for player_idx in range(len(all_player_game_logs)):
             max_row = ["Max", result_max, minutes_max, fg_max, fg_rate_max, threes_max, threes_rate_max, ft_max, ft_rate_max, rebs_max, asts_max, b_max, s_max, f_max, to_max, pts_max]
             #header_row = ["Output"] + player_data[0][2:]
             output_table = [header_row, mean_row, median_row, mode_row, min_row, max_row]
-            print(str(key).title())
+
+            output_title = str(key).title()
+            if re.search('before',key):
+                output_title = re.sub('Before','days before next game', output_title).title()
+            elif re.search('after',key):
+                output_title = re.sub('After','days after previous game', output_title).title()
+            
+
+            print(output_title)
             print(tabulate(output_table))
 
             # header_row = ['Points', 'All Season']
