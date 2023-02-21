@@ -338,7 +338,7 @@ for player_idx in range(len(all_player_game_logs)):
                 init_game_date_string = player_game_log.loc[game_idx, 'Date'].lower().split()[1] # 'wed 2/15'
                 game_mth = init_game_date_string.split('/')[0]
                 final_season_year = season_year
-                if int(game_mth) in range(10,12):
+                if int(game_mth) in range(10,13):
                     final_season_year = str(int(season_year) - 1)
                 game_date_string = init_game_date_string + "/" + final_season_year
                 print("game_date_string: " + str(game_date_string))
@@ -408,7 +408,7 @@ for player_idx in range(len(all_player_game_logs)):
                 init_prev_game_date_string = player_game_log.loc[game_idx+1, 'Date'].lower().split()[1]
                 prev_game_mth = init_prev_game_date_string.split('/')[0]
                 final_season_year = season_year
-                if int(prev_game_mth) in range(10,12):
+                if int(prev_game_mth) in range(10,13):
                     final_season_year = str(int(season_year) - 1)
                 prev_game_date_string = init_prev_game_date_string + "/" + final_season_year
                 print("prev_game_date_string: " + str(prev_game_date_string))
