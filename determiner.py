@@ -7,9 +7,15 @@ import reader # format stat val
 
 from datetime import datetime # convert date str to date so we can see if games 1 day apart and how many games apart
 
+import requests # check if webpage exists while we are looping through player game log seasons until we cannot find game log for that year (note rare players may take a year off and come back but for now assume consistent years)
+# request not working by checking status code 200 so test httplib2
+import httplib2
+
+import pandas as pd # read html results from webpage to determine if player played season
+
 
 def determine_consistent_streak(stat_counts):
-    print("\n===Determine Consistent Streak===\n")
+    #print("\n===Determine Consistent Streak===\n")
     #print("stat_counts: " + str(stat_counts))
     consistent = False
 
@@ -215,3 +221,37 @@ def determine_prev_game_date(player_game_log, season_year):
     prev_game_date_string = player_game_log.loc[prev_game_idx, 'Date'].split()[1] + "/" + season_year # eg 'wed 2/15' to '2/15/23'
     prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%y')
     return prev_game_date_obj
+
+
+# gather game logs by season and do not pull webpage if it does not exist
+def determine_played_season(player_url):
+    played_season = False
+    # response = requests.get(player_url)
+    # if response.status_code == 200:
+    #     played_season = True
+    #     print('played season')
+
+    h = httplib2.Http()
+    resp = h.request(player_url, 'HEAD')
+    status_code = resp[0]['status']
+    print('status_code: ' + str(status_code))
+    if int(status_code) < 400:
+        # some websites will simply not have the webpage but espn still has the webpage for all years prior to playing with blank game logs
+        #if len(game_log) > 0:
+
+        html_results = pd.read_html(player_url)
+        #print("html_results: " + str(html_results))
+
+        len_html_results = len(html_results) # each element is a dataframe/table so we loop thru each table
+
+        for order in range(len_html_results):
+            #print("order: " + str(order))
+
+            if len(html_results[order].columns.tolist()) == 17:
+
+                played_season = True
+                print('played season')
+
+                break
+
+    return played_season

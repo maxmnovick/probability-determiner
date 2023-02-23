@@ -29,8 +29,9 @@ a_line = 1
 #print("\n===" + player_name + "===\n")
 #row1 = ['Tue 2/7','vs OKC','L 133-130', '34','13-20','65.0','4-6','66.7','8-10','80.0','7','3','0','3','3','4','38']
 
-all_player_game_logs = []
-all_player_game_logs_dict = {}
+#all_player_game_logs = []
+#all_player_game_logs_dict = {}
+#all_player_season_logs_dict = {}
 
 
 player_names = ['Julius Randle', 'Jalen Brunson', 'RJ Barrett', 'Demar Derozan', 'Paolo Banchero', 'Zach Lavine', 'Franz Wagner', 'Nikola Vucevic', 'Wendell Carter Jr', 'Ayo Dosunmu', 'Markelle Fultz', 'Patrick Williams', 'Brandon Ingram', 'Shai Gilgeous Alexander', 'CJ Mccollum', 'Josh Giddey', 'Trey Murphy III', 'Jalen Williams', 'Herbert Jones', 'Anthony Edwards', 'Luka Doncic', 'Rudy Gobert', 'Kyrie Irving', 'Mike Conley', 'Jaden Mcdaniels', 'Jordan Poole', 'Klay Thompson', 'Draymond Green', 'Kevon Looney','Gary Harris'] #['Bojan Bogdanovic', 'Jaden Ivey', 'Killian Hayes', 'Pascal Siakam', 'Fred Vanvleet', 'Gary Trent Jr', 'Scottie Barnes', 'Isaiah Stewart', 'Jalen Duren', 'Chris Boucher'] #['Ja Morant', 'Desmond Bane', 'Jaren Jackson Jr', 'Dillon Brooks', 'Jayson Tatum', 'Derrick White', 'Robert Williams', 'Malcolm Brogdon', 'Al Horford', 'Xavier Tillman', 'Brandon Clarke']
@@ -73,63 +74,34 @@ to_lines = isolator.isolate_data_field("to",projected_lines)
 locations = isolator.isolate_data_field("loc",projected_lines) # home/away
 opponents = isolator.isolate_data_field("opp",projected_lines) # format OKC
 
-for p_name in player_names:
 
-    player_game_log = reader.read_player_game_log(p_name) # player url includes year at this point
 
-    all_player_game_logs.append(player_game_log) # could continue to process in this loop or save all player game logs to process in next loop
+# get all player season logs
+all_player_season_logs_dict = reader.read_all_players_season_logs(player_names)
 
-    all_player_game_logs_dict[p_name] = player_game_log
+
+# for p_name in player_names:
+
+#     # player_season_logs = reader.read_player_season_logs(p_name) # list of game logs for each season played by p_name
+#     # all_player_season_logs_dict[p_name] = player_season_logs
+
+
+#     player_game_log = reader.read_player_season_log(p_name) # construct player url from name
+
+#     all_player_game_logs.append(player_game_log) # could continue to process in this loop or save all player game logs to process in next loop
+
+#     #all_player_game_logs_dict[p_name] = player_game_log
 
 
 print("\n===All Players===\n")
 
-player_game_log = all_player_game_logs[0] # init
-# player game log from espn
-for player_idx in range(len(all_player_game_logs)):
-    player_game_log = all_player_game_logs[player_idx]
-    player_name = player_names[player_idx] # player names must be aligned with player game logs
+#player_game_log = all_player_game_logs[0] # init
+# player game log from espn, for 1 season or all seasons
 
-    all_pts = []
-    all_rebs = []
-    all_asts = []
-
-    all_winning_scores = []
-    all_losing_scores = []
-    all_minutes = []
-    all_fgms = []
-    all_fgas = []
-    all_fg_rates = []
-    all_threes_made = []
-    all_threes_attempts = []
-    all_three_rates = []
-    all_ftms = []
-    all_ftas = []
-    all_ft_rates = []
-    all_bs = []
-    all_ss = []
-    all_fs = []
-    all_tos = []
-
-    all_pts_dict = { 'all':[], 'home':[], 'away':[] }
-    all_rebs_dict = { 'all':[], 'home':[], 'away':[] }
-    all_asts_dict = { 'all':[], 'home':[], 'away':[] }
-    all_winning_scores_dict = { 'all':[], 'home':[], 'away':[] }
-    all_losing_scores_dict = { 'all':[], 'home':[], 'away':[] }
-    all_minutes_dict = { 'all':[], 'home':[], 'away':[] }
-    all_fgms_dict = { 'all':[], 'home':[], 'away':[] }
-    all_fgas_dict = { 'all':[], 'home':[], 'away':[] }
-    all_fg_rates_dict = { 'all':[], 'home':[], 'away':[] }
-    all_threes_made_dict = { 'all':[], 'home':[], 'away':[] }
-    all_threes_attempts_dict = { 'all':[], 'home':[], 'away':[] }
-    all_threes_rates_dict = { 'all':[], 'home':[], 'away':[] }
-    all_ftms_dict = { 'all':[], 'home':[], 'away':[] }
-    all_ftas_dict = { 'all':[], 'home':[], 'away':[] }
-    all_ft_rates_dict = { 'all':[], 'home':[], 'away':[] }
-    all_bs_dict = { 'all':[], 'home':[], 'away':[] }
-    all_ss_dict = { 'all':[], 'home':[], 'away':[] }
-    all_fs_dict = { 'all':[], 'home':[], 'away':[] }
-    all_tos_dict = { 'all':[], 'home':[], 'away':[] }
+for player_name, player_season_logs in all_player_season_logs_dict.items():
+#for player_idx in range(len(all_player_game_logs)):
+    player_game_log = player_season_logs[0] #start with current season. all_player_game_logs[player_idx]
+    #player_name = player_names[player_idx] # player names must be aligned with player game logs
 
     all_pts_dicts = { 'all':{}, 'home':{}, 'away':{} }
     all_rebs_dicts = { 'all':{}, 'home':{}, 'away':{} }
@@ -151,7 +123,7 @@ for player_idx in range(len(all_player_game_logs)):
     all_fs_dicts = { 'all':{}, 'home':{}, 'away':{} }
     all_tos_dicts = { 'all':{}, 'home':{}, 'away':{} }
 
-    all_stats_dicts = [all_pts_dicts, all_rebs_dicts, all_asts_dicts, all_winning_scores_dicts, all_losing_scores_dicts, all_minutes_dicts, all_fgms_dicts, all_fgas_dicts, all_fg_rates_dicts, all_threes_made_dicts, all_threes_attempts_dicts, all_threes_rates_dicts, all_ftms_dicts, all_ftas_dicts, all_ft_rates_dicts, all_bs_dicts, all_ss_dicts, all_fs_dicts, all_tos_dicts] # loop through to add all new stats with 1 fcn
+    all_stats_dicts = {'pts':all_pts_dicts, 'reb':all_rebs_dicts, 'ast':all_asts_dicts, 'w score':all_winning_scores_dicts, 'l score':all_losing_scores_dicts, 'min':all_minutes_dicts, 'fgm':all_fgms_dicts, 'fga':all_fgas_dicts, 'fg%':all_fg_rates_dicts, '3pm':all_threes_made_dicts, '3pa':all_threes_attempts_dicts, '3p%':all_threes_rates_dicts, 'ftm':all_ftms_dicts, 'fta':all_ftas_dicts, 'ft%':all_ft_rates_dicts, 'blk':all_bs_dicts, 'stl':all_ss_dicts, 'pf':all_fs_dicts, 'to':all_tos_dicts} # loop through to add all new stats with 1 fcn
 
 
     # if getting data from player game logs read from internet
@@ -228,227 +200,39 @@ for player_idx in range(len(all_player_game_logs)):
                 game_stats = [pts,rebs,asts,winning_score,losing_score,minutes,fgm,fga,fg_rate,threes_made,threes_attempts,three_rate,ftm,fta,ft_rate,bs,ss,fs,tos] # make list to loop through so we can add all stats to dicts with 1 fcn
 
                 # now that we have game stats add them to dict
-                all_pts.append(pts)
-                all_rebs.append(rebs)
-                all_asts.append(asts)
 
-                all_winning_scores.append(winning_score)
-                all_losing_scores.append(losing_score)
-
-                all_minutes.append(minutes)
-                all_fgms.append(fgm)
-                all_fgas.append(fga)
-                all_fg_rates.append(fg_rate)
-                all_threes_made.append(threes_made)
-                all_threes_attempts.append(threes_attempts)
-                all_three_rates.append(three_rate)
-                all_ftms.append(ftm)
-                all_ftas.append(fta)
-                all_ft_rates.append(ft_rate)
-                all_bs.append(bs)
-                all_ss.append(ss)
-                all_fs.append(fs)
-                all_tos.append(tos)
-
-                all_pts_dict['all'].append(pts)
-                #print("all_pts_dict: " + str(all_pts_dict))
-                all_rebs_dict['all'].append(rebs)
-                all_asts_dict['all'].append(asts)
-                all_winning_scores_dict['all'].append(winning_score)
-                all_losing_scores_dict['all'].append(losing_score)
-                all_minutes_dict['all'].append(minutes)
-                all_fgms_dict['all'].append(fgm)
-                all_fgas_dict['all'].append(fga)
-                all_fg_rates_dict['all'].append(fg_rate)
-                all_threes_made_dict['all'].append(threes_made)
-                all_threes_attempts_dict['all'].append(threes_attempts)
-                all_threes_rates_dict['all'].append(three_rate)
-                all_ftms_dict['all'].append(ftm)
-                all_ftas_dict['all'].append(fta)
-                all_ft_rates_dict['all'].append(ft_rate)
-                all_bs_dict['all'].append(bs)
-                all_ss_dict['all'].append(ss)
-                all_fs_dict['all'].append(fs)
-                all_tos_dict['all'].append(tos)
-
-                all_pts_dicts['all'][game_idx] = pts # use game idx as key so we can refer to game for details related to stat eg which game is anomaly in streak
-                #print("all_pts_dicts: " + str(all_pts_dicts))
-                all_rebs_dicts['all'][game_idx] = rebs
-                all_asts_dicts['all'][game_idx] = asts
-                all_winning_scores_dicts['all'][game_idx] = winning_score
-                all_losing_scores_dicts['all'][game_idx] = losing_score
-                all_minutes_dicts['all'][game_idx] = minutes
-                all_fgms_dicts['all'][game_idx] = fgm
-                all_fgas_dicts['all'][game_idx] = fga
-                all_fg_rates_dicts['all'][game_idx] = fg_rate
-                all_threes_made_dicts['all'][game_idx] = threes_made
-                all_threes_attempts_dicts['all'][game_idx] = threes_attempts
-                all_threes_rates_dicts['all'][game_idx] = three_rate
-                all_ftms_dicts['all'][game_idx] = ftm
-                all_ftas_dicts['all'][game_idx] = fta
-                all_ft_rates_dicts['all'][game_idx] = ft_rate
-                all_bs_dicts['all'][game_idx] = bs
-                all_ss_dicts['all'][game_idx] = ss
-                all_fs_dicts['all'][game_idx] = fs
-                all_tos_dicts['all'][game_idx] = tos
+                for stat_idx in range(len(all_stats_dicts.values())):
+                    stat_dict = list(all_stats_dicts.values())[stat_idx]
+                    stat = game_stats[stat_idx]
+                    stat_dict['all'][game_idx] = stat
 
                 if re.search('vs',player_game_log.loc[game_idx, 'OPP']):
-                    all_pts_dict['home'].append(pts)
-                    #print("all_pts_dict: " + str(all_pts_dict))
-                    all_rebs_dict['home'].append(rebs)
-                    all_asts_dict['home'].append(asts)
-                    all_winning_scores_dict['home'].append(winning_score)
-                    all_losing_scores_dict['home'].append(losing_score)
-                    all_minutes_dict['home'].append(minutes)
-                    all_fgms_dict['home'].append(fgm)
-                    all_fgas_dict['home'].append(fga)
-                    all_fg_rates_dict['home'].append(fg_rate)
-                    all_threes_made_dict['home'].append(threes_made)
-                    all_threes_attempts_dict['home'].append(threes_attempts)
-                    all_threes_rates_dict['home'].append(three_rate)
-                    all_ftms_dict['home'].append(ftm)
-                    all_ftas_dict['home'].append(fta)
-                    all_ft_rates_dict['home'].append(ft_rate)
-                    all_bs_dict['home'].append(bs)
-                    all_ss_dict['home'].append(ss)
-                    all_fs_dict['home'].append(fs)
-                    all_tos_dict['home'].append(tos)
 
-                    all_pts_dicts['home'][game_idx] = pts # use game idx as key so we can refer to game for details related to stat eg which game is anomaly in streak
-                    #print("all_pts_dicts: " + str(all_pts_dicts))
-                    all_rebs_dicts['home'][game_idx] = rebs
-                    all_asts_dicts['home'][game_idx] = asts
-                    all_winning_scores_dicts['home'][game_idx] = winning_score
-                    all_losing_scores_dicts['home'][game_idx] = losing_score
-                    all_minutes_dicts['home'][game_idx] = minutes
-                    all_fgms_dicts['home'][game_idx] = fgm
-                    all_fgas_dicts['home'][game_idx] = fga
-                    all_fg_rates_dicts['home'][game_idx] = fg_rate
-                    all_threes_made_dicts['home'][game_idx] = threes_made
-                    all_threes_attempts_dicts['home'][game_idx] = threes_attempts
-                    all_threes_rates_dicts['home'][game_idx] = three_rate
-                    all_ftms_dicts['home'][game_idx] = ftm
-                    all_ftas_dicts['home'][game_idx] = fta
-                    all_ft_rates_dicts['home'][game_idx] = ft_rate
-                    all_bs_dicts['home'][game_idx] = bs
-                    all_ss_dicts['home'][game_idx] = ss
-                    all_fs_dicts['home'][game_idx] = fs
-                    all_tos_dicts['home'][game_idx] = tos
+                    for stat_idx in range(len(all_stats_dicts.values())):
+                        stat_dict = list(all_stats_dicts.values())[stat_idx]
+                        stat = game_stats[stat_idx]
+                        stat_dict['home'][game_idx] = stat
+
+                    
                 else: # if not home then away
-                    all_pts_dict['away'].append(pts)
-                    #print("all_pts_dict: " + str(all_pts_dict))
-                    all_rebs_dict['away'].append(rebs)
-                    all_asts_dict['away'].append(asts)
-                    all_winning_scores_dict['away'].append(winning_score)
-                    all_losing_scores_dict['away'].append(losing_score)
-                    all_minutes_dict['away'].append(minutes)
-                    all_fgms_dict['away'].append(fgm)
-                    all_fgas_dict['away'].append(fga)
-                    all_fg_rates_dict['away'].append(fg_rate)
-                    all_threes_made_dict['away'].append(threes_made)
-                    all_threes_attempts_dict['away'].append(threes_attempts)
-                    all_threes_rates_dict['away'].append(three_rate)
-                    all_ftms_dict['away'].append(ftm)
-                    all_ftas_dict['away'].append(fta)
-                    all_ft_rates_dict['away'].append(ft_rate)
-                    all_bs_dict['away'].append(bs)
-                    all_ss_dict['away'].append(ss)
-                    all_fs_dict['away'].append(fs)
-                    all_tos_dict['away'].append(tos)
+                    for stat_idx in range(len(all_stats_dicts.values())):
+                        stat_dict = list(all_stats_dicts.values())[stat_idx]
+                        stat = game_stats[stat_idx]
+                        stat_dict['away'][game_idx] = stat
 
-                    all_pts_dicts['away'][game_idx] = pts # use game idx as key so we can refer to game for details related to stat eg which game is anomaly in streak
-                    #print("all_pts_dicts: " + str(all_pts_dicts))
-                    all_rebs_dicts['away'][game_idx] = rebs
-                    all_asts_dicts['away'][game_idx] = asts
-                    all_winning_scores_dicts['away'][game_idx] = winning_score
-                    all_losing_scores_dicts['away'][game_idx] = losing_score
-                    all_minutes_dicts['away'][game_idx] = minutes
-                    all_fgms_dicts['away'][game_idx] = fgm
-                    all_fgas_dicts['away'][game_idx] = fga
-                    all_fg_rates_dicts['away'][game_idx] = fg_rate
-                    all_threes_made_dicts['away'][game_idx] = threes_made
-                    all_threes_attempts_dicts['away'][game_idx] = threes_attempts
-                    all_threes_rates_dicts['away'][game_idx] = three_rate
-                    all_ftms_dicts['away'][game_idx] = ftm
-                    all_ftas_dicts['away'][game_idx] = fta
-                    all_ft_rates_dicts['away'][game_idx] = ft_rate
-                    all_bs_dicts['away'][game_idx] = bs
-                    all_ss_dicts['away'][game_idx] = ss
-                    all_fs_dicts['away'][game_idx] = fs
-                    all_tos_dicts['away'][game_idx] = tos
+                    
 
                 # matchup against opponent
                 if re.search(opponent,player_game_log.loc[game_idx, 'OPP'].lower()):
 
-                    for stat_idx in range(len(all_stats_dicts)):
-                        stat_dict = all_stats_dicts[stat_idx]
+                    for stat_idx in range(len(all_stats_dicts.values())):
+                        stat_dict = list(all_stats_dicts.values())[stat_idx]
                         stat = game_stats[stat_idx]
                         if not opponent in stat_dict.keys():
                             stat_dict[opponent] = {}
                         stat_dict[opponent][game_idx] = stat
 
-                    # all_pts_dicts[opponent][game_idx] = pts # use game idx as key so we can refer to game for details related to stat eg which game is anomaly in streak
-                    # #print("all_pts_dicts: " + str(all_pts_dicts))
-                    # all_rebs_dicts[opponent][game_idx] = rebs
-                    # all_asts_dicts[opponent][game_idx] = asts
-                    # all_winning_scores_dicts[opponent][game_idx] = winning_score
-                    # all_losing_scores_dicts[opponent][game_idx] = losing_score
-                    # all_minutes_dicts[opponent][game_idx] = minutes
-                    # all_fgms_dicts[opponent][game_idx] = fgm
-                    # all_fgas_dicts[opponent][game_idx] = fga
-                    # all_fg_rates_dicts[opponent][game_idx] = fg_rate
-                    # all_threes_made_dicts[opponent][game_idx] = threes_made
-                    # all_threes_attempts_dicts[opponent][game_idx] = threes_attempts
-                    # all_threes_rates_dicts[opponent][game_idx] = three_rate
-                    # all_ftms_dicts[opponent][game_idx] = ftm
-                    # all_ftas_dicts[opponent][game_idx] = fta
-                    # all_ft_rates_dicts[opponent][game_idx] = ft_rate
-                    # all_bs_dicts[opponent][game_idx] = bs
-                    # all_ss_dicts[opponent][game_idx] = ss
-                    # all_fs_dicts[opponent][game_idx] = fs
-                    # all_tos_dicts[opponent][game_idx] = tos
-
-                    if opponent in all_pts_dict.keys():
-                        all_pts_dict[opponent].append(pts)
-                        #print("all_pts_dict: " + str(all_pts_dict))
-                        all_rebs_dict[opponent].append(rebs)
-                        all_asts_dict[opponent].append(asts)
-                        all_winning_scores_dict[opponent].append(winning_score)
-                        all_losing_scores_dict[opponent].append(losing_score)
-                        all_minutes_dict[opponent].append(minutes)
-                        all_fgms_dict[opponent].append(fgm)
-                        all_fgas_dict[opponent].append(fga)
-                        all_fg_rates_dict[opponent].append(fg_rate)
-                        all_threes_made_dict[opponent].append(threes_made)
-                        all_threes_attempts_dict[opponent].append(threes_attempts)
-                        all_threes_rates_dict[opponent].append(three_rate)
-                        all_ftms_dict[opponent].append(ftm)
-                        all_ftas_dict[opponent].append(fta)
-                        all_ft_rates_dict[opponent].append(ft_rate)
-                        all_bs_dict[opponent].append(bs)
-                        all_ss_dict[opponent].append(ss)
-                        all_fs_dict[opponent].append(fs)
-                        all_tos_dict[opponent].append(tos)
-                    else:
-                        all_pts_dict[opponent] = [pts]
-                        all_rebs_dict[opponent] = [rebs]
-                        all_asts_dict[opponent] = [asts]
-                        all_winning_scores_dict[opponent] = [winning_score]
-                        all_losing_scores_dict[opponent] = [losing_score]
-                        all_minutes_dict[opponent] = [minutes]
-                        all_fgms_dict[opponent] = [fgm]
-                        all_fgas_dict[opponent] = [fga]
-                        all_fg_rates_dict[opponent] = [fg_rate]
-                        all_threes_made_dict[opponent] = [threes_made]
-                        all_threes_attempts_dict[opponent] = [threes_attempts]
-                        all_threes_rates_dict[opponent] = [three_rate]
-                        all_ftms_dict[opponent] = [ftm]
-                        all_ftas_dict[opponent] = [fta]
-                        all_ft_rates_dict[opponent] = [ft_rate]
-                        all_bs_dict[opponent] = [bs]
-                        all_ss_dict[opponent] = [ss]
-                        all_fs_dict[opponent] = [fs]
-                        all_tos_dict[opponent] = [tos]
+                    
 
 
                 # see if this game is 1st or 2nd night of back to back bc we want to see if pattern for those conditions
@@ -480,96 +264,12 @@ for player_idx in range(len(all_player_game_logs)):
                 days_before_next_game = str(days_before_next_game_int) + ' before'
                 #print("days_before_next_game: " + days_before_next_game)
 
-                for stat_idx in range(len(all_stats_dicts)):
-                    stat_dict = all_stats_dicts[stat_idx]
+                for stat_idx in range(len(all_stats_dicts.values())):
+                    stat_dict = list(all_stats_dicts.values())[stat_idx]
                     stat = game_stats[stat_idx]
                     if not days_before_next_game in stat_dict.keys():
                         stat_dict[days_before_next_game] = {}
                     stat_dict[days_before_next_game][game_idx] = stat
-
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_pts_dicts[days_before_next_game][game_idx] = pts # use game idx as key so we can refer to game for details related to stat eg which game is anomaly in streak
-                # #print("all_pts_dicts: " + str(all_pts_dicts))
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_rebs_dicts[days_before_next_game][game_idx] = rebs
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_asts_dicts[days_before_next_game][game_idx] = asts
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_winning_scores_dicts[days_before_next_game][game_idx] = winning_score
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_losing_scores_dicts[days_before_next_game][game_idx] = losing_score
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_minutes_dicts[days_before_next_game][game_idx] = minutes
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_fgms_dicts[days_before_next_game][game_idx] = fgm
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_fgas_dicts[days_before_next_game][game_idx] = fga
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_fg_rates_dicts[days_before_next_game][game_idx] = fg_rate
-                # if not days_before_next_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_before_next_game] = {}
-                # all_threes_made_dicts[days_before_next_game][game_idx] = threes_made
-                # all_threes_attempts_dicts[days_before_next_game][game_idx] = threes_attempts
-                # all_threes_rates_dicts[days_before_next_game][game_idx] = three_rate
-                # all_ftms_dicts[days_before_next_game][game_idx] = ftm
-                # all_ftas_dicts[days_before_next_game][game_idx] = fta
-                # all_ft_rates_dicts[days_before_next_game][game_idx] = ft_rate
-                # all_bs_dicts[days_before_next_game][game_idx] = bs
-                # all_ss_dicts[days_before_next_game][game_idx] = ss
-                # all_fs_dicts[days_before_next_game][game_idx] = fs
-                # all_tos_dicts[days_before_next_game][game_idx] = tos
-
-                if days_before_next_game in all_pts_dict.keys():
-                    all_pts_dict[days_before_next_game].append(pts)
-                    #print("all_pts_dict: " + str(all_pts_dict))
-                    all_rebs_dict[days_before_next_game].append(rebs)
-                    all_asts_dict[days_before_next_game].append(asts)
-                    all_winning_scores_dict[days_before_next_game].append(winning_score)
-                    all_losing_scores_dict[days_before_next_game].append(losing_score)
-                    all_minutes_dict[days_before_next_game].append(minutes)
-                    all_fgms_dict[days_before_next_game].append(fgm)
-                    all_fgas_dict[days_before_next_game].append(fga)
-                    all_fg_rates_dict[days_before_next_game].append(fg_rate)
-                    all_threes_made_dict[days_before_next_game].append(threes_made)
-                    all_threes_attempts_dict[days_before_next_game].append(threes_attempts)
-                    all_threes_rates_dict[days_before_next_game].append(three_rate)
-                    all_ftms_dict[days_before_next_game].append(ftm)
-                    all_ftas_dict[days_before_next_game].append(fta)
-                    all_ft_rates_dict[days_before_next_game].append(ft_rate)
-                    all_bs_dict[days_before_next_game].append(bs)
-                    all_ss_dict[days_before_next_game].append(ss)
-                    all_fs_dict[days_before_next_game].append(fs)
-                    all_tos_dict[days_before_next_game].append(tos)
-                else:
-                    all_pts_dict[days_before_next_game] = [pts]
-                    all_rebs_dict[days_before_next_game] = [rebs]
-                    all_asts_dict[days_before_next_game] = [asts]
-                    all_winning_scores_dict[days_before_next_game] = [winning_score]
-                    all_losing_scores_dict[days_before_next_game] = [losing_score]
-                    all_minutes_dict[days_before_next_game] = [minutes]
-                    all_fgms_dict[days_before_next_game] = [fgm]
-                    all_fgas_dict[days_before_next_game] = [fga]
-                    all_fg_rates_dict[days_before_next_game] = [fg_rate]
-                    all_threes_made_dict[days_before_next_game] = [threes_made]
-                    all_threes_attempts_dict[days_before_next_game] = [threes_attempts]
-                    all_threes_rates_dict[days_before_next_game] = [three_rate]
-                    all_ftms_dict[days_before_next_game] = [ftm]
-                    all_ftas_dict[days_before_next_game] = [fta]
-                    all_ft_rates_dict[days_before_next_game] = [ft_rate]
-                    all_bs_dict[days_before_next_game] = [bs]
-                    all_ss_dict[days_before_next_game] = [ss]
-                    all_fs_dict[days_before_next_game] = [fs]
-                    all_tos_dict[days_before_next_game] = [tos]
-                
 
                 init_prev_game_date_string = player_game_log.loc[game_idx+1, 'Date'].lower().split()[1]
                 prev_game_mth = init_prev_game_date_string.split('/')[0]
@@ -585,278 +285,25 @@ for player_idx in range(len(all_player_game_logs)):
                 days_after_prev_game = str(days_after_prev_game_int) + ' after'
                 #print("days_after_prev_game: " + days_after_prev_game)
 
-                for stat_idx in range(len(all_stats_dicts)):
-                    stat_dict = all_stats_dicts[stat_idx]
+                for stat_idx in range(len(all_stats_dicts.values())):
+                    stat_dict = list(all_stats_dicts.values())[stat_idx]
                     stat = game_stats[stat_idx]
                     if not days_after_prev_game in stat_dict.keys():
                         stat_dict[days_after_prev_game] = {}
                     stat_dict[days_after_prev_game][game_idx] = stat
 
-                # if not days_after_prev_game in all_pts_dicts.keys():
-                #     all_pts_dicts[days_after_prev_game] = {}
-                # all_pts_dicts[days_after_prev_game][game_idx] = pts # use game idx as key so we can refer to game for details related to stat eg which game is anomaly in streak
-                # #print("all_pts_dicts: " + str(all_pts_dicts))
-                # all_rebs_dicts[days_after_prev_game][game_idx] = rebs
-                # all_asts_dicts[days_after_prev_game][game_idx] = asts
-                # all_winning_scores_dicts[days_after_prev_game][game_idx] = winning_score
-                # all_losing_scores_dicts[days_after_prev_game][game_idx] = losing_score
-                # all_minutes_dicts[days_after_prev_game][game_idx] = minutes
-                # all_fgms_dicts[days_after_prev_game][game_idx] = fgm
-                # all_fgas_dicts[days_after_prev_game][game_idx] = fga
-                # all_fg_rates_dicts[days_after_prev_game][game_idx] = fg_rate
-                # all_threes_made_dicts[days_after_prev_game][game_idx] = threes_made
-                # all_threes_attempts_dicts[days_after_prev_game][game_idx] = threes_attempts
-                # all_threes_rates_dicts[days_after_prev_game][game_idx] = three_rate
-                # all_ftms_dicts[days_after_prev_game][game_idx] = ftm
-                # all_ftas_dicts[days_after_prev_game][game_idx] = fta
-                # all_ft_rates_dicts[days_after_prev_game][game_idx] = ft_rate
-                # all_bs_dicts[days_after_prev_game][game_idx] = bs
-                # all_ss_dicts[days_after_prev_game][game_idx] = ss
-                # all_fs_dicts[days_after_prev_game][game_idx] = fs
-                # all_tos_dicts[days_after_prev_game][game_idx] = tos
-
-                if days_after_prev_game in all_pts_dict.keys():
-                    all_pts_dict[days_after_prev_game].append(pts)
-                    #print("all_pts_dict: " + str(all_pts_dict))
-                    all_rebs_dict[days_after_prev_game].append(rebs)
-                    all_asts_dict[days_after_prev_game].append(asts)
-                    all_winning_scores_dict[days_after_prev_game].append(winning_score)
-                    all_losing_scores_dict[days_after_prev_game].append(losing_score)
-                    all_minutes_dict[days_after_prev_game].append(minutes)
-                    all_fgms_dict[days_after_prev_game].append(fgm)
-                    all_fgas_dict[days_after_prev_game].append(fga)
-                    all_fg_rates_dict[days_after_prev_game].append(fg_rate)
-                    all_threes_made_dict[days_after_prev_game].append(threes_made)
-                    all_threes_attempts_dict[days_after_prev_game].append(threes_attempts)
-                    all_threes_rates_dict[days_after_prev_game].append(three_rate)
-                    all_ftms_dict[days_after_prev_game].append(ftm)
-                    all_ftas_dict[days_after_prev_game].append(fta)
-                    all_ft_rates_dict[days_after_prev_game].append(ft_rate)
-                    all_bs_dict[days_after_prev_game].append(bs)
-                    all_ss_dict[days_after_prev_game].append(ss)
-                    all_fs_dict[days_after_prev_game].append(fs)
-                    all_tos_dict[days_after_prev_game].append(tos)
-                else:
-                    all_pts_dict[days_after_prev_game] = [pts]
-                    all_rebs_dict[days_after_prev_game] = [rebs]
-                    all_asts_dict[days_after_prev_game] = [asts]
-                    all_winning_scores_dict[days_after_prev_game] = [winning_score]
-                    all_losing_scores_dict[days_after_prev_game] = [losing_score]
-                    all_minutes_dict[days_after_prev_game] = [minutes]
-                    all_fgms_dict[days_after_prev_game] = [fgm]
-                    all_fgas_dict[days_after_prev_game] = [fga]
-                    all_fg_rates_dict[days_after_prev_game] = [fg_rate]
-                    all_threes_made_dict[days_after_prev_game] = [threes_made]
-                    all_threes_attempts_dict[days_after_prev_game] = [threes_attempts]
-                    all_threes_rates_dict[days_after_prev_game] = [three_rate]
-                    all_ftms_dict[days_after_prev_game] = [ftm]
-                    all_ftas_dict[days_after_prev_game] = [fta]
-                    all_ft_rates_dict[days_after_prev_game] = [ft_rate]
-                    all_bs_dict[days_after_prev_game] = [bs]
-                    all_ss_dict[days_after_prev_game] = [ss]
-                    all_fs_dict[days_after_prev_game] = [fs]
-                    all_tos_dict[days_after_prev_game] = [tos]
                 
-
-                # next_day = game_date_obj + timedelta(days = 1)
-                # #print("next_day: " + str(next_day))
-                # if next_game_date_obj == next_day:
-                #     print("1of2")
-
-                #     if '1of2' in all_pts_dict.keys():
-                #         all_pts_dict['1of2'].append(pts)
-                #         #print("all_pts_dict: " + str(all_pts_dict))
-                #         all_rebs_dict['1of2'].append(rebs)
-                #         all_asts_dict['1of2'].append(asts)
-                #         all_winning_scores_dict['1of2'].append(winning_score)
-                #         all_losing_scores_dict['1of2'].append(losing_score)
-                #         all_minutes_dict['1of2'].append(minutes)
-                #         all_fgms_dict['1of2'].append(fgm)
-                #         all_fgas_dict['1of2'].append(fga)
-                #         all_fg_rates_dict['1of2'].append(fg_rate)
-                #         all_threes_made_dict['1of2'].append(threes_made)
-                #         all_threes_attempts_dict['1of2'].append(threes_attempts)
-                #         all_threes_rates_dict['1of2'].append(three_rate)
-                #         all_ftms_dict['1of2'].append(ftm)
-                #         all_ftas_dict['1of2'].append(fta)
-                #         all_ft_rates_dict['1of2'].append(ft_rate)
-                #         all_bs_dict['1of2'].append(bs)
-                #         all_ss_dict['1of2'].append(ss)
-                #         all_fs_dict['1of2'].append(fs)
-                #         all_tos_dict['1of2'].append(tos)
-                #     else:
-                #         all_pts_dict['1of2'] = [pts]
-                #         all_rebs_dict['1of2'] = [rebs]
-                #         all_asts_dict['1of2'] = [asts]
-                #         all_winning_scores_dict['1of2'] = [winning_score]
-                #         all_losing_scores_dict['1of2'] = [losing_score]
-                #         all_minutes_dict['1of2'] = [minutes]
-                #         all_fgms_dict['1of2'] = [fgm]
-                #         all_fgas_dict['1of2'] = [fga]
-                #         all_fg_rates_dict['1of2'] = [fg_rate]
-                #         all_threes_made_dict['1of2'] = [threes_made]
-                #         all_threes_attempts_dict['1of2'] = [threes_attempts]
-                #         all_threes_rates_dict['1of2'] = [three_rate]
-                #         all_ftms_dict['1of2'] = [ftm]
-                #         all_ftas_dict['1of2'] = [fta]
-                #         all_ft_rates_dict['1of2'] = [ft_rate]
-                #         all_bs_dict['1of2'] = [bs]
-                #         all_ss_dict['1of2'] = [ss]
-                #         all_fs_dict['1of2'] = [fs]
-                #         all_tos_dict['1of2'] = [tos]
-
-
-                
-                # prev_day = game_date_obj - timedelta(days = 1)
-                # #print("prev_day: " + str(prev_day))
-                # if prev_game_date_obj == prev_day:
-                #     print("2of2")
-
-                #     if '2of2' in all_pts_dict.keys():
-                #         all_pts_dict['2of2'].append(pts)
-                #         #print("all_pts_dict: " + str(all_pts_dict))
-                #         all_rebs_dict['2of2'].append(rebs)
-                #         all_asts_dict['2of2'].append(asts)
-                #         all_winning_scores_dict['2of2'].append(winning_score)
-                #         all_losing_scores_dict['2of2'].append(losing_score)
-                #         all_minutes_dict['2of2'].append(minutes)
-                #         all_fgms_dict['2of2'].append(fgm)
-                #         all_fgas_dict['2of2'].append(fga)
-                #         all_fg_rates_dict['2of2'].append(fg_rate)
-                #         all_threes_made_dict['2of2'].append(threes_made)
-                #         all_threes_attempts_dict['2of2'].append(threes_attempts)
-                #         all_threes_rates_dict['2of2'].append(three_rate)
-                #         all_ftms_dict['2of2'].append(ftm)
-                #         all_ftas_dict['2of2'].append(fta)
-                #         all_ft_rates_dict['2of2'].append(ft_rate)
-                #         all_bs_dict['2of2'].append(bs)
-                #         all_ss_dict['2of2'].append(ss)
-                #         all_fs_dict['2of2'].append(fs)
-                #         all_tos_dict['2of2'].append(tos)
-                #     else:
-                #         all_pts_dict['2of2'] = [pts]
-                #         all_rebs_dict['2of2'] = [rebs]
-                #         all_asts_dict['2of2'] = [asts]
-                #         all_winning_scores_dict['2of2'] = [winning_score]
-                #         all_losing_scores_dict['2of2'] = [losing_score]
-                #         all_minutes_dict['2of2'] = [minutes]
-                #         all_fgms_dict['2of2'] = [fgm]
-                #         all_fgas_dict['2of2'] = [fga]
-                #         all_fg_rates_dict['2of2'] = [fg_rate]
-                #         all_threes_made_dict['2of2'] = [threes_made]
-                #         all_threes_attempts_dict['2of2'] = [threes_attempts]
-                #         all_threes_rates_dict['2of2'] = [three_rate]
-                #         all_ftms_dict['2of2'] = [ftm]
-                #         all_ftas_dict['2of2'] = [fta]
-                #         all_ft_rates_dict['2of2'] = [ft_rate]
-                #         all_bs_dict['2of2'] = [bs]
-                #         all_ss_dict['2of2'] = [ss]
-                #         all_fs_dict['2of2'] = [fs]
-                #         all_tos_dict['2of2'] = [tos]
 
                 next_game_date_obj = game_date_obj # next game bc we loop from most to least recent
                     
 
     else:
         # if getting data from file
-        player_data = reader.extract_data(data_type, player_name, 'tsv')
-        # first row is headers, next are games with monthly averages bt each mth
-
-        #desired_field = 'points'
-        #desired_field_idx = determiner.determine_field_idx(desired_field)
-        date_idx = 0
-        opp_idx = 1
-        result_idx = 2
-        minutes_idx = 3
-        fg_idx = 4
-        fg_rate_idx = 5
-        three_idx = 6
-        three_rate_idx = 7
-        ft_idx = 8
-        ft_rate_idx = 9
-        r_idx = 10
-        a_idx = 11
-        b_idx = 12
-        s_idx = 13
-        f_idx = 14
-        to_idx = 15
-        p_idx = 16
-
-        # isolate games from lebron data
-        # exclude headers and monthly averages
-        player_games_data = isolator.isolate_player_game_data(player_data, player_name)
-
-
-
-        if len(player_games_data) > 0:
-            for game in player_games_data:
-                pts = int(game[p_idx])
-                rebs = int(game[r_idx])
-                asts = int(game[a_idx])
-
-                results = game[result_idx]
-                #print("results: " + results)
-                results_data = re.split('\\s+', results)
-                #print("results_data: " + str(results_data))
-                score_data = results_data[1].split('-')
-                #print("score_data: " + str(score_data))
-                winning_score = int(score_data[0])
-                losing_score = int(score_data[1])
-
-                minutes = int(game[minutes_idx])
-
-                fgs = game[fg_idx]
-                fg_data = fgs.split('-')
-                fgm = int(fg_data[0])
-                fga = int(fg_data[1])
-                fg_rate = round(float(game[fg_rate_idx]), 1)
-
-                threes = game[three_idx]
-                threes_data = threes.split('-')
-                #print("threes_data: " + str(threes_data))
-                threes_made = int(threes_data[0])
-                threes_attempts = int(threes_data[1])
-                three_rate = round(float(game[three_rate_idx]), 1)
-
-                fts = game[ft_idx]
-                ft_data = fts.split('-')
-                ftm = int(ft_data[0])
-                fta = int(ft_data[1])
-                ft_rate = round(float(game[ft_rate_idx]), 1)
-
-                bs = int(game[b_idx])
-                ss = int(game[s_idx])
-                fs = int(game[f_idx])
-                tos = int(game[to_idx])
-
-                all_pts.append(pts)
-                all_rebs.append(rebs)
-                all_asts.append(asts)
-
-                all_winning_scores.append(winning_score)
-                all_losing_scores.append(losing_score)
-
-                all_minutes.append(minutes)
-                all_fgms.append(fgm)
-                all_fgas.append(fga)
-                all_fg_rates.append(fg_rate)
-                all_threes_made.append(threes_made)
-                all_threes_attempts.append(threes_attempts)
-                all_three_rates.append(three_rate)
-                all_ftms.append(ftm)
-                all_ftas.append(fta)
-                all_ft_rates.append(ft_rate)
-                all_bs.append(bs)
-                all_ss.append(ss)
-                all_fs.append(fs)
-                all_tos.append(tos)
-
-        else:
-            print("Warning: No player games data!")
+        player_season_log = reader.read_season_log_from_file(data_type, player_name, 'tsv')
 
 
     # no matter how we read data, we should have filled all_pts list
-    if len(all_pts) > 0:
+    if len(all_pts_dicts['all'].keys()) > 0:
         # no matter how we get data, 
         # next we compute relevant results
 
@@ -872,205 +319,58 @@ for player_idx in range(len(all_player_game_logs)):
         all_streak_tables = { } # { 'player name': { 'all': [], 'home':[], 'away':[] } }
 
         # at this point we have added all keys to dict eg all_pts_dict = {'1of2':[],'2of2':[]}
-        print("all_pts_dict: " + str(all_pts_dict))
+        #print("all_pts_dict: " + str(all_pts_dict))
         print("all_pts_dicts: " + str(all_pts_dicts))
-        for key in all_pts_dict.keys():
-            pts_mean = round(numpy.mean(all_pts_dict[key]), 1)
-            pts_median = int(numpy.median(all_pts_dict[key]))
-            pts_mode = stats.mode(all_pts_dict[key], keepdims=False)[0]
-            pts_min = numpy.min(all_pts_dict[key])
-            pts_max = numpy.max(all_pts_dict[key])
-
-            rebs_mean = round(numpy.mean(all_rebs_dict[key]), 1)
-            rebs_median = int(numpy.median(all_rebs_dict[key]))
-            rebs_mode = stats.mode(all_rebs_dict[key], keepdims=False)[0]
-            rebs_min = numpy.min(all_rebs_dict[key])
-            rebs_max = numpy.max(all_rebs_dict[key])
-
-            asts_mean = round(numpy.mean(all_asts_dict[key]), 1)
-            asts_median = int(numpy.median(all_asts_dict[key]))
-            asts_mode = stats.mode(all_asts_dict[key], keepdims=False)[0]
-            asts_min = numpy.min(all_asts_dict[key])
-            asts_max = numpy.max(all_asts_dict[key])
-
-
-            winning_score_mean = round(numpy.mean(all_winning_scores_dict[key]), 1)
-            winning_score_median = int(numpy.median(all_winning_scores_dict[key]))
-            winning_score_mode = stats.mode(all_winning_scores_dict[key], keepdims=False)[0]
-            winning_score_min = int(numpy.min(all_winning_scores_dict[key]))
-            winning_score_max = int(numpy.max(all_winning_scores_dict[key]))
-
-            losing_score_mean = round(numpy.mean(all_losing_scores_dict[key]), 1)
-            losing_score_median = int(numpy.median(all_losing_scores_dict[key]))
-            losing_score_mode = stats.mode(all_losing_scores_dict[key], keepdims=False)[0]
-            losing_score_min = int(numpy.min(all_losing_scores_dict[key]))
-            losing_score_max = int(numpy.max(all_losing_scores_dict[key]))
-
-            result_mean = str(winning_score_mean) + "-" + str(losing_score_mean)
-            result_median = str(winning_score_median) + "-" + str(losing_score_median)
-            result_mode = str(winning_score_mode) + "-" + str(losing_score_mode)
-            result_min = str(winning_score_min) + "-" + str(losing_score_min)
-            result_max = str(winning_score_max) + "-" + str(losing_score_max)
-
-
-            minutes_mean = round(numpy.mean(all_minutes_dict[key]), 1)
-            minutes_median = int(numpy.median(all_minutes_dict[key]))
-            minutes_mode = stats.mode(all_minutes_dict[key], keepdims=False)[0]
-            minutes_min = int(numpy.min(all_minutes_dict[key]))
-            minutes_max = int(numpy.max(all_minutes_dict[key]))
-
-            fgm_mean = round(numpy.mean(all_fgms_dict[key]), 1)
-            fgm_median = int(numpy.median(all_fgms_dict[key]))
-            fgm_mode = stats.mode(all_fgms_dict[key], keepdims=False)[0]
-            fgm_min = numpy.min(all_fgms_dict[key])
-            fgm_max = numpy.max(all_fgms_dict[key])
-
-            fga_mean = round(numpy.mean(all_fgas_dict[key]), 1)
-            fga_median = int(numpy.median(all_fgas_dict[key]))
-            fga_mode = stats.mode(all_fgas_dict[key], keepdims=False)[0]
-            fga_min = numpy.min(all_fgas_dict[key])
-            fga_max = numpy.max(all_fgas_dict[key])
-
-            fg_mean = str(fgm_mean) + "-" + str(fga_mean)
-            fg_median = str(fgm_median) + "-" + str(fga_median)
-            fg_mode = str(fgm_mode) + "-" + str(fga_mode)
-            fg_min = str(fgm_min) + "-" + str(fga_min)
-            fg_max = str(fgm_max) + "-" + str(fga_max)
-
-            fg_rate_mean = round(numpy.mean(all_fg_rates_dict[key]), 1)
-            fg_rate_median = round(float(numpy.median(all_fg_rates_dict[key])), 1)
-            fg_rate_mode = stats.mode(all_fg_rates_dict[key], keepdims=False)[0]
-            fg_rate_min = numpy.min(all_fg_rates_dict[key])
-            fg_rate_max = numpy.max(all_fg_rates_dict[key])
-
-
-
-            threes_made_mean = round(numpy.mean(all_threes_made_dict[key]), 1)
-            threes_made_median = int(numpy.median(all_threes_made_dict[key]))
-            threes_made_mode = stats.mode(all_threes_made_dict[key], keepdims=False)[0]
-            threes_made_min = numpy.min(all_threes_made_dict[key])
-            threes_made_max = numpy.max(all_threes_made_dict[key])
-
-            threes_attempts_mean = round(numpy.mean(all_threes_attempts_dict[key]), 1)
-            threes_attempts_median = int(numpy.median(all_threes_attempts_dict[key]))
-            threes_attempts_mode = stats.mode(all_threes_attempts_dict[key], keepdims=False)[0]
-            threes_attempts_min = numpy.min(all_threes_attempts_dict[key])
-            threes_attempts_max = numpy.max(all_threes_attempts_dict[key])
-
-            threes_mean = str(threes_made_mean) + "-" + str(threes_attempts_mean)
-            threes_median = str(threes_made_median) + "-" + str(threes_attempts_median)
-            threes_mode = str(threes_made_mode) + "-" + str(threes_attempts_mode)
-            threes_min = str(threes_made_min) + "-" + str(threes_attempts_min)
-            threes_max = str(threes_made_max) + "-" + str(threes_attempts_max)
-
-            threes_rate_mean = round(numpy.mean(all_threes_rates_dict[key]), 1)
-            threes_rate_median = round(float(numpy.median(all_threes_rates_dict[key])), 1)
-            threes_rate_mode = stats.mode(all_threes_rates_dict[key], keepdims=False)[0]
-            threes_rate_min = numpy.min(all_threes_rates_dict[key])
-            threes_rate_max = numpy.max(all_threes_rates_dict[key])
-
-
-
-            ftm_mean = round(numpy.mean(all_ftms_dict[key]), 1)
-            ftm_median = int(numpy.median(all_ftms_dict[key]))
-            ftm_mode = stats.mode(all_ftms_dict[key], keepdims=False)[0]
-            ftm_min = numpy.min(all_ftms_dict[key])
-            ftm_max = numpy.max(all_ftms_dict[key])
-
-            fta_mean = round(numpy.mean(all_ftas_dict[key]), 1)
-            fta_median = int(numpy.median(all_ftas_dict[key]))
-            fta_mode = stats.mode(all_ftas_dict[key], keepdims=False)[0]
-            fta_min = numpy.min(all_ftas_dict[key])
-            fta_max = numpy.max(all_ftas_dict[key])
-
-            ft_mean = str(ftm_mean) + "-" + str(fta_mean)
-            ft_median = str(ftm_median) + "-" + str(fta_median)
-            ft_mode = str(ftm_mode) + "-" + str(fta_mode)
-            ft_min = str(ftm_min) + "-" + str(fta_min)
-            ft_max = str(ftm_max) + "-" + str(fta_max)
-
-            ft_rate_mean = round(numpy.mean(all_ft_rates_dict[key]), 1)
-            ft_rate_median = round(float(numpy.median(all_ft_rates_dict[key])), 1)
-            ft_rate_mode = stats.mode(all_ft_rates_dict[key], keepdims=False)[0]
-            ft_rate_min = numpy.min(all_ft_rates_dict[key])
-            ft_rate_max = numpy.max(all_ft_rates_dict[key])
-
-
-
-            b_mean = round(numpy.mean(all_bs_dict[key]), 1)
-            b_median = int(numpy.median(all_bs_dict[key]))
-            b_mode = stats.mode(all_bs_dict[key], keepdims=False)[0]
-            b_min = numpy.min(all_bs_dict[key])
-            b_max = numpy.max(all_bs_dict[key])
-
-            s_mean = round(numpy.mean(all_ss_dict[key]), 1)
-            s_median = int(numpy.median(all_ss_dict[key]))
-            s_mode = stats.mode(all_ss_dict[key], keepdims=False)[0]
-            s_min = numpy.min(all_ss_dict[key])
-            s_max = numpy.max(all_ss_dict[key])
-
-            f_mean = round(numpy.mean(all_fs_dict[key]), 1)
-            f_median = int(numpy.median(all_fs_dict[key]))
-            f_mode = stats.mode(all_fs_dict[key], keepdims=False)[0]
-            f_min = numpy.min(all_fs_dict[key])
-            f_max = numpy.max(all_fs_dict[key])
-
-            to_mean = round(numpy.mean(all_tos_dict[key]), 1)
-            to_median = int(numpy.median(all_tos_dict[key]))
-            to_mode = stats.mode(all_tos_dict[key], keepdims=False)[0]
-            to_min = numpy.min(all_tos_dict[key])
-            to_max = numpy.max(all_tos_dict[key])
-
-            # p(a|b) = p(b|a)p(a)/p(b)
-            # a = player does action, 
-            # b = player did action in previous x/y instances, where x is no. times did action and y is no. opportunities to do action
-            # eg if player was 3/3, 3/4, 4/5 then the next move he always goes 4/4, 4/5, 5/6 but this is misleading bc must account for external environmental factors
-
-            # output: 
-            # 1, 2, 3, ... 30 ... 82 (total games played)
-            # 1/1, 2/2, 3/3, ..., 10/30, 30/82
-            # mean, median, mode
-            # get for all games, just winning games, just losing, just home/away, given opp, given set of circumstances, etc
-
-            #header_row = ["Result"]
-            #header_row.append(player_data[0][2:])
-
-            header_row = ['Output', 'Result', 'MIN', 'FG', 'FG%', '3P', '3P%', 'FT', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS']
+        # all_pts_dicts = {'all':{1:20}}
+        # key=condition, val={idx:stat}
 
         
-            
-            #output_row = [field_name]
-            mean_row = ["Mean", result_mean, minutes_mean, fg_mean, fg_rate_mean, threes_mean, threes_rate_mean, ft_mean, ft_rate_mean, rebs_mean, asts_mean, b_mean, s_mean, f_mean, to_mean, pts_mean]
-            median_row = ["Median", result_median, minutes_median, fg_median, fg_rate_median, threes_median, threes_rate_median, ft_median, ft_rate_median, rebs_median, asts_median, b_median, s_median, f_median, to_median, pts_median]
-            mode_row = ["Mode", result_mode, minutes_mode, fg_mode, fg_rate_mode, threes_mode, threes_rate_mode, ft_mode, ft_rate_mode, rebs_mode, asts_mode, b_mode, s_mode, f_mode, to_mode, pts_mode]
-            min_row = ["Min", result_min, minutes_min, fg_min, fg_rate_min, threes_min, threes_rate_min, ft_min, ft_rate_min, rebs_min, asts_min, b_min, s_min, f_min, to_min, pts_min]
-            max_row = ["Max", result_max, minutes_max, fg_max, fg_rate_max, threes_max, threes_rate_max, ft_max, ft_rate_max, rebs_max, asts_max, b_max, s_max, f_max, to_max, pts_max]
-            #header_row = ["Output"] + player_data[0][2:]
-            output_table = [header_row, mean_row, median_row, mode_row, min_row, max_row]
+        #compute stats from data
+        # key represents set of conditions of interest eg home/away
+        for conditions in all_pts_dicts.keys(): # all stats dicts have same keys so we use first 1 as reference
 
-            output_title = str(key).title()
-            if re.search('before',key):
+            # reset for each set of conditions
+            header_row = ['Output']
+            stat_means = ['Mean'] #{pts:'',reb...}
+            stat_medians = ['Median']
+            stat_modes = ['Mode']
+            stat_mins = ['Min']
+            stat_maxes = ['Max']
+
+            for stat_key, stat_dict in all_stats_dicts.items(): # stat key eg pts
+
+                header_row.append(stat_key.upper())
+
+                stat_vals = list(stat_dict[conditions].values())
+                #print("stat_vals: " + str(stat_vals))
+
+                stat_mean = round(numpy.mean(stat_vals), 1)
+                stat_median = int(numpy.median(stat_vals))
+                stat_mode = stats.mode(stat_vals, keepdims=False)[0]
+                stat_min = numpy.min(stat_vals)
+                stat_max = numpy.max(stat_vals)
+
+                stat_means.append(stat_mean)
+                stat_medians.append(stat_median)
+                stat_modes.append(stat_mode)
+                stat_mins.append(stat_min)
+                stat_maxes.append(stat_max)
+
+            output_table = [header_row, stat_means, stat_medians, stat_modes, stat_mins, stat_maxes]
+
+            output_title = str(conditions).title()
+            if re.search('before',conditions):
                 output_title = re.sub('Before','days before next game', output_title).title()
-            elif re.search('after',key):
+            elif re.search('after',conditions):
                 output_title = re.sub('After','days after previous game', output_title).title()
             
 
             print(output_title)
             print(tabulate(output_table))
 
-            # header_row = ['Points', 'All Season']
-            # mean_row = ['Mean', pts_mean]
-            # median_row = ['Median', pts_median]
-            # mode_row = ['Mode', pts_mode]
-            # output_table = [header_row, mean_row, median_row, mode_row]
 
-            # print("\n===" + player_name + "===\n")
-            # print(tabulate(output_table))
 
-            # given how many of recent games we care about
-            # later we will take subsection of games with certain settings like home/away
-            # first we get all stats and then we can analyze subsections of stats
-            # eg last 10 games
+            # for same set of conditions, count streaks for stats
             min_line_hits = 7
             game_sample = 10
             current_line_hits = 10 # player reached 0+ stats in all 10/10 games. current hits is for current level of points line
@@ -1098,30 +398,31 @@ for player_idx in range(len(all_player_game_logs)):
             #if set_sample_size = True: # if we set a sample size only consider those settings. else take all games
             #while(current_line_hits > min_line_hits) # min line hits is considered good odds. increase current line hits count out of 10
                 # if count after 10 games is greater than min line hits then check next level up
-            for game_idx in range(len(all_pts_dict[key])):
-                pts = all_pts_dict[key][game_idx]
-                rebs = all_rebs_dict[key][game_idx]
-                asts = all_asts_dict[key][game_idx]
+            for game_idx in range(len(all_pts_dicts[conditions].values())):
+                pts = list(all_pts_dicts[conditions].values())[game_idx]
+                rebs = list(all_rebs_dicts[conditions].values())[game_idx]
+                asts = list(all_asts_dicts[conditions].values())[game_idx]
 
-                threes = all_threes_made_dict[key][game_idx]
-                blks = all_bs_dict[key][game_idx]
-                stls = all_ss_dict[key][game_idx]
-                tos = all_tos_dict[key][game_idx]
+                threes = list(all_threes_made_dicts[conditions].values())[game_idx]
+                blks = list(all_bs_dicts[conditions].values())[game_idx]
+                stls = list(all_ss_dicts[conditions].values())[game_idx]
+                tos = list(all_tos_dicts[conditions].values())[game_idx]
 
-                if pts >= int(pts_lines[player_idx]):
+                player_projected_lines = projected_lines_dict[player_name]
+                if pts >= int(player_projected_lines['PTS']):
                     pts_count += 1
-                if rebs >= int(r_lines[player_idx]):
+                if rebs >= int(player_projected_lines['REB']):
                     r_count += 1
-                if asts >= int(a_lines[player_idx]):
+                if asts >= int(player_projected_lines['AST']):
                     a_count += 1
 
-                if threes >= int(threes_lines[player_idx]):
+                if threes >= int(player_projected_lines['3PT']):
                     threes_count += 1
-                if blks >= int(b_lines[player_idx]):
+                if blks >= int(player_projected_lines['BLK']):
                     b_count += 1
-                if stls >= int(s_lines[player_idx]):
+                if stls >= int(player_projected_lines['STL']):
                     s_count += 1
-                if tos >= int(to_lines[player_idx]):
+                if tos >= int(player_projected_lines['TO']):
                     to_count += 1
 
                 all_pts_counts.append(pts_count)
@@ -1134,19 +435,19 @@ for player_idx in range(len(all_player_game_logs)):
                 all_tos_counts.append(to_count)
 
             # make stats counts to find consistent streaks
-            all_stats_counts_dict[key] = [ all_pts_counts, all_rebs_counts, all_asts_counts, all_threes_counts, all_blks_counts, all_stls_counts, all_tos_counts ]
+            all_stats_counts_dict[conditions] = [ all_pts_counts, all_rebs_counts, all_asts_counts, all_threes_counts, all_blks_counts, all_stls_counts, all_tos_counts ]
 
             stats_counts = [ all_pts_counts, all_rebs_counts, all_asts_counts, all_threes_counts, all_blks_counts, all_stls_counts, all_tos_counts ]
 
             header_row = ['Games']
-            over_pts_line = 'PTS ' + str(pts_lines[player_idx]) + "+"
-            over_rebs_line = 'REB ' + str(r_lines[player_idx]) + "+"
-            over_asts_line = 'AST ' + str(a_lines[player_idx]) + "+"
+            over_pts_line = 'PTS ' + str(player_projected_lines['PTS']) + "+"
+            over_rebs_line = 'REB ' + str(player_projected_lines['REB']) + "+"
+            over_asts_line = 'AST ' + str(player_projected_lines['AST']) + "+"
             
-            over_threes_line = '3P ' + str(threes_lines[player_idx]) + "+"
-            over_blks_line = 'BLK ' + str(b_lines[player_idx]) + "+"
-            over_stls_line = 'STL ' + str(s_lines[player_idx]) + "+"
-            over_tos_line = 'TO ' + str(to_lines[player_idx]) + "+"
+            over_threes_line = '3P ' + str(player_projected_lines['3PT']) + "+"
+            over_blks_line = 'BLK ' + str(player_projected_lines['BLK']) + "+"
+            over_stls_line = 'STL ' + str(player_projected_lines['STL']) + "+"
+            over_tos_line = 'TO ' + str(player_projected_lines['TO']) + "+"
             
             prob_pts_row = [over_pts_line]
             prob_rebs_row = [over_rebs_line]
@@ -1157,12 +458,9 @@ for player_idx in range(len(all_player_game_logs)):
             prob_stls_row = [over_stls_line]
             prob_tos_row = [over_tos_line]
 
-            game_num_header = 'Games Ago'
-            game_num_row = [game_num_header]
-            game_date_header = 'Date'
-            game_date_row = [game_date_header]
+            
 
-            for game_idx in range(len(all_pts_dict[key])):
+            for game_idx in range(len(all_pts_dicts[conditions].values())):
                 p_count = all_pts_counts[game_idx]
                 r_count = all_rebs_counts[game_idx]
                 a_count = all_asts_counts[game_idx]
@@ -1193,11 +491,20 @@ for player_idx in range(len(all_player_game_logs)):
                 prob_over_tos_line = str(to_count) + "/" + current_total
                 prob_tos_row.append(prob_over_tos_line)
 
+            game_num_header = 'Games Ago'
+            game_num_row = [game_num_header]
+            game_day_header = 'DoW'
+            game_day_row = [game_day_header]
+            game_date_header = 'Date'
+            game_date_row = [game_date_header]
 
-            for game_num in all_pts_dicts[key].keys():
+            for game_num in all_pts_dicts[conditions].keys():
                 #game_num = all_pts_dicts[key]
                 game_num_row.append(game_num)
-                game_date = player_game_log.loc[game_num,'Date']
+                game_day_date = player_game_log.loc[game_num,'Date']
+                game_day = game_day_date.split()[0]
+                game_day_row.append(game_day)
+                game_date = game_day_date.split()[1]
                 game_date_row.append(game_date)
             
 
@@ -1211,7 +518,7 @@ for player_idx in range(len(all_player_game_logs)):
 
             print("\n===" + player_name + "===\n")
 
-            game_num_table = [game_num_row, game_date_row]
+            game_num_table = [game_num_row, game_day_row, game_date_row]
             print(tabulate(game_num_table))
 
             prob_pts_table = [prob_pts_row]
@@ -1244,19 +551,319 @@ for player_idx in range(len(all_player_game_logs)):
                 if determiner.determine_consistent_streak(stat_counts):
                     if player_name in all_streak_tables.keys():
                         player_streak_tables = all_streak_tables[player_name]
-                        if key in player_streak_tables.keys():
-                            player_streak_tables[key].append(prob_table) # append all stats for given key
+                        if conditions in player_streak_tables.keys():
+                            player_streak_tables[conditions].append(prob_table) # append all stats for given key
                         else:
-                            player_streak_tables[key] = [prob_table]
+                            player_streak_tables[conditions] = [prob_table]
                     else:
                         all_streak_tables[player_name] = {}
                         player_streak_tables = all_streak_tables[player_name]
-                        player_streak_tables[key] = [prob_table]
+                        player_streak_tables[conditions] = [prob_table]
 
                     # if key in player_streak_tables.keys():
                     #     player_streak_tables[key].append(prob_table) # append all stats for given key
                     # else:
                     #     player_streak_tables[key] = [prob_table]
+
+        # header_row = ['Output']
+        # for stat_key, stat_dict in all_stats_dicts.items():
+        #     print("stat_dict: " + str(stat_dict)) # stat_dict = {idx:val}
+
+        #     header_row.append(stat_key.upper())
+
+        #     stat_means = {} #{pts:'',reb...}
+        #     stat_medians = {}
+        #     stat_modes = {}
+        #     stat_mins = {}
+        #     stat_maxes = {}
+
+        #     for key, val in stat_dict.items():
+        #         #print("val: " + str(val))
+        #         #print("val.values(): " + str(val.values()))
+        #         stat_vals = list(val.values())
+
+        #         stat_mean = round(numpy.mean(stat_vals), 1)
+        #         stat_median = int(numpy.median(stat_vals))
+        #         stat_mode = stats.mode(stat_vals, keepdims=False)[0]
+        #         stat_min = numpy.min(stat_vals)
+        #         stat_max = numpy.max(stat_vals)
+                
+        #         stat_means.append(stat_mean)
+        #         stat_medians.append(stat_median)
+        #         stat_modes.append(stat_mode)
+        #         stat_mins.append(stat_min)
+        #         stat_maxes.append(stat_max)
+
+        #     for key, val in stat_dict.items():
+
+        #         # all_pts_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_rebs_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_asts_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_winning_scores_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_losing_scores_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_minutes_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_fgms_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_fgas_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_fg_rates_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_threes_made_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_threes_attempts_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_threes_rates_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_ftms_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_ftas_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_ft_rates_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_bs_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_ss_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_fs_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        #         # all_tos_dicts = { 'all':{}, 'home':{}, 'away':{} }
+
+        #         header_row = ['Output', 'PTS']
+        #         output_table = [header_row, [stat_means[0]]]
+
+        #         output_title = str(key).title()
+        #         if re.search('before',key):
+        #             output_title = re.sub('Before','days before next game', output_title).title()
+        #         elif re.search('after',key):
+        #             output_title = re.sub('After','days after previous game', output_title).title()
+                
+
+        #         print(output_title)
+        #         print(tabulate(output_table))
+
+        # key represents set of conditions of interest eg home/away
+        # for key, val in all_pts_dicts.items():
+        #     #print("val: " + str(val))
+        #     #print("val.values(): " + str(val.values()))
+        #     pts_mean = round(numpy.mean(list(val.values())), 1)
+        #     pts_median = int(numpy.median(list(val.values())))
+        #     pts_mode = stats.mode(list(val.values()), keepdims=False)[0]
+        #     pts_min = numpy.min(list(val.values()))
+        #     pts_max = numpy.max(list(val.values()))
+            
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     rebs_mean = round(numpy.mean(values), 1)
+        #     rebs_median = int(numpy.median(values))
+        #     rebs_mode = stats.mode(values, keepdims=False)[0]
+        #     rebs_min = numpy.min(values)
+        #     rebs_max = numpy.max(values)
+
+        #     val = all_asts_dicts[key]
+        #     values = list(val.values())
+        #     asts_mean = round(numpy.mean(values), 1)
+        #     asts_median = int(numpy.median(values))
+        #     asts_mode = stats.mode(values, keepdims=False)[0]
+        #     asts_min = numpy.min(values)
+        #     asts_max = numpy.max(values)
+
+        #     val = all_winning_scores_dicts[key]
+        #     values = list(val.values())
+        #     winning_score_mean = round(numpy.mean(all_winning_scores_dict[key]), 1)
+        #     winning_score_median = int(numpy.median(all_winning_scores_dict[key]))
+        #     winning_score_mode = stats.mode(all_winning_scores_dict[key], keepdims=False)[0]
+        #     winning_score_min = int(numpy.min(all_winning_scores_dict[key]))
+        #     winning_score_max = int(numpy.max(all_winning_scores_dict[key]))
+        #     val = all_losing_scores_dicts[key]
+        #     values = list(val.values())
+        #     losing_score_mean = round(numpy.mean(all_losing_scores_dict[key]), 1)
+        #     losing_score_median = int(numpy.median(all_losing_scores_dict[key]))
+        #     losing_score_mode = stats.mode(all_losing_scores_dict[key], keepdims=False)[0]
+        #     losing_score_min = int(numpy.min(all_losing_scores_dict[key]))
+        #     losing_score_max = int(numpy.max(all_losing_scores_dict[key]))
+
+        #     result_mean = str(winning_score_mean) + "-" + str(losing_score_mean)
+        #     result_median = str(winning_score_median) + "-" + str(losing_score_median)
+        #     result_mode = str(winning_score_mode) + "-" + str(losing_score_mode)
+        #     result_min = str(winning_score_min) + "-" + str(losing_score_min)
+        #     result_max = str(winning_score_max) + "-" + str(losing_score_max)
+
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     minutes_mean = round(numpy.mean(all_minutes_dict[key]), 1)
+        #     minutes_median = int(numpy.median(all_minutes_dict[key]))
+        #     minutes_mode = stats.mode(all_minutes_dict[key], keepdims=False)[0]
+        #     minutes_min = int(numpy.min(all_minutes_dict[key]))
+        #     minutes_max = int(numpy.max(all_minutes_dict[key]))
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     fgm_mean = round(numpy.mean(all_fgms_dict[key]), 1)
+        #     fgm_median = int(numpy.median(all_fgms_dict[key]))
+        #     fgm_mode = stats.mode(all_fgms_dict[key], keepdims=False)[0]
+        #     fgm_min = numpy.min(all_fgms_dict[key])
+        #     fgm_max = numpy.max(all_fgms_dict[key])
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     fga_mean = round(numpy.mean(all_fgas_dict[key]), 1)
+        #     fga_median = int(numpy.median(all_fgas_dict[key]))
+        #     fga_mode = stats.mode(all_fgas_dict[key], keepdims=False)[0]
+        #     fga_min = numpy.min(all_fgas_dict[key])
+        #     fga_max = numpy.max(all_fgas_dict[key])
+
+        #     fg_mean = str(fgm_mean) + "-" + str(fga_mean)
+        #     fg_median = str(fgm_median) + "-" + str(fga_median)
+        #     fg_mode = str(fgm_mode) + "-" + str(fga_mode)
+        #     fg_min = str(fgm_min) + "-" + str(fga_min)
+        #     fg_max = str(fgm_max) + "-" + str(fga_max)
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     fg_rate_mean = round(numpy.mean(all_fg_rates_dict[key]), 1)
+        #     fg_rate_median = round(float(numpy.median(all_fg_rates_dict[key])), 1)
+        #     fg_rate_mode = stats.mode(all_fg_rates_dict[key], keepdims=False)[0]
+        #     fg_rate_min = numpy.min(all_fg_rates_dict[key])
+        #     fg_rate_max = numpy.max(all_fg_rates_dict[key])
+
+
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     threes_made_mean = round(numpy.mean(all_threes_made_dict[key]), 1)
+        #     threes_made_median = int(numpy.median(all_threes_made_dict[key]))
+        #     threes_made_mode = stats.mode(all_threes_made_dict[key], keepdims=False)[0]
+        #     threes_made_min = numpy.min(all_threes_made_dict[key])
+        #     threes_made_max = numpy.max(all_threes_made_dict[key])
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     threes_attempts_mean = round(numpy.mean(all_threes_attempts_dict[key]), 1)
+        #     threes_attempts_median = int(numpy.median(all_threes_attempts_dict[key]))
+        #     threes_attempts_mode = stats.mode(all_threes_attempts_dict[key], keepdims=False)[0]
+        #     threes_attempts_min = numpy.min(all_threes_attempts_dict[key])
+        #     threes_attempts_max = numpy.max(all_threes_attempts_dict[key])
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     threes_mean = str(threes_made_mean) + "-" + str(threes_attempts_mean)
+        #     threes_median = str(threes_made_median) + "-" + str(threes_attempts_median)
+        #     threes_mode = str(threes_made_mode) + "-" + str(threes_attempts_mode)
+        #     threes_min = str(threes_made_min) + "-" + str(threes_attempts_min)
+        #     threes_max = str(threes_made_max) + "-" + str(threes_attempts_max)
+
+        #     threes_rate_mean = round(numpy.mean(all_threes_rates_dict[key]), 1)
+        #     threes_rate_median = round(float(numpy.median(all_threes_rates_dict[key])), 1)
+        #     threes_rate_mode = stats.mode(all_threes_rates_dict[key], keepdims=False)[0]
+        #     threes_rate_min = numpy.min(all_threes_rates_dict[key])
+        #     threes_rate_max = numpy.max(all_threes_rates_dict[key])
+
+
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     ftm_mean = round(numpy.mean(all_ftms_dict[key]), 1)
+        #     ftm_median = int(numpy.median(all_ftms_dict[key]))
+        #     ftm_mode = stats.mode(all_ftms_dict[key], keepdims=False)[0]
+        #     ftm_min = numpy.min(all_ftms_dict[key])
+        #     ftm_max = numpy.max(all_ftms_dict[key])
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     fta_mean = round(numpy.mean(all_ftas_dict[key]), 1)
+        #     fta_median = int(numpy.median(all_ftas_dict[key]))
+        #     fta_mode = stats.mode(all_ftas_dict[key], keepdims=False)[0]
+        #     fta_min = numpy.min(all_ftas_dict[key])
+        #     fta_max = numpy.max(all_ftas_dict[key])
+
+        #     ft_mean = str(ftm_mean) + "-" + str(fta_mean)
+        #     ft_median = str(ftm_median) + "-" + str(fta_median)
+        #     ft_mode = str(ftm_mode) + "-" + str(fta_mode)
+        #     ft_min = str(ftm_min) + "-" + str(fta_min)
+        #     ft_max = str(ftm_max) + "-" + str(fta_max)
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     ft_rate_mean = round(numpy.mean(all_ft_rates_dict[key]), 1)
+        #     ft_rate_median = round(float(numpy.median(all_ft_rates_dict[key])), 1)
+        #     ft_rate_mode = stats.mode(all_ft_rates_dict[key], keepdims=False)[0]
+        #     ft_rate_min = numpy.min(all_ft_rates_dict[key])
+        #     ft_rate_max = numpy.max(all_ft_rates_dict[key])
+
+
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     b_mean = round(numpy.mean(all_bs_dict[key]), 1)
+        #     b_median = int(numpy.median(all_bs_dict[key]))
+        #     b_mode = stats.mode(all_bs_dict[key], keepdims=False)[0]
+        #     b_min = numpy.min(all_bs_dict[key])
+        #     b_max = numpy.max(all_bs_dict[key])
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     s_mean = round(numpy.mean(all_ss_dict[key]), 1)
+        #     s_median = int(numpy.median(all_ss_dict[key]))
+        #     s_mode = stats.mode(all_ss_dict[key], keepdims=False)[0]
+        #     s_min = numpy.min(all_ss_dict[key])
+        #     s_max = numpy.max(all_ss_dict[key])
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     f_mean = round(numpy.mean(all_fs_dict[key]), 1)
+        #     f_median = int(numpy.median(all_fs_dict[key]))
+        #     f_mode = stats.mode(all_fs_dict[key], keepdims=False)[0]
+        #     f_min = numpy.min(all_fs_dict[key])
+        #     f_max = numpy.max(all_fs_dict[key])
+        #     val = all_rebs_dicts[key]
+        #     values = list(val.values())
+        #     to_mean = round(numpy.mean(all_tos_dict[key]), 1)
+        #     to_median = int(numpy.median(all_tos_dict[key]))
+        #     to_mode = stats.mode(all_tos_dict[key], keepdims=False)[0]
+        #     to_min = numpy.min(all_tos_dict[key])
+        #     to_max = numpy.max(all_tos_dict[key])
+
+            # p(a|b) = p(b|a)p(a)/p(b)
+            # a = player does action, 
+            # b = player did action in previous x/y instances, where x is no. times did action and y is no. opportunities to do action
+            # eg if player was 3/3, 3/4, 4/5 then the next move he always goes 4/4, 4/5, 5/6 but this is misleading bc must account for external environmental factors
+
+            # output: 
+            # 1, 2, 3, ... 30 ... 82 (total games played)
+            # 1/1, 2/2, 3/3, ..., 10/30, 30/82
+            # mean, median, mode
+            # get for all games, just winning games, just losing, just home/away, given opp, given set of circumstances, etc
+
+            #header_row = ["Result"]
+            #header_row.append(player_data[0][2:])
+
+            #header_row = ['Output', 'Result', 'MIN', 'FG', 'FG%', '3P', '3P%', 'FT', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS']
+
+        
+            
+            #output_row = [field_name]
+            # mean_row = ["Mean", result_mean, minutes_mean, fg_mean, fg_rate_mean, threes_mean, threes_rate_mean, ft_mean, ft_rate_mean, rebs_mean, asts_mean, b_mean, s_mean, f_mean, to_mean, pts_mean]
+            # median_row = ["Median", result_median, minutes_median, fg_median, fg_rate_median, threes_median, threes_rate_median, ft_median, ft_rate_median, rebs_median, asts_median, b_median, s_median, f_median, to_median, pts_median]
+            # mode_row = ["Mode", result_mode, minutes_mode, fg_mode, fg_rate_mode, threes_mode, threes_rate_mode, ft_mode, ft_rate_mode, rebs_mode, asts_mode, b_mode, s_mode, f_mode, to_mode, pts_mode]
+            # min_row = ["Min", result_min, minutes_min, fg_min, fg_rate_min, threes_min, threes_rate_min, ft_min, ft_rate_min, rebs_min, asts_min, b_min, s_min, f_min, to_min, pts_min]
+            # max_row = ["Max", result_max, minutes_max, fg_max, fg_rate_max, threes_max, threes_rate_max, ft_max, ft_rate_max, rebs_max, asts_max, b_max, s_max, f_max, to_max, pts_max]
+            
+            # for stat_idx in range(len(stat_means)):
+            #     stat_mean = stat_means[stat_idx]
+            #     stat_median = stat_medians[stat_idx]
+            #     stat_mode = stat_modes[stat_idx]
+            #     stat_min = stat_mins[stat_idx]
+            #     stat_max = stat_maxes[stat_idx]
+
+            #     mean_row.append(stat_mean)
+            #     median_row.append(stat_median)
+            #     mode_row.append(stat_mode)
+            #     min_row.append(stat_min)
+            #     max_row.append(stat_max)
+            
+            #header_row = ["Output"] + player_data[0][2:]
+            # output_table = [header_row, mean_row, median_row, mode_row, min_row, max_row]
+
+            # output_title = str(key).title()
+            # if re.search('before',key):
+            #     output_title = re.sub('Before','days before next game', output_title).title()
+            # elif re.search('after',key):
+            #     output_title = re.sub('After','days after previous game', output_title).title()
+            
+
+            # print(output_title)
+            # print(tabulate(output_table))
+
+            # header_row = ['Points', 'All Season']
+            # mean_row = ['Mean', pts_mean]
+            # median_row = ['Median', pts_median]
+            # mode_row = ['Mode', pts_mode]
+            # output_table = [header_row, mean_row, median_row, mode_row]
+
+            # print("\n===" + player_name + "===\n")
+            # print(tabulate(output_table))
+
+            # given how many of recent games we care about
+            # later we will take subsection of games with certain settings like home/away
+            # first we get all stats and then we can analyze subsections of stats
+            # eg last 10 games
+            
     
 find_matchups = False
 if find_matchups:
@@ -1287,8 +894,12 @@ for p_name, p_streak_tables in all_streak_tables.items():
     # but we can get prev game from player game log we already have
     # todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
     # print("todays_games_date_obj: " + str(todays_games_date_obj))
-    player_game_log = all_player_game_logs_dict[p_name]
-    prev_game_date_obj = determiner.determine_prev_game_date(player_game_log, season_year) # exclude all star and other special games
+
+    player_season_logs = all_player_season_logs_dict[p_name]
+    current_season_log = player_season_logs[0]
+
+    #player_game_log = all_player_game_logs_dict[p_name]
+    prev_game_date_obj = determiner.determine_prev_game_date(current_season_log, season_year) # exclude all star and other special games
     # prev_game_date_string = player_game_log.loc[prev_game_idx, 'Date'].split()[1] + "/" + season_year # eg 'wed 2/15' to '2/15/23'
     # prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%y')
     days_after_prev_game = (todays_games_date_obj - prev_game_date_obj).days

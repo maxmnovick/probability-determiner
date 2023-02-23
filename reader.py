@@ -15,6 +15,9 @@ from selenium.webdriver.chrome.options import Options # block ads
 import csv
 import json # we need projected lines table to be json so we can refer to player when analyzing stats
 
+import determiner # determine played season before reading webpage to avoid exception/error
+import isolator # isolate_player_game_data to read data from file
+
 # get data from a file and format into a list (same as generator version of this fcn but more general)
 # input such as Game Data - All Games
 # or Game Log - All Players
@@ -96,14 +99,15 @@ def read_player_espn_id(player_name):
 
 
 # get game log from espn.com
-def read_player_game_log(player_name):
+def read_player_season_log(player_name, season_year=2023, player_url=''):
 	print("\n===Read Player Game Log===\n")
 
 	# get espn player id from google so we can get url
-	player_espn_id = read_player_espn_id(player_name)
-	year = '2023'
-	player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_espn_id + '/type/nba/year/' + year #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
-	print("player_url: " + player_url)
+	if player_url == '':
+		player_espn_id = read_player_espn_id(player_name)
+		season_year = 2023
+		player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_espn_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
+		print("player_url: " + player_url)
 
 	player_game_log = []
 
@@ -142,29 +146,33 @@ def read_player_game_log(player_name):
 			print("Warning: table does not have 17 columns so it is not valid game log.")
 			pass
 
-	player_game_log_df = pd.concat(parts_of_season, sort=False, ignore_index=True)
+	player_game_log_df = pd.DataFrame()
 
-	player_game_log_df = player_game_log_df[(player_game_log_df['OPP'].str.startswith('@')) | (player_game_log_df['OPP'].str.startswith('vs'))].reset_index(drop=True)
+	if len(parts_of_season) > 0:
 
-	player_game_log_df['Season'] = str(int(year)-1) + '-' + str(int(year)-2000)
+		player_game_log_df = pd.concat(parts_of_season, sort=False, ignore_index=True)
 
-	player_game_log_df['Player'] = player_name
+		player_game_log_df = player_game_log_df[(player_game_log_df['OPP'].str.startswith('@')) | (player_game_log_df['OPP'].str.startswith('vs'))].reset_index(drop=True)
 
-	player_game_log_df = player_game_log_df.set_index(['Player', 'Season', 'Type']).reset_index()
+		player_game_log_df['Season'] = str(season_year-1) + '-' + str(season_year-2000)
 
-	# Successful 3P Attempts
-	player_game_log_df['3PT_SA'] = player_game_log_df['3PT'].str.split('-').str[0]
+		player_game_log_df['Player'] = player_name
 
-	# All 3P Attempts
-	player_game_log_df['3PT_A'] = player_game_log_df['3PT'].str.split('-').str[1]
-	player_game_log_df[
-		['MIN', 'FG%', '3P%', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS', '3PT_SA', '3PT_A']
+		player_game_log_df = player_game_log_df.set_index(['Player', 'Season', 'Type']).reset_index()
 
-		] = player_game_log_df[
+		# Successful 3P Attempts
+		player_game_log_df['3PT_SA'] = player_game_log_df['3PT'].str.split('-').str[0]
 
+		# All 3P Attempts
+		player_game_log_df['3PT_A'] = player_game_log_df['3PT'].str.split('-').str[1]
+		player_game_log_df[
 			['MIN', 'FG%', '3P%', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS', '3PT_SA', '3PT_A']
 
-			].astype(float)
+			] = player_game_log_df[
+
+				['MIN', 'FG%', '3P%', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS', '3PT_SA', '3PT_A']
+
+				].astype(float)
 
 	# display player game log in readable format
 	#pd.set_option('display.max_columns', 100)
@@ -186,6 +194,42 @@ def read_player_game_log(player_name):
 	# print(tabulate(table))
 	#print("player_game_log: " + str(player_game_log))
 	return player_game_log_df # can return this df directly or first arrange into list but seems simpler and more intuitive to keep df so we can access elements by keyword
+
+def read_player_season_logs(player_name):
+
+	player_game_logs = []
+
+	player_espn_id = read_player_espn_id(player_name)
+	season_year = 2023
+	player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_espn_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
+	
+	read_all_seasons = False
+	while determiner.determine_played_season(player_url):
+
+		print("player_url: " + player_url)
+		game_log_df = read_player_season_log(player_name, season_year, player_url)
+		if not game_log_df.empty:
+			player_game_logs.append(game_log_df)
+
+		if not read_all_seasons:
+			break
+
+		season_year -= 1
+		player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_espn_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
+		
+
+	return player_game_logs
+
+def read_all_players_season_logs(player_names):
+
+	all_players_season_logs = {}
+
+	for player_name in player_names:
+		players_season_logs = read_player_season_logs(player_name)
+		all_players_season_logs[player_name] = players_season_logs
+
+	return all_players_season_logs
+
 
 # show matchup data against each position so we can see which position has easiest matchup
 def read_matchup_data(source_url):
@@ -485,3 +529,126 @@ def format_stat_val(col_val):
 		stat_val = float(col_val)
 
 	return stat_val
+
+def read_season_log_from_file(data_type, player_name, ext):
+	
+	all_pts = []
+	all_rebs = []
+	all_asts = []
+	all_winning_scores = []
+	all_losing_scores = []
+	all_minutes = []
+	all_fgms = []
+	all_fgas = []
+	all_fg_rates = []
+	all_threes_made = []
+	all_threes_attempts = []
+	all_three_rates = []
+	all_ftms = []
+	all_ftas = []
+	all_ft_rates = []
+	all_bs = []
+	all_ss = []
+	all_fs = []
+	all_tos = []
+
+	all_stats = []
+    
+	player_data = extract_data(data_type, player_name, ext)
+	# first row is headers, next are games with monthly averages bt each mth
+
+	#desired_field = 'points'
+	#desired_field_idx = determiner.determine_field_idx(desired_field)
+	date_idx = 0
+	opp_idx = 1
+	result_idx = 2
+	minutes_idx = 3
+	fg_idx = 4
+	fg_rate_idx = 5
+	three_idx = 6
+	three_rate_idx = 7
+	ft_idx = 8
+	ft_rate_idx = 9
+	r_idx = 10
+	a_idx = 11
+	b_idx = 12
+	s_idx = 13
+	f_idx = 14
+	to_idx = 15
+	p_idx = 16
+
+	# isolate games from lebron data
+	# exclude headers and monthly averages
+	player_games_data = isolator.isolate_player_game_data(player_data, player_name)
+
+	
+
+	if len(player_games_data) > 0:
+		for game in player_games_data:
+			pts = int(game[p_idx])
+			rebs = int(game[r_idx])
+			asts = int(game[a_idx])
+
+			results = game[result_idx]
+			#print("results: " + results)
+			results_data = re.split('\\s+', results)
+			#print("results_data: " + str(results_data))
+			score_data = results_data[1].split('-')
+			#print("score_data: " + str(score_data))
+			winning_score = int(score_data[0])
+			losing_score = int(score_data[1])
+
+			minutes = int(game[minutes_idx])
+
+			fgs = game[fg_idx]
+			fg_data = fgs.split('-')
+			fgm = int(fg_data[0])
+			fga = int(fg_data[1])
+			fg_rate = round(float(game[fg_rate_idx]), 1)
+
+			threes = game[three_idx]
+			threes_data = threes.split('-')
+			#print("threes_data: " + str(threes_data))
+			threes_made = int(threes_data[0])
+			threes_attempts = int(threes_data[1])
+			three_rate = round(float(game[three_rate_idx]), 1)
+
+			fts = game[ft_idx]
+			ft_data = fts.split('-')
+			ftm = int(ft_data[0])
+			fta = int(ft_data[1])
+			ft_rate = round(float(game[ft_rate_idx]), 1)
+
+			bs = int(game[b_idx])
+			ss = int(game[s_idx])
+			fs = int(game[f_idx])
+			tos = int(game[to_idx])
+
+			all_pts.append(pts)
+			all_rebs.append(rebs)
+			all_asts.append(asts)
+
+			all_winning_scores.append(winning_score)
+			all_losing_scores.append(losing_score)
+
+			all_minutes.append(minutes)
+			all_fgms.append(fgm)
+			all_fgas.append(fga)
+			all_fg_rates.append(fg_rate)
+			all_threes_made.append(threes_made)
+			all_threes_attempts.append(threes_attempts)
+			all_three_rates.append(three_rate)
+			all_ftms.append(ftm)
+			all_ftas.append(fta)
+			all_ft_rates.append(ft_rate)
+			all_bs.append(bs)
+			all_ss.append(ss)
+			all_fs.append(fs)
+			all_tos.append(tos)
+
+			all_stats = [all_pts,all_rebs,all_asts,all_winning_scores,all_losing_scores,all_minutes,all_fgms,all_fgas,all_fg_rates,all_threes_made,all_threes_attempts,all_three_rates,all_ftms,all_ftas,all_ft_rates,all_bs,all_ss,all_fs,all_tos]
+
+	else:
+		print("Warning: No player games data!")
+
+	return all_stats
