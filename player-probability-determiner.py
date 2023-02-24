@@ -651,14 +651,21 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                 for stat_idx in range(len(stats_counts)):
                     stat_counts = stats_counts[stat_idx]
                     prob_table = all_prob_stat_tables[stat_idx][0] # only need first element bc previously formatted for table display
+                    # if blk, stl, or to look for 2+
+                    # for all, check to see if 1+ or not worth predicting bc too risky
+                    #stat_line = prob_table[0].split
+                    stat_line = int(prob_table[0].split()[1][:-1])
+                    #print('stat_line: ' + str(stat_line))
+                    if stat_line < 2: # may need to change for 3 pointers if really strong likelihood to get 1
+                        continue
                     if determiner.determine_consistent_streak(stat_counts):
                         # { 'player name': { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} } }
                         if player_name in all_streak_tables.keys():
-                            print(player_name + " in streak tables")
+                            #print(player_name + " in streak tables")
 
                             player_streak_tables = all_streak_tables[player_name]
                             if conditions in player_streak_tables.keys():
-                                print("conditions " + conditions + " in streak tables")
+                                #print("conditions " + conditions + " in streak tables")
                                 player_all_season_streaks = player_streak_tables[conditions]
                                 if season_year in player_all_season_streaks.keys():
                                     player_all_season_streaks[season_year].append(prob_table)
@@ -667,14 +674,14 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
 
                                 #player_streak_tables[conditions].append(prob_table) # append all stats for given key
                             else:
-                                print("conditions " + conditions + " not in streak tables")
+                                #print("conditions " + conditions + " not in streak tables")
                                 player_streak_tables[conditions] = {}
                                 player_all_season_streaks = player_streak_tables[conditions]
                                 player_all_season_streaks[season_year] = [prob_table]
 
                                 #player_streak_tables[conditions] = [prob_table]
                         else:
-                            print(player_name + " not in streak tables")
+                            #print(player_name + " not in streak tables")
 
                             all_streak_tables[player_name] = {}
                             player_streak_tables = all_streak_tables[player_name]
@@ -687,8 +694,8 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                             player_all_season_streaks = player_streak_tables[conditions]
                             player_all_season_streaks[season_year] = [prob_table]
 
-                        print("player_all_season_streaks: " + str(player_all_season_streaks))
-                        print("player_streak_tables: " + str(player_streak_tables))
+                        #print("player_all_season_streaks: " + str(player_all_season_streaks))
+                        #print("player_streak_tables: " + str(player_streak_tables))
 
                             
 
@@ -728,17 +735,21 @@ if find_matchups:
 print("\n===Consistent Streaks===\n")
 
 injury_prone_players = ['dangelo russell', 'anthony davis', 'joel embiid']
-all_player_game_dicts = {}
+all_player_pre_dicts = {} # could we use list bc player has multiple props so dont group by name?
+# p_streak_tables = { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} }
 for p_name, p_streak_tables in all_streak_tables.items():
     print("\n===" + p_name + "===\n")
 
     # should we include in output if they have 9/10 overall record but 3/10 location record? depends on breaks and matchups and history pattern
 
-    player_game_dict = {}
-    all_player_game_dicts[p_name] = player_game_dict
+    player_pre_dict = {}
+    
+    #all_player_pre_dicts[p_name] = player_pre_dict
     if p_name in injury_prone_players:
         print("\n===Warning: Injury Prone Player: " + p_name + "!===\n")
-        player_game_dict['warning'] = 'Avoid: ' + p_name + ' is an Injury Prone Player!'
+        player_pre_dict['warning'] = 'Warning: ' + p_name + ' is an Injury Prone Player!'
+
+    
 
     #print("p_streak_tables:\n" + str(p_streak_tables))
 
@@ -765,15 +776,46 @@ for p_name, p_streak_tables in all_streak_tables.items():
 
         opponent = player_lines['OPP'].lower()
 
+        
        
         
         #days_before_next_game = 1
         if str(condition) == 'all' or str(condition) == player_lines['LOC'].lower() or str(condition) == opponent or str(condition) == str(days_after_prev_game) + ' after': # current conditions we are interested in
             print(str(condition).title())
             
+            #streak_tables=[[],..]
             for year, streak_tables in streak_dicts.items():
                 print('\n===' + str(year) + '===\n')
-                print(tabulate(streak_tables))
+                print(tabulate(streak_tables))\
+
+                # is it an over or under? above 7/10 or 4/5 or 3/3, or below 3/10 and not 3/3?
+                #player_pre_dict['prediction'] = determiner.determiner_player_prediction(p_name,)
+                # determine player prediction
+                print("\n===Determine Player Predictions===\n")
+                predictions = []
+                for streak in streak_tables:
+                    print("streak: " + str(streak))
+                   
+                    # if other criteria met for likely prediction, then add prediction to all predictions
+                    # check relevant conditions like home/away, breaks, and previous seasons similar times, and matchups
+                    
+                    # 1st idx header like [pts 10+,1/1,2/2,..]
+                    stat_line = int(streak[0].split()[1][:-1])
+                    
+                    direction = determiner.determine_streak_direction(streak)
+                    print('direction: ' + str(direction))
+                    if direction == '-': 
+                        stat_line -= 1
+                    if stat_line == 0: # 0 is blank direction
+                        direction = ''
+                    print('stat_line: ' + str(stat_line))
+                    stat_name = streak[0].split()[0]
+                    print('stat_name: ' + str(stat_name))
+                    player_prediction = p_name + ' ' + str(stat_line) + direction + ' ' + stat_name # eg d fox 27+p or a davis 2-a
+                    print('player_prediction: ' + str(player_prediction))
+                    all_player_pre_dicts[player_prediction] = {}
+                    #all_player_pre_dicts[player_prediction] = player_pre_dict
+                    player_pre_dict['prediction'] = player_prediction
 
             # determine matchup for opponent and stat. we need to see all position matchups to see relative ease
             # display matchup tables with consistent streaks (later look at easiest matchups for all current games, not just consistent streaks bc we may find an exploit)
@@ -819,3 +861,22 @@ for p_name, p_streak_tables in all_streak_tables.items():
 
                         print(tabulate(matchup_table))
 
+print("\n===Game Data===\n")
+# all_player_pre_dicts = [{'prediction':val,'overall record':[],..},{},..]
+# get headers
+header_row = ['Prediction']
+for pre_dict in all_player_pre_dicts.values():
+    for key in pre_dict:
+        header_row.append(key.title())
+    break
+game_data = [header_row]
+
+print("all_player_pre_dicts: " + str(all_player_pre_dicts))
+for prediction, pre_dict in all_player_pre_dicts.items():
+    prediction_row = [prediction]
+    for val in pre_dict.values():
+        prediction_row.append(val)
+    game_data.append(prediction_row)
+
+
+print(tabulate(game_data))

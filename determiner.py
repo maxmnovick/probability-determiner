@@ -299,3 +299,18 @@ def determine_regular_season_games(player_game_log):
 
     print("reg_season_games_df:\n" + str(reg_season_games_df))
     return reg_season_games_df
+
+# is it an over or under? above 7/10 or 4/5 or 3/3, or below 3/10 and not 2/2 bc maybe teammate injury so more playing time?
+def determine_streak_direction(streak):
+    direction = '+'
+    # 1st idx header like [pts 10+,1/1,2/2,..]
+    out_of_10 = int(streak[10].split('/')[0])
+    out_of_5 = int(streak[5].split('/')[0])
+    out_of_3 = int(streak[3].split('/')[0])
+    out_of_2 = int(streak[2].split('/')[0])
+    if out_of_10 >= 7 or out_of_5 >= 4 or out_of_3 >= 3:
+        direction = '+'
+    elif out_of_10 <= 3 and out_of_2 < 2: # if 3/10 but 2/2 then maybe recent change causing beginning of over streak
+        direction = '-'
+
+    return direction
