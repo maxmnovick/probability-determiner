@@ -13,17 +13,25 @@ import httplib2
 
 import pandas as pd # read html results from webpage to determine if player played season
 
-
+# if streak resembles pattern we have seen consistently such as 3/3,3/4,4/5,5/6,6/7,6/9,7/10
 def determine_consistent_streak(stat_counts):
     #print("\n===Determine Consistent Streak===\n")
     #print("stat_counts: " + str(stat_counts))
     consistent = False
 
-    if len(stat_counts) > 10:
+    # even if it is consistent it does not mean they will hit it next game
+    # instead we must determine if likely to hit next game based on previous game pattern
+    if len(stat_counts) >= 10:
         if stat_counts[9] >= 7: # arbitrary 7/10
             consistent = True
         elif stat_counts[9] <= 3: # arbitrary 7/10
             consistent = True
+    elif len(stat_counts) >= 7: # 5 <= x <= 10
+        if stat_counts[6] <= 1: # arbitrary 1/7
+            consistent = True
+
+    if consistent:
+        print('consistent')
 
     return consistent
 
@@ -75,6 +83,11 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
     team_abbrev = ''
     if team_name[:3].isupper():
         team_abbrev = team_name[:3].lower()
+
+        irregular_abbrevs = {'bro':'bkn', 'okl':'okc'} # for these match the first 3 letters of team name instead
+        if team_abbrev in irregular_abbrevs.keys():
+            #print("irregular abbrev: " + team_abbrev)
+            team_abbrev = irregular_abbrevs[team_abbrev]
     else:
         for abbrev, name in team_abbrevs_dict.items():
             if team_name.lower() == name:
@@ -113,7 +126,7 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
     return team_abbrev
 
 def determine_all_team_abbrevs(position_matchup_data):
-    print("\n===Determine All Team Abbrevs===\n")
+    #print("\n===Determine All Team Abbrevs===\n")
     team_abbrevs = []
     for team_idx, row in position_matchup_data.iterrows():
         team_col_name = determine_col_name('team',position_matchup_data)
@@ -129,7 +142,7 @@ def determine_all_team_abbrevs(position_matchup_data):
 
             team_abbrevs.append(team_abbrev)
 
-    print("team_abbrevs: " + str(team_abbrevs))
+    #print("team_abbrevs: " + str(team_abbrevs))
     return team_abbrevs
 
 # rating or ranking bc shows average value and orders from easiest ot hardest by position and stat
@@ -183,8 +196,11 @@ def determine_matchup_rating(opponent, stat, all_matchup_data):
                 #         team_col_name = col_name
                 team_col_name = determine_col_name('team',position_matchup_data)
                 team_name = str(position_matchup_data.loc[team_idx, team_col_name])
+                #print("team_name: " + team_name)
                 team = determine_team_abbrev(team_name) # fantasy pros gives both name and abbrev together so use that source to make dict
-                
+                #print("team: " + team)
+                #print("opponent: " + opponent)
+
                 #if opponent in different_abbrevs:
 
                 if team == opponent:
@@ -218,8 +234,17 @@ def determine_prev_game_date(player_game_log, season_year):
     prev_game_idx = 0
     while re.search('\\*', player_game_log.loc[prev_game_idx, 'OPP']):
         prev_game_idx += 1
-    prev_game_date_string = player_game_log.loc[prev_game_idx, 'Date'].split()[1] + "/" + season_year # eg 'wed 2/15' to '2/15/23'
-    prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%y')
+
+    init_game_date_string = player_game_log.loc[prev_game_idx, 'Date'].split()[1] # 'wed 2/15'
+    game_mth = init_game_date_string.split('/')[0]
+    final_season_year = str(season_year)
+    if int(game_mth) in range(10,13):
+        final_season_year = str(season_year - 1)
+    prev_game_date_string = init_game_date_string + "/" + final_season_year
+
+
+    #prev_game_date_string = player_game_log.loc[prev_game_idx, 'Date'].split()[1] + "/" + str(season_year) # eg 'wed 2/15' to '2/15/23'
+    prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%Y')
     return prev_game_date_obj
 
 
@@ -255,3 +280,22 @@ def determine_played_season(player_url):
                 break
 
     return played_season
+
+
+def determine_regular_season_games(player_game_log):
+
+    #reg_season_games_df = pd.DataFrame()
+    reg_season_games = []
+
+    for game_idx, row in player_game_log.iterrows():
+        if re.search('\\*',player_game_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
+            #print("game excluded")
+            continue
+        
+        if player_game_log.loc[game_idx, 'Type'] == 'Regular':
+            reg_season_games.append(row)
+
+    reg_season_games_df = pd.concat(reg_season_games)
+
+    print("reg_season_games_df:\n" + str(reg_season_games_df))
+    return reg_season_games_df

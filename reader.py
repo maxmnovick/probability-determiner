@@ -195,7 +195,7 @@ def read_player_season_log(player_name, season_year=2023, player_url=''):
 	#print("player_game_log: " + str(player_game_log))
 	return player_game_log_df # can return this df directly or first arrange into list but seems simpler and more intuitive to keep df so we can access elements by keyword
 
-def read_player_season_logs(player_name):
+def read_player_season_logs(player_name, read_all_seasons=True):
 
 	player_game_logs = []
 
@@ -203,7 +203,7 @@ def read_player_season_logs(player_name):
 	season_year = 2023
 	player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_espn_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
 	
-	read_all_seasons = False
+	read_all_seasons = True
 	while determiner.determine_played_season(player_url):
 
 		print("player_url: " + player_url)
@@ -281,18 +281,19 @@ def read_matchup_data(source_url):
 		#time.sleep(3)
 
 		if re.search('fantasypro',source_url):
-			driver.switch_to.frame(driver.find_element("id", "google_ads_iframe_/2705664/fantasypros_interstitial_1_0"))
-			#l = driver.find_element('xpath', 'html/body/div')
-			l = driver.find_element('id', 'closebutton')
-			h1= driver.execute_script("return arguments[0].outerHTML;",l)
-			print("h1: " + str(h1))
-			# driver.switch_to.frame(driver.find_element("tag name", "iframe"))
-			# l = driver.find_element('xpath', 'html/body')
-			# h2= driver.execute_script("return arguments[0].innerHTML;",l)
-			# print("h2: " + str(h2))
-			l.click(); #Close Ad
+			if driver.find_elements("id", "google_ads_iframe_/2705664/fantasypros_interstitial_1_0"):
+				driver.switch_to.frame(driver.find_element("id", "google_ads_iframe_/2705664/fantasypros_interstitial_1_0"))
+				#l = driver.find_element('xpath', 'html/body/div')
+				l = driver.find_element('id', 'closebutton')
+				h1= driver.execute_script("return arguments[0].outerHTML;",l)
+				print("h1: " + str(h1))
+				# driver.switch_to.frame(driver.find_element("tag name", "iframe"))
+				# l = driver.find_element('xpath', 'html/body')
+				# h2= driver.execute_script("return arguments[0].innerHTML;",l)
+				# print("h2: " + str(h2))
+				l.click(); #Close Ad
 
-			driver.switch_to.default_content()
+				driver.switch_to.default_content()
 
 			# get the defense matchup table as text
 
