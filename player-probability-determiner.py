@@ -18,17 +18,23 @@ import pandas as pd # see when was prev game
 # main settings
 read_all_seasons = False
 find_matchups = True
+input_type = '2_27' # date as mth_day
+
+data_type = "Player Lines"
+todays_games_date = '2/27/23'
+todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
 
 # input: game log
 # player name
 # date, opponent, result, min, fg, fg%, 3pt, 3p%, ft, ft%, reb, ast, blk, stl, pf, to, pts
 
-data_type = 'Player Data'
-player_name = 'Ja Morant'
-# count no. times player hit over line
-pts_line = 1
-r_line = 3
-a_line = 1
+# for testing
+# data_type = 'Player Data'
+# player_name = 'Ja Morant'
+# # count no. times player hit over line
+# pts_line = 1
+# r_line = 3
+# a_line = 1
 
 #print("\n===" + player_name + "===\n")
 #row1 = ['Tue 2/7','vs OKC','L 133-130', '34','13-20','65.0','4-6','66.7','8-10','80.0','7','3','0','3','3','4','38']
@@ -47,10 +53,8 @@ b_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 s_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 
-data_type = "Game Lines"
-todays_games_date = '2/23/23'
-todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
-input_type = '2_23' # date as mth_day
+
+
 projected_lines = reader.extract_data(data_type, input_type, header=True)
 if input_type == '': # for testing we make input type blank ''
 #projected_lines = reader.read_projected_lines(date)
@@ -81,7 +85,7 @@ opponents = isolator.isolate_data_field("opp",projected_lines) # format OKC
 
 
 # get all player season logs
-all_player_season_logs_dict = reader.read_all_players_season_logs(player_names)
+all_player_season_logs_dict = reader.read_all_players_season_logs(player_names, read_all_seasons)
 
 
 # for p_name in player_names:
@@ -103,6 +107,8 @@ print("\n===All Players===\n")
 # player game log from espn, for 1 season or all seasons
 
 all_streak_tables = { } # { 'player name': { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} } }
+# need to store all records in dict so we can refer to it by player, condition, year, and stat
+all_records_dicts = { } # { 'player name': { 'all': {year: { pts: '1/1,2/2..', stat: record, .. },...}, 'home':{year:{ stat: record, .. },.. }, 'away':{year:{ stat: record, .. }} } }
 
 
 for player_name, player_season_logs in all_player_season_logs_dict.items():
@@ -152,7 +158,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
         #player_name = player_names[player_idx] # player names must be aligned with player game logs
 
         # all_pts_dicts = {'all':{idx:val,..},..}
-        all_pts_dicts = { 'all':{}, 'home':{}, 'away':{} }
+        all_pts_dicts = { 'all':{}, 'home':{}, 'away':{} } # 'opp eg okc':{}, 'day of week eg tue':{}
         all_rebs_dicts = { 'all':{}, 'home':{}, 'away':{} }
         all_asts_dicts = { 'all':{}, 'home':{}, 'away':{} }
         all_winning_scores_dicts = { 'all':{}, 'home':{}, 'away':{} }
@@ -216,6 +222,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                     #print("game excluded")
                     continue
                 
+                # group reg season games together for analysis
                 if player_game_log.loc[game_idx, 'Type'] == 'Regular':
                     #print("Current Game Num: " + str(game_idx))
 
@@ -289,6 +296,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                         
 
                     # matchup against opponent
+                    # only add key for current opp bc we dont need to see all opps here
                     if re.search(opponent,player_game_log.loc[game_idx, 'OPP'].lower()):
 
                         for stat_idx in range(len(all_stats_dicts.values())):
@@ -312,12 +320,14 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                     game_date_obj = datetime.strptime(game_date_string, '%m/%d/%Y')
                     #print("game_date_obj: " + str(game_date_obj))
 
-                    # if current loop is most recent game (idx 0) then today's game is the next game
+                    # if current loop is most recent game (idx 0) then today's game is the next game, if current season
+                    # if last game of prev season then next game after idx 0 (bc from recent to distant) is next season game 1
                     if game_idx == 0: # see how many days after prev game is date of today's projected lines
                         # already defined or passed todays_games_date_obj
                         # todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
                         # print("todays_games_date_obj: " + str(todays_games_date_obj))
-                        if season_year == 2023:
+                        current_year = 2023
+                        if season_year == current_year: # current year
                             next_game_date_obj = todays_games_date_obj # today's game is the next game relative to the previous game
                         else:
                             next_game_date_obj = game_date_obj # should be 0 unless we want to get date of next season game
@@ -366,9 +376,25 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
 
                     
 
-                    next_game_date_obj = game_date_obj # next game bc we loop from most to least recent
+                    
 
 
+                    # add keys for each day of the week so we can see performance by day of week
+                    # only add key for current dow bc we dont need to see all dows here
+                    current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lower()
+                    game_dow = player_game_log.loc[game_idx, 'Date'].lower().split()[0].lower() # 'wed 2/15'[0]='wed'
+                    if current_dow == game_dow:
+                        print("found same game day of week: " + game_dow)
+                        for stat_idx in range(len(all_stats_dicts.values())):
+                            stat_dict = list(all_stats_dicts.values())[stat_idx]
+                            stat = game_stats[stat_idx]
+                            if not game_dow in stat_dict.keys():
+                                stat_dict[game_dow] = {}
+                            stat_dict[game_dow][game_idx] = stat
+                        print("stat_dict: " + str(stat_dict))
+
+
+                    # Career/All Seasons Stats
                     # if we find a game played on the same day/mth previous seasons, add a key for this/today's day/mth
                     today_date_data = todays_games_date.split('/')
                     today_day_mth = today_date_data[0] + '/' + today_date_data[1]
@@ -381,7 +407,10 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                                 stat_dict[game_date_string] = {}
                                 stat_dict[game_date_string][game_idx] = [stat] # we cant use game idx as key bc it gets replaced instead of adding vals
                             else:
-                                stat_dict[game_date_string][game_idx].append(stat)
+                                if game_idx in stat_dict[game_date_string].keys():
+                                    stat_dict[game_date_string][game_idx].append(stat)
+                                else:
+                                    stat_dict[game_date_string][game_idx] = [stat]
                         print("all_seasons_stats_dicts: " + str(all_seasons_stats_dicts))
                     # add key for the current game number for this season and add games played from previous seasons (1 per season)
                     game_num = total_season_games - game_idx # bc going from recent to past
@@ -399,7 +428,14 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                                 else:
                                     stat_dict[num_games_played][game_idx] = [stat]
                         print("all_seasons_stats_dicts: " + str(all_seasons_stats_dicts))
-                        
+
+
+
+
+
+
+                    # after all keys are set, set next game as current game for next loop
+                    next_game_date_obj = game_date_obj # next game bc we loop from most to least recent
 
         else:
             # if getting data from file
@@ -648,18 +684,21 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
 
                 all_prob_stat_tables = [prob_pts_table, prob_rebs_table, prob_asts_table, prob_threes_table, prob_blks_table, prob_stls_table, prob_tos_table]
 
+                # stats counts should include all stats
+                # so we save in dict for reference
                 for stat_idx in range(len(stats_counts)):
                     stat_counts = stats_counts[stat_idx]
                     prob_table = all_prob_stat_tables[stat_idx][0] # only need first element bc previously formatted for table display
                     # if blk, stl, or to look for 2+
                     # for all, check to see if 1+ or not worth predicting bc too risky
                     #stat_line = prob_table[0].split
-                    stat_line = int(prob_table[0].split()[1][:-1])
+                    stat_line = int(prob_table[0].split()[1][:-1]) # [pts 16+, 1/1, 2/2, ..] -> 16
                     #print('stat_line: ' + str(stat_line))
                     if stat_line < 2: # may need to change for 3 pointers if really strong likelihood to get 1
                         continue
                     if determiner.determine_consistent_streak(stat_counts):
                         # { 'player name': { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} } }
+                        # at first there will not be this player name in the dict so we add it
                         if player_name in all_streak_tables.keys():
                             #print(player_name + " in streak tables")
 
@@ -704,6 +743,42 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                         # else:
                         #     player_streak_tables[key] = [prob_table]
 
+
+
+                    # save player stats in dict for reference
+                    # save for all stats, not just streaks
+                    # at first there will not be this player name in the dict so we add it
+                    stat_name = prob_table[0].split()[0].lower() # [pts 16+, 1/1, 2/2, ..] -> pts
+                    streak = prob_table[1:] # [pts 16+, 1/1, 2/2, ..] -> [1/1,2/2,...]
+
+                    if not player_name in all_records_dicts.keys():
+                        all_records_dicts[player_name] = {} # init bc player name key not in dict so if we attempt to set its val it is error
+
+                        player_records_dicts = all_records_dicts[player_name] # {player name: { condition: { year: { stat: [1/1,2/2,...],.. },.. },.. },.. }
+
+                        player_records_dicts[conditions] = {}
+                        player_all_records_dicts = player_records_dicts[conditions]
+                        
+                        player_all_records_dicts[season_year] = { stat_name: streak }
+
+                    else: # player already in list
+
+                        player_records_dicts = all_records_dicts[player_name]
+                        if conditions in player_records_dicts.keys():
+                            #print("conditions " + conditions + " in streak tables")
+                            player_all_records_dicts = player_records_dicts[conditions]
+                            if season_year in player_all_records_dicts.keys():
+                                player_all_records_dicts[season_year][stat_name] = streak
+                            else:
+                                player_all_records_dicts[season_year] = { stat_name: streak }
+
+                            #player_streak_tables[conditions].append(prob_table) # append all stats for given key
+                        else:
+                            #print("conditions " + conditions + " not in streak tables")
+                            player_records_dicts[conditions] = {}
+                            player_all_records_dicts = player_records_dicts[conditions]
+                            player_all_records_dicts[season_year] = { stat_name: streak }
+
                 # given how many of recent games we care about
                 # later we will take subsection of games with certain settings like home/away
                 # first we get all stats and then we can analyze subsections of stats
@@ -736,13 +811,15 @@ print("\n===Consistent Streaks===\n")
 
 injury_prone_players = ['dangelo russell', 'anthony davis', 'joel embiid']
 all_player_pre_dicts = {} # could we use list bc player has multiple props so dont group by name?
+all_valid_streak_dict = {} # cannot use streak name as key bc multiple streaks with different conditions. could combine all streak conditions and into a list under 1 key or keep each 1 separate as unkeyed list. {'streak key':AD 3-a:{'streak condition':all, 'streak outline':1/1,...}, ..}
+all_valid_streaks_list = []
 # p_streak_tables = { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} }
 for p_name, p_streak_tables in all_streak_tables.items():
     print("\n===" + p_name + "===\n")
 
     # should we include in output if they have 9/10 overall record but 3/10 location record? depends on breaks and matchups and history pattern
 
-    player_pre_dict = {}
+    
     
     #all_player_pre_dicts[p_name] = player_pre_dict
     if p_name in injury_prone_players:
@@ -773,14 +850,12 @@ for p_name, p_streak_tables in all_streak_tables.items():
     for condition, streak_dicts in p_streak_tables.items():
         player_lines = projected_lines_dict[p_name]
         #print("player_lines: " + str(player_lines))
-
-        opponent = player_lines['OPP'].lower()
-
-        
-       
         
         #days_before_next_game = 1
-        if str(condition) == 'all' or str(condition) == player_lines['LOC'].lower() or str(condition) == opponent or str(condition) == str(days_after_prev_game) + ' after': # current conditions we are interested in
+        location = player_lines['LOC'].lower()
+        opponent = player_lines['OPP'].lower()
+        time_after = str(days_after_prev_game) + ' after'
+        if str(condition) == 'all' or str(condition) == location or str(condition) == opponent or str(condition) == time_after: # current conditions we are interested in
             print(str(condition).title())
             
             #streak_tables=[[],..]
@@ -793,29 +868,94 @@ for p_name, p_streak_tables in all_streak_tables.items():
                 # determine player prediction
                 print("\n===Determine Player Predictions===\n")
                 predictions = []
+                valid_streaks = []
                 for streak in streak_tables:
                     print("streak: " + str(streak))
+
+                    player_pre_dict = {}
                    
                     # if other criteria met for likely prediction, then add prediction to all predictions
                     # check relevant conditions like home/away, breaks, and previous seasons similar times, and matchups
-                    
+
                     # 1st idx header like [pts 10+,1/1,2/2,..]
                     stat_line = int(streak[0].split()[1][:-1])
                     
                     direction = determiner.determine_streak_direction(streak)
-                    print('direction: ' + str(direction))
+                    #print('direction: ' + str(direction))
                     if direction == '-': 
                         stat_line -= 1
                     if stat_line == 0: # 0 is blank direction
                         direction = ''
-                    print('stat_line: ' + str(stat_line))
-                    stat_name = streak[0].split()[0]
-                    print('stat_name: ' + str(stat_name))
-                    player_prediction = p_name + ' ' + str(stat_line) + direction + ' ' + stat_name # eg d fox 27+p or a davis 2-a
-                    print('player_prediction: ' + str(player_prediction))
-                    all_player_pre_dicts[player_prediction] = {}
+                    #print('stat_line: ' + str(stat_line))
+                    stat_name = streak[0].split()[0] # 1st idx header like [pts 10+,1/1,2/2,..]
+                    #print('stat_name: ' + str(stat_name))
+                    player_prediction = p_name.title() + ' ' + str(stat_line) + direction + ' ' + stat_name # eg d fox 27+p or a davis 2-a
+                    #print('player_prediction: ' + str(player_prediction))
+                    #all_player_pre_dicts[player_prediction] = {}
                     #all_player_pre_dicts[player_prediction] = player_pre_dict
+                    #player_pre_dict['prediction'] = player_prediction
+
                     player_pre_dict['prediction'] = player_prediction
+
+                    player_pre_dict['streak condition'] = condition
+
+                    streak_outline = determiner.determine_streak_outline(streak) # show outline highlights for readability and comparison for elimination (may find that it is oversimplied and change back to full record)
+                    player_pre_dict['streak'] = streak_outline
+                    #print("player_pre_dict: " + str(player_pre_dict))
+
+                    #all_player_pre_dicts[player_prediction] = player_pre_dict
+                    
+
+                    valid_streaks.append(player_pre_dict)
+
+                #print("valid_streaks: " + str(valid_streaks))
+
+                for pre_dict in valid_streaks:
+                    
+
+                    stat_name = pre_dict['prediction'].split()[-1].lower() # d fox 27+ pts
+                    #print('Get overall record for stat_name: ' + stat_name)
+                    #print("all_records_dicts: " + str(all_records_dicts))
+                    overall_record = all_records_dicts[p_name]['all'][year][stat_name] # { 'player name': { 'all': {year: { pts: '1/1,2/2..', stat: record, .. },...}, 'home':{year:{ stat: record, .. },.. }, 'away':{year:{ stat: record, .. }} } }
+                    #print('overall_record: ' + str(overall_record))
+                    overall_record = determiner.determine_record_outline(overall_record)
+                    pre_dict['overall record'] = overall_record
+
+                    location_record = all_records_dicts[p_name][location][year][stat_name]
+                    location_record = determiner.determine_record_outline(location_record)
+                    pre_dict['location record'] = location + ': ' + str(location_record)
+
+                    pre_dict['opponent record'] = ''
+                    if opponent in all_records_dicts[p_name].keys():
+                        opp_record = all_records_dicts[p_name][opponent][year][stat_name]
+                        pre_dict['opponent record'] = opponent + ': ' + str(opp_record)
+
+                    pre_dict['time after record'] = ''
+                    if time_after in all_records_dicts[p_name].keys():
+                        time_after_record = all_records_dicts[p_name][time_after][year][stat_name]
+                        time_after_record = determiner.determine_record_outline(time_after_record)
+                        pre_dict['time after record'] = time_after + ': ' + str(time_after_record)
+
+                    pre_dict['day record'] = ''
+                    if game_dow in all_records_dicts[p_name].keys():
+                        dow_record = all_records_dicts[p_name][game_dow][year][stat_name]
+                        pre_dict['day record'] = game_dow + ': ' + str(dow_record)
+
+                    # add avg and range in prediction
+
+
+
+
+                    
+
+
+
+                    # once we set values in pre_dict (prediction dictionary) we add pre_dict to all player pre dicts
+                    prediction = pre_dict['prediction']
+                    all_player_pre_dicts[prediction] = pre_dict # [d fox 27+ pts,...]
+
+                    all_valid_streaks_list.append(pre_dict)
+                #print("all_player_pre_dicts: " + str(all_player_pre_dicts))
 
             # determine matchup for opponent and stat. we need to see all position matchups to see relative ease
             # display matchup tables with consistent streaks (later look at easiest matchups for all current games, not just consistent streaks bc we may find an exploit)
@@ -832,14 +972,13 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     #print("stat: " + stat)
                     #all_matchup_ratings = { 'all':{}, 'pg':{}, 'sg':{}, 'sf':{}, 'pf':{}, 'c':{} } # { 'pg': { 'values': [source1,source2,..], 'ranks': [source1,source2,..] }, 'sg': {}, ... }
                     #position_matchup_rating = { 'values':[], 'ranks':[] } # comparing results from different sources
+                    # current_matchup_data = { pos: [source results] }
+                    #  sources_results={values:[],ranks:[]}
                     current_matchup_data = determiner.determine_matchup_rating(opponent, stat, all_matchup_data) # first show matchups from easiest to hardest position for stat. 
-
-                    #sources_results={values:[],ranks:[]}
                     
+                    # loop thru position in matchup data by position
                     for pos, sources_results in current_matchup_data.items():
                         print("Position: " + pos.upper())
-
-                        
 
                         matchup_table_header_row = ['Sources'] # [source1, source2, ..]
                         num_sources = len(sources_results['averages']) #len(source_vals)
@@ -861,22 +1000,49 @@ for p_name, p_streak_tables in all_streak_tables.items():
 
                         print(tabulate(matchup_table))
 
+
+                        # add matchups in prediction
+
 print("\n===Game Data===\n")
 # all_player_pre_dicts = [{'prediction':val,'overall record':[],..},{},..]
 # get headers
-header_row = ['Prediction']
-for pre_dict in all_player_pre_dicts.values():
-    for key in pre_dict:
-        header_row.append(key.title())
-    break
-game_data = [header_row]
+# header_row = ['Prediction']
+# for pre_dict in all_player_pre_dicts.values():
+#     for key in pre_dict:
+#         header_row.append(key.title())
+#     break
+# game_data = [header_row]
 
-print("all_player_pre_dicts: " + str(all_player_pre_dicts))
-for prediction, pre_dict in all_player_pre_dicts.items():
-    prediction_row = [prediction]
-    for val in pre_dict.values():
-        prediction_row.append(val)
-    game_data.append(prediction_row)
+# print("all_player_pre_dicts: " + str(all_player_pre_dicts))
+# for prediction, pre_dict in all_player_pre_dicts.items():
+#     prediction_row = [prediction]
+#     for val in pre_dict.values():
+#         prediction_row.append(val)
+#     game_data.append(prediction_row)
+
+# get headers
+header_row = []
+header_string = '' # separate by semicolons and delimit in spreadsheet
+streak1 = all_valid_streaks_list[0]
+for key in streak1.keys():
+    header_row.append(key.title())
+    header_string += key.title() + ";"
+
+game_data = [header_row]
+game_data_strings = []
+for streak in all_valid_streaks_list:
+    streak_row = []
+    streak_string = ''
+    for val in streak.values():
+        streak_row.append(val)
+        streak_string += str(val) + ";"
+    game_data.append(streak_row)
+    game_data_strings.append(streak_string)
 
 
 print(tabulate(game_data))
+
+print("Export")
+print(header_string)
+for game_data in game_data_strings:
+    print(game_data)

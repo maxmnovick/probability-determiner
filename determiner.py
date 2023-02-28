@@ -15,8 +15,8 @@ import pandas as pd # read html results from webpage to determine if player play
 
 # if streak resembles pattern we have seen consistently such as 3/3,3/4,4/5,5/6,6/7,6/9,7/10
 def determine_consistent_streak(stat_counts):
-    #print("\n===Determine Consistent Streak===\n")
-    #print("stat_counts: " + str(stat_counts))
+    print("\n===Determine Consistent Streak===\n")
+    print("stat_counts: " + str(stat_counts))
     consistent = False
 
     # even if it is consistent it does not mean they will hit it next game
@@ -27,7 +27,16 @@ def determine_consistent_streak(stat_counts):
         elif stat_counts[9] <= 3: # arbitrary 7/10
             consistent = True
     elif len(stat_counts) >= 7: # 5 <= x <= 10
-        if stat_counts[6] <= 1: # arbitrary 1/7
+        if stat_counts[6] <= 1 or stat_counts[6] >= 6: # arbitrary 1/7 or 6/7
+            consistent = True
+    elif len(stat_counts) == 4: # x=4
+        if stat_counts[3] == 4 or stat_counts[3] == 0: # arbitrary 4/4 or 0/4. if only 4 samples for the whole season and both are same then check other seasons for extended streak
+            consistent = True
+    elif len(stat_counts) == 3: # x=3
+        if stat_counts[2] == 3 or stat_counts[2] == 0: # arbitrary 3/3. if only 3 samples for the whole season and both are same then check other seasons for extended streak
+            consistent = True
+    elif len(stat_counts) == 2: # x=2
+        if stat_counts[1] == 2 or stat_counts[1] == 0: # arbitrary 2/2. if only 2 samples for the whole season and both are same then check other seasons for extended streak
             consistent = True
 
     if consistent:
@@ -84,7 +93,7 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
     if team_name[:3].isupper():
         team_abbrev = team_name[:3].lower()
 
-        irregular_abbrevs = {'bro':'bkn', 'okl':'okc'} # for these match the first 3 letters of team name instead
+        irregular_abbrevs = {'bro':'bkn', 'okl':'okc', 'nor':'nop', 'pho':'phx', 'was':'wsh', 'uth': 'uta' } # for these match the first 3 letters of team name instead
         if team_abbrev in irregular_abbrevs.keys():
             #print("irregular abbrev: " + team_abbrev)
             team_abbrev = irregular_abbrevs[team_abbrev]
@@ -304,13 +313,53 @@ def determine_regular_season_games(player_game_log):
 def determine_streak_direction(streak):
     direction = '+'
     # 1st idx header like [pts 10+,1/1,2/2,..]
-    out_of_10 = int(streak[10].split('/')[0])
-    out_of_5 = int(streak[5].split('/')[0])
-    out_of_3 = int(streak[3].split('/')[0])
-    out_of_2 = int(streak[2].split('/')[0])
+    out_of_10 = 0
+    out_of_5 = 0
+    out_of_3 = 0
+    out_of_2 = 0
+    if len(streak) > 10:
+        out_of_10 = int(streak[10].split('/')[0])
+    if len(streak) > 5:
+        out_of_5 = int(streak[5].split('/')[0])
+    if len(streak) > 3:
+        out_of_3 = int(streak[3].split('/')[0])
+    if len(streak) > 2:
+        out_of_2 = int(streak[2].split('/')[0])
+
     if out_of_10 >= 7 or out_of_5 >= 4 or out_of_3 >= 3:
         direction = '+'
     elif out_of_10 <= 3 and out_of_2 < 2: # if 3/10 but 2/2 then maybe recent change causing beginning of over streak
         direction = '-'
 
     return direction
+
+# streak has header element
+def determine_streak_outline(streak):
+    #print("\n===Determine Streak Outline===\n")
+    #print(record)
+    outline = []
+
+    outline_idxs = [0,1,2,3,4,5,6,7,8,9,14,19,29,49]
+
+    for game_idx in range(len(streak[1:])):
+        game = streak[game_idx+1] # record has header at idx 0
+        if game_idx in outline_idxs:
+            outline.append(game)
+
+    print('outline: ' + str(outline))
+    return outline
+
+def determine_record_outline(record):
+    print("\n===Determine Record Outline===\n")
+    print(record)
+    outline = []
+
+    outline_idxs = [0,1,2,3,4,5,6,7,8,9,14,19,29,49]
+
+    for game_idx in range(len(record)):
+        game = record[game_idx] # record has header at idx 0
+        if game_idx in outline_idxs:
+            outline.append(game)
+
+    print('outline: ' + str(outline))
+    return outline

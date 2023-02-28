@@ -203,7 +203,7 @@ def read_player_season_logs(player_name, read_all_seasons=True):
 	season_year = 2023
 	player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_espn_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
 	
-	read_all_seasons = True
+	#read_all_seasons = True
 	while determiner.determine_played_season(player_url):
 
 		print("player_url: " + player_url)
@@ -220,12 +220,12 @@ def read_player_season_logs(player_name, read_all_seasons=True):
 
 	return player_game_logs
 
-def read_all_players_season_logs(player_names):
+def read_all_players_season_logs(player_names, read_all_seasons=True):
 
 	all_players_season_logs = {}
 
 	for player_name in player_names:
-		players_season_logs = read_player_season_logs(player_name)
+		players_season_logs = read_player_season_logs(player_name, read_all_seasons)
 		all_players_season_logs[player_name] = players_season_logs
 
 	return all_players_season_logs
