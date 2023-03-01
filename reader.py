@@ -388,7 +388,7 @@ def read_matchup_data(source_url):
 		elif re.search('swish',source_url):
 			print("Pull data from Swish.")
 
-			time.sleep(3) #needs to load
+			time.sleep(2) #needs to load
 
 			pg_btn = driver.find_element('xpath','html/body/div[3]/div[2]/div[2]/div/ul/li[2]/a')
 			print("pg_btn: " + pg_btn.get_attribute('innerHTML'))

@@ -350,7 +350,7 @@ def determine_streak_outline(streak):
     return outline
 
 def determine_record_outline(record):
-    print("\n===Determine Record Outline===\n")
+    #print("\n===Determine Record Outline===\n")
     print(record)
     outline = []
 
@@ -361,5 +361,5 @@ def determine_record_outline(record):
         if game_idx in outline_idxs:
             outline.append(game)
 
-    print('outline: ' + str(outline))
+    #print('outline: ' + str(outline))
     return outline

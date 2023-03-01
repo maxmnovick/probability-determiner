@@ -18,10 +18,10 @@ import pandas as pd # see when was prev game
 # main settings
 read_all_seasons = False
 find_matchups = True
-input_type = '2_27' # date as mth_day
+input_type = '3_1' # date as mth_day
 
 data_type = "Player Lines"
-todays_games_date = '2/27/23'
+todays_games_date = '3/1/23'
 todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
 
 # input: game log
@@ -813,6 +813,10 @@ injury_prone_players = ['dangelo russell', 'anthony davis', 'joel embiid']
 all_player_pre_dicts = {} # could we use list bc player has multiple props so dont group by name?
 all_valid_streak_dict = {} # cannot use streak name as key bc multiple streaks with different conditions. could combine all streak conditions and into a list under 1 key or keep each 1 separate as unkeyed list. {'streak key':AD 3-a:{'streak condition':all, 'streak outline':1/1,...}, ..}
 all_valid_streaks_list = []
+
+all_matchups_dicts = {} # store all matchup data (avg and rank) for each opponent/team
+
+
 # p_streak_tables = { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} }
 for p_name, p_streak_tables in all_streak_tables.items():
     print("\n===" + p_name + "===\n")
@@ -962,14 +966,16 @@ for p_name, p_streak_tables in all_streak_tables.items():
             
             #print("streak_tables: " + str(streak_tables))
             if find_matchups:
+
+                
                 for streak in streak_tables:
 
                     print("\n===Matchups===\n")
 
                     print(streak)
 
-                    stat = streak[0].split(' ')[0]#'pts'
-                    #print("stat: " + stat)
+                    stat = streak[0].split(' ')[0].lower() #'pts'
+                    print("stat: " + stat)
                     #all_matchup_ratings = { 'all':{}, 'pg':{}, 'sg':{}, 'sf':{}, 'pf':{}, 'c':{} } # { 'pg': { 'values': [source1,source2,..], 'ranks': [source1,source2,..] }, 'sg': {}, ... }
                     #position_matchup_rating = { 'values':[], 'ranks':[] } # comparing results from different sources
                     # current_matchup_data = { pos: [source results] }
@@ -977,6 +983,8 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     current_matchup_data = determiner.determine_matchup_rating(opponent, stat, all_matchup_data) # first show matchups from easiest to hardest position for stat. 
                     
                     # loop thru position in matchup data by position
+                    # to get matchup table for a given opponent and position
+                    matchup_dict = {} # {pg:0, sg:0, ..}, for given opponent
                     for pos, sources_results in current_matchup_data.items():
                         print("Position: " + pos.upper())
 
@@ -988,10 +996,15 @@ for p_name, p_streak_tables in all_streak_tables.items():
                             source_header = 'Source ' + str(source_num)
                             matchup_table_header_row.append(source_header)
 
+                        #{pg:0, sg:0, ..}, for given opponent
+                        matchup_dict[pos] = sources_results['ranks'][0] #for example test take idx 0
+
                         matchup_table = [matchup_table_header_row]
                         for result, source_vals in sources_results.items():
                             source_vals.insert(0, result.title())
                             matchup_table.append(source_vals)
+
+                            
 
                         #source_matchup_ratings={ source1: {positions:[], averages:[], ranks:[], avg_ranks:[]}, source2...}
                         avg_source_matchup_ratings = {} # so we can sort by average rank
@@ -999,9 +1012,46 @@ for p_name, p_streak_tables in all_streak_tables.items():
 
 
                         print(tabulate(matchup_table))
+                    print("matchup_dict: " + str(matchup_dict))
 
+                    # ====== once for each streak, after created matchup dict for opponent ======
 
-                        # add matchups in prediction
+                    # add matchup dict to all matchup dicts so we can access matchups by opponent, stat and position
+                    for pos, rank in matchup_dict.items():
+                        # init dicts
+                        if not pos in all_matchups_dicts.keys():
+                            print('position ' + pos + ' not in all matchups so it is first loop')
+                            all_matchups_dicts[pos] = {}
+                        if not stat in all_matchups_dicts[pos].keys():
+                            print('stat ' + stat + ' not in position so it is new stat')
+                            all_matchups_dicts[pos][stat] = {}
+                        # if we do not have rank yet then set it
+                        if not opponent in all_matchups_dicts[pos][stat].keys():
+                            all_matchups_dicts[pos][stat][opponent] = rank
+                        
+                    
+                    
+                    # if key not in dict then add it
+                    #if not opponent in all_matchups_dicts.keys():
+                        #all_matchups_dicts[opponent] = matchup_dict # init bc player name key not in dict so if we attempt to set its val it is error
+
+                        #opponent_matchups_dicts = all_matchups_dicts[opponent] # {team name: { position : rank } }
+
+                    print("all_matchups_dicts: " + str(all_matchups_dicts))
+                    
+                # add matchups in prediction, for position
+                # currently pre_dict from valid streaks but eventually will be narrowed down further into valid preidctions=streaks+matchups+avg+range etc
+                for pre_dict in all_valid_streaks_list: # all_valid_streaks_list.append(pre_dict)
+                    stat = pre_dict['prediction'].split()[-1].lower()
+                    print("stat from prediction: " + stat)
+                    player_name = ' '.join(pre_dict['prediction'].split()[:-2])
+                    print("player_name from prediction: " + player_name)
+                    position = 'pg' # get player position from easiest source such as game log webpage already visited
+                    #pre_dict['matchup'] = ''
+                    if opponent in all_matchups_dicts[position][stat].keys():
+                        matchup_rank = all_matchups_dicts[position][stat][opponent] # stat eg 'pts' is given for the streak
+                        print("matchup_rank: " + str(matchup_rank))
+                        pre_dict['matchup'] = matchup_rank
 
 print("\n===Game Data===\n")
 # all_player_pre_dicts = [{'prediction':val,'overall record':[],..},{},..]
@@ -1040,7 +1090,7 @@ for streak in all_valid_streaks_list:
     game_data_strings.append(streak_string)
 
 
-print(tabulate(game_data))
+#print(tabulate(game_data))
 
 print("Export")
 print(header_string)
