@@ -85,8 +85,11 @@ opponents = isolator.isolate_data_field("opp",projected_lines) # format OKC
 
 
 # get all player season logs
-all_player_season_logs_dict = reader.read_all_players_season_logs(player_names, read_all_seasons)
+player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
 
+all_player_season_logs_dict = reader.read_all_players_season_logs(player_names, read_all_seasons, player_espn_ids_dict)
+
+all_player_positions = reader.read_all_players_positions(player_espn_ids_dict)
 
 # for p_name in player_names:
 
@@ -874,7 +877,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
                 predictions = []
                 valid_streaks = []
                 for streak in streak_tables:
-                    print("streak: " + str(streak))
+                    #print("streak: " + str(streak))
 
                     player_pre_dict = {}
                    
@@ -1044,9 +1047,10 @@ for p_name, p_streak_tables in all_streak_tables.items():
                 for pre_dict in all_valid_streaks_list: # all_valid_streaks_list.append(pre_dict)
                     stat = pre_dict['prediction'].split()[-1].lower()
                     print("stat from prediction: " + stat)
-                    player_name = ' '.join(pre_dict['prediction'].split()[:-2])
+                    player_name = ' '.join(pre_dict['prediction'].split()[:-2]).lower()
                     print("player_name from prediction: " + player_name)
-                    position = 'pg' # get player position from easiest source such as game log webpage already visited
+                    position = all_player_positions[player_name] #'pg' # get player position from easiest source such as game log webpage already visited
+                    print("position from all_player_positions: " + position)
                     #pre_dict['matchup'] = ''
                     if opponent in all_matchups_dicts[position][stat].keys():
                         matchup_rank = all_matchups_dicts[position][stat][opponent] # stat eg 'pts' is given for the streak

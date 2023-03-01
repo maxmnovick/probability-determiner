@@ -97,16 +97,26 @@ def read_player_espn_id(player_name):
 	print("espn_id: " + espn_id)
 	return espn_id
 
+def read_all_player_espn_ids(player_names):
+	espn_ids_dict = {}
+
+	for name in player_names:
+		espn_id = read_player_espn_id(name)
+		espn_ids_dict[name] = espn_id
+
+	return espn_ids_dict
+
 
 # get game log from espn.com
-def read_player_season_log(player_name, season_year=2023, player_url=''):
+def read_player_season_log(player_name, season_year=2023, player_url='', player_id=''):
 	print("\n===Read Player Game Log===\n")
 
 	# get espn player id from google so we can get url
 	if player_url == '':
-		player_espn_id = read_player_espn_id(player_name)
+		if player_id == '':
+			player_id = read_player_espn_id(player_name)
 		season_year = 2023
-		player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_espn_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
+		player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
 		print("player_url: " + player_url)
 
 	player_game_log = []
@@ -195,11 +205,19 @@ def read_player_season_log(player_name, season_year=2023, player_url=''):
 	#print("player_game_log: " + str(player_game_log))
 	return player_game_log_df # can return this df directly or first arrange into list but seems simpler and more intuitive to keep df so we can access elements by keyword
 
-def read_player_season_logs(player_name, read_all_seasons=True):
+def read_player_season_logs(player_name, read_all_seasons=True, player_espn_ids={}):
 
 	player_game_logs = []
 
-	player_espn_id = read_player_espn_id(player_name)
+	player_espn_id = ''
+	if len(player_espn_ids.keys()) == 0:
+		player_espn_id = read_player_espn_id(player_name)
+	else:
+		player_espn_id = player_espn_ids[player_name]
+
+	if player_espn_id == '':
+		print('Warning: player_espn_id blank while trying to get player url! ')
+		
 	season_year = 2023
 	player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_espn_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
 	
@@ -220,15 +238,77 @@ def read_player_season_logs(player_name, read_all_seasons=True):
 
 	return player_game_logs
 
-def read_all_players_season_logs(player_names, read_all_seasons=True):
+def read_all_players_season_logs(player_names, read_all_seasons=True, player_espn_ids={}):
 
 	all_players_season_logs = {}
 
 	for player_name in player_names:
-		players_season_logs = read_player_season_logs(player_name, read_all_seasons)
+		players_season_logs = read_player_season_logs(player_name, read_all_seasons, player_espn_ids)
 		all_players_season_logs[player_name] = players_season_logs
 
 	return all_players_season_logs
+
+
+
+
+# get player position from espn game log page bc we already have urls for each player
+def read_player_position(player_name, player_id, season_year=2023):
+	print("\n===Read Player Position===\n")
+	position = ''
+
+	try:
+		
+		site = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_id + '/type/nba/year/' + str(season_year)
+
+		req = Request(site, headers={
+			'User-Agent': 'Mozilla/5.0',
+		})
+
+		page = urlopen(req) # open webpage given request
+
+		soup = BeautifulSoup(page, features="lxml")
+
+		# find last element of ul with class PlayerHeader__Team_Info
+		position = str(list(soup.find("ul", {"class": "PlayerHeader__Team_Info"}).descendants)[-1])
+		#print("position_elementn:\n" + str(position_element))
+
+		if len(position) > 2: # use abbrev
+			pos_abbrev = ''
+			words = position.split()
+			for word in words:
+				pos_abbrev += word[0].lower()
+			position = pos_abbrev
+
+		# links_with_text = [] # id is in first link with text
+
+		# for a in soup.find_all('a', href=True):
+		# 	if a.text and a['href'].startswith('/url?'):
+		# 		links_with_text.append(a['href'])
+
+		# links_with_id_text = [x for x in links_with_text if 'id/' in x]
+
+		# espn_id_link = links_with_id_text[0] # string starting with player id
+
+		# position = re.findall(r'\d+', espn_id_link)[0]
+
+		print('Success', position, player_name)
+
+	except Exception as e:
+		print('Error', position, player_name)
+
+	print("position: " + position)
+	return position
+
+def read_all_players_positions(player_espn_ids_dict):
+	print("\n===Read All Players Positions===\n")
+	players_positions = {}
+
+	for name, id in player_espn_ids_dict.items():
+		pos = read_player_position(name, id)
+		players_positions[name] = pos
+
+	print("players_positions: " + str(players_positions))
+	return players_positions
 
 
 # show matchup data against each position so we can see which position has easiest matchup
