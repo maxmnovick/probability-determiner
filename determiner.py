@@ -13,6 +13,8 @@ import httplib2
 
 import pandas as pd # read html results from webpage to determine if player played season
 
+import numpy # mean, median
+
 # if streak resembles pattern we have seen consistently such as 3/3,3/4,4/5,5/6,6/7,6/9,7/10
 def determine_consistent_streak(stat_counts):
     print("\n===Determine Consistent Streak===\n")
@@ -25,6 +27,11 @@ def determine_consistent_streak(stat_counts):
         if stat_counts[9] >= 7: # arbitrary 7/10
             consistent = True
         elif stat_counts[9] <= 3: # arbitrary 7/10
+            consistent = True
+
+        if stat_counts[2] == 3: # arbitrary 3/3
+            consistent = True
+        elif stat_counts[2] == 0: # arbitrary 0/3
             consistent = True
     elif len(stat_counts) >= 7: # 5 <= x <= 10
         if stat_counts[6] <= 1 or stat_counts[6] >= 6: # arbitrary 1/7 or 6/7
@@ -330,6 +337,8 @@ def determine_streak_direction(streak):
         direction = '+'
     elif out_of_10 <= 3 and out_of_2 < 2: # if 3/10 but 2/2 then maybe recent change causing beginning of over streak
         direction = '-'
+    elif out_of_3 == 0:
+        direction = '-'
 
     return direction
 
@@ -346,12 +355,12 @@ def determine_streak_outline(streak):
         if game_idx in outline_idxs:
             outline.append(game)
 
-    print('outline: ' + str(outline))
+    #print('outline: ' + str(outline))
     return outline
 
 def determine_record_outline(record):
     #print("\n===Determine Record Outline===\n")
-    print(record)
+    #print(record)
     outline = []
 
     outline_idxs = [0,1,2,3,4,5,6,7,8,9,14,19,29,49]
@@ -363,3 +372,30 @@ def determine_record_outline(record):
 
     #print('outline: ' + str(outline))
     return outline
+
+# mean, corrected mean, combined mean
+# matchup_dict = { pg: { s1: 0, s2: 0, .. }, sg: { s1: 0 }, .. }
+def determine_rank_avgs(pos, matchup_dict):
+
+    # combined mean is enough to cancel error when determining which position player is
+    rank_avgs = {'mean':0, 'combined mean':0} # add corrected mean which checks to see which position the sources agree with most
+
+
+    pos_matchup_ranks = [matchup_dict[pos]['s1'],matchup_dict[pos]['s2'],matchup_dict[pos]['s3']]
+
+    rank_avgs['mean'] = round(numpy.mean(pos_matchup_ranks))
+
+    alt_pos = 'c' # if listed pos=pg then combine with guard bc sometimes play both
+    if pos == 'pg':
+        alt_pos = 'sg'
+    elif pos == 'sg':
+        alt_pos = 'pg'
+    elif pos == 'sf':
+        alt_pos = 'pf'
+    elif pos == 'pf':
+        alt_pos = 'sf'
+    alt_pos_matchup_ranks = [matchup_dict[alt_pos]['s1'],matchup_dict[alt_pos]['s2'],matchup_dict[alt_pos]['s3']]
+    rank_avgs['combined mean'] = round(numpy.mean(pos_matchup_ranks+alt_pos_matchup_ranks))
+
+
+    return rank_avgs

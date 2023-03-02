@@ -253,7 +253,7 @@ def read_all_players_season_logs(player_names, read_all_seasons=True, player_esp
 
 # get player position from espn game log page bc we already have urls for each player
 def read_player_position(player_name, player_id, season_year=2023):
-	print("\n===Read Player Position===\n")
+	print("\n===Read Player Position: " + player_name + "===\n")
 	position = ''
 
 	try:
@@ -277,6 +277,11 @@ def read_player_position(player_name, player_id, season_year=2023):
 			words = position.split()
 			for word in words:
 				pos_abbrev += word[0].lower()
+
+			if pos_abbrev == 'f': # some just say forward so make it small forward but actually better to use height to determine bc if over 6'6 then pf maybe?
+				pos_abbrev = 'sf'
+			elif pos_abbrev == 'g':
+				pos_abbrev = 'sg'
 			position = pos_abbrev
 
 		# links_with_text = [] # id is in first link with text
@@ -300,14 +305,14 @@ def read_player_position(player_name, player_id, season_year=2023):
 	return position
 
 def read_all_players_positions(player_espn_ids_dict):
-	print("\n===Read All Players Positions===\n")
+	#print("\n===Read All Players Positions===\n")
 	players_positions = {}
 
 	for name, id in player_espn_ids_dict.items():
 		pos = read_player_position(name, id)
 		players_positions[name] = pos
 
-	print("players_positions: " + str(players_positions))
+	#print("players_positions: " + str(players_positions))
 	return players_positions
 
 

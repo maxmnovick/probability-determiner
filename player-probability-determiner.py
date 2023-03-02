@@ -17,12 +17,13 @@ import pandas as pd # see when was prev game
 
 # main settings
 read_all_seasons = False
-find_matchups = True
-input_type = '3_1' # date as mth_day
+find_matchups = False
+input_type = '3_2' # date as mth_day
 
 data_type = "Player Lines"
-todays_games_date = '3/1/23'
+todays_games_date = '3/2/23'
 todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
+current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lower()
 
 # input: game log
 # player name
@@ -89,7 +90,9 @@ player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
 
 all_player_season_logs_dict = reader.read_all_players_season_logs(player_names, read_all_seasons, player_espn_ids_dict)
 
-all_player_positions = reader.read_all_players_positions(player_espn_ids_dict)
+all_player_positions = {}
+if find_matchups == True:
+    all_player_positions = reader.read_all_players_positions(player_espn_ids_dict)
 
 # for p_name in player_names:
 
@@ -113,6 +116,11 @@ all_streak_tables = { } # { 'player name': { 'all': {year:[streaks],...}, 'home'
 # need to store all records in dict so we can refer to it by player, condition, year, and stat
 all_records_dicts = { } # { 'player name': { 'all': {year: { pts: '1/1,2/2..', stat: record, .. },...}, 'home':{year:{ stat: record, .. },.. }, 'away':{year:{ stat: record, .. }} } }
 
+all_means_dicts = {}
+all_medians_dicts = {}
+all_modes_dicts = {}
+all_mins_dicts = {}
+all_maxes_dicts = {}
 
 for player_name, player_season_logs in all_player_season_logs_dict.items():
 #for player_idx in range(len(all_player_game_logs)):
@@ -301,7 +309,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                     # matchup against opponent
                     # only add key for current opp bc we dont need to see all opps here
                     if re.search(opponent,player_game_log.loc[game_idx, 'OPP'].lower()):
-
+                        # look for irregular abbrevs like NO and NY
                         for stat_idx in range(len(all_stats_dicts.values())):
                             stat_dict = list(all_stats_dicts.values())[stat_idx]
                             stat = game_stats[stat_idx]
@@ -384,7 +392,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
 
                     # add keys for each day of the week so we can see performance by day of week
                     # only add key for current dow bc we dont need to see all dows here
-                    current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lower()
+                    
                     game_dow = player_game_log.loc[game_idx, 'Date'].lower().split()[0].lower() # 'wed 2/15'[0]='wed'
                     if current_dow == game_dow:
                         print("found same game day of week: " + game_dow)
@@ -498,6 +506,46 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                     stat_mins.append(stat_min)
                     stat_maxes.append(stat_max)
 
+
+
+                    # save player stats in dict for reference
+                    # save for all stats, not just streaks
+                    # at first there will not be this player name in the dict so we add it
+                    stat_name = stat_key
+                    if stat_name == '3p':
+                        stat_name = '3pm'
+
+                    if not player_name in all_means_dicts.keys():
+                        all_means_dicts[player_name] = {} # init bc player name key not in dict so if we attempt to set its val it is error
+
+                        player_means_dicts = all_means_dicts[player_name] # {player name: { condition: { year: { stat: [1/1,2/2,...],.. },.. },.. },.. }
+
+                        player_means_dicts[conditions] = {}
+                        player_all_means_dicts = player_means_dicts[conditions]
+                        
+                        player_all_means_dicts[season_year] = { stat_name: stat_mean }
+
+                    else: # player already in list
+
+                        player_means_dicts = all_means_dicts[player_name]
+                        if conditions in player_means_dicts.keys():
+                            #print("conditions " + conditions + " in streak tables")
+                            player_all_means_dicts = player_means_dicts[conditions]
+                            if season_year in player_all_means_dicts.keys():
+                                player_all_means_dicts[season_year][stat_name] = stat_mean
+                            else:
+                                player_all_means_dicts[season_year] = { stat_name: stat_mean }
+
+                            #player_streak_tables[conditions].append(prob_table) # append all stats for given key
+                        else:
+                            #print("conditions " + conditions + " not in streak tables")
+                            player_means_dicts[conditions] = {}
+                            player_all_means_dicts = player_means_dicts[conditions]
+                            player_all_means_dicts[season_year] = { stat_name: stat_mean }
+
+
+
+
                 output_table = [header_row, stat_means, stat_medians, stat_modes, stat_mins, stat_maxes]
 
                 output_title = str(conditions).title() + ", " + str(season_year)
@@ -509,6 +557,9 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                 print("\n===" + player_name + " Average and Range===\n")
                 print(output_title)
                 print(tabulate(output_table))
+
+
+
 
 
 
@@ -586,7 +637,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                 over_rebs_line = 'REB ' + str(player_projected_lines['REB']) + "+"
                 over_asts_line = 'AST ' + str(player_projected_lines['AST']) + "+"
                 
-                over_threes_line = '3P ' + str(player_projected_lines['3PT']) + "+"
+                over_threes_line = '3PM ' + str(player_projected_lines['3PT']) + "+"
                 over_blks_line = 'BLK ' + str(player_projected_lines['BLK']) + "+"
                 over_stls_line = 'STL ' + str(player_projected_lines['STL']) + "+"
                 over_tos_line = 'TO ' + str(player_projected_lines['TO']) + "+"
@@ -822,7 +873,7 @@ all_matchups_dicts = {} # store all matchup data (avg and rank) for each opponen
 
 # p_streak_tables = { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} }
 for p_name, p_streak_tables in all_streak_tables.items():
-    print("\n===" + p_name + "===\n")
+    print("\n===" + p_name.title() + "===\n")
 
     # should we include in output if they have 9/10 overall record but 3/10 location record? depends on breaks and matchups and history pattern
 
@@ -851,7 +902,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
     # prev_game_date_string = player_game_log.loc[prev_game_idx, 'Date'].split()[1] + "/" + season_year # eg 'wed 2/15' to '2/15/23'
     # prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%y')
     days_after_prev_game = (todays_games_date_obj - prev_game_date_obj).days
-    print("days_after_prev_game: " + str(days_after_prev_game))
+    #print("days_after_prev_game: " + str(days_after_prev_game))
 
     # p_streak_tables = { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} }
     for condition, streak_dicts in p_streak_tables.items():
@@ -862,8 +913,8 @@ for p_name, p_streak_tables in all_streak_tables.items():
         location = player_lines['LOC'].lower()
         opponent = player_lines['OPP'].lower()
         time_after = str(days_after_prev_game) + ' after'
-        if str(condition) == 'all' or str(condition) == location or str(condition) == opponent or str(condition) == time_after: # current conditions we are interested in
-            print(str(condition).title())
+        if str(condition) == 'all' or str(condition) == location or str(condition) == opponent or str(condition) == time_after or str(condition) == current_dow: # current conditions we are interested in
+            print('\n===' + str(condition).title() + '===\n')
             
             #streak_tables=[[],..]
             for year, streak_tables in streak_dicts.items():
@@ -928,11 +979,38 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     overall_record = determiner.determine_record_outline(overall_record)
                     pre_dict['overall record'] = overall_record
 
+                    # add avg and range in prediction, for current condition, all
+                    pre_dict['overall mean'] = ''
+                    pre_dict['overall median'] = ''
+                    pre_dict['overall mode'] = ''
+                    pre_dict['overall min'] = ''
+                    pre_dict['overall max'] = ''
+
+                    if p_name in all_means_dicts.keys():
+                        print("all_means_dicts: " + str(all_means_dicts))
+                        overall_mean = all_means_dicts[p_name]['all'][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+                        pre_dict['overall mean'] = overall_mean
+                    if p_name in all_medians_dicts.keys():
+                        overall_median = all_medians_dicts[p_name]['all'][year][stat_name]
+                        pre_dict['overall median'] = overall_median
+                    if p_name in all_modes_dicts.keys():
+                        overall_mode = all_modes_dicts[p_name]['all'][year][stat_name]
+                        pre_dict['overall mode'] = overall_mode
+                    if p_name in all_mins_dicts.keys():
+                        overall_min = all_mins_dicts[p_name]['all'][year][stat_name]
+                        pre_dict['overall min'] = overall_min
+                    if p_name in all_maxes_dicts.keys():
+                        overall_max = all_maxes_dicts[p_name]['all'][year][stat_name]
+                        pre_dict['overall max'] = overall_max
+
+
                     location_record = all_records_dicts[p_name][location][year][stat_name]
                     location_record = determiner.determine_record_outline(location_record)
                     pre_dict['location record'] = location + ': ' + str(location_record)
 
                     pre_dict['opponent record'] = ''
+                    print('Add opponent ' + opponent + ' record. ')
+                    print("all_records_dicts: " + str(all_records_dicts))
                     if opponent in all_records_dicts[p_name].keys():
                         opp_record = all_records_dicts[p_name][opponent][year][stat_name]
                         pre_dict['opponent record'] = opponent + ': ' + str(opp_record)
@@ -944,11 +1022,17 @@ for p_name, p_streak_tables in all_streak_tables.items():
                         pre_dict['time after record'] = time_after + ': ' + str(time_after_record)
 
                     pre_dict['day record'] = ''
-                    if game_dow in all_records_dicts[p_name].keys():
-                        dow_record = all_records_dicts[p_name][game_dow][year][stat_name]
-                        pre_dict['day record'] = game_dow + ': ' + str(dow_record)
+                    if current_dow in all_records_dicts[p_name].keys():
+                        #print("current_dow " + current_dow + " in all records dicts")
+                        dow_record = all_records_dicts[p_name][current_dow][year][stat_name]
+                        pre_dict['day record'] = current_dow + ': ' + str(dow_record)
+                    else:
+                        print("current_dow " + current_dow + " NOT in all records dicts")
+                    #print("pre_dict: " + str(pre_dict))
 
-                    # add avg and range in prediction
+
+
+                    
 
 
 
@@ -964,98 +1048,198 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     all_valid_streaks_list.append(pre_dict)
                 #print("all_player_pre_dicts: " + str(all_player_pre_dicts))
 
-            # determine matchup for opponent and stat. we need to see all position matchups to see relative ease
-            # display matchup tables with consistent streaks (later look at easiest matchups for all current games, not just consistent streaks bc we may find an exploit)
-            
-            #print("streak_tables: " + str(streak_tables))
-            if find_matchups:
-
+                # determine matchup for opponent and stat. we need to see all position matchups to see relative ease
+                # display matchup tables with consistent streaks (later look at easiest matchups for all current games, not just consistent streaks bc we may find an exploit)
                 
-                for streak in streak_tables:
+                #print("streak_tables: " + str(streak_tables))
+                if find_matchups:
 
-                    print("\n===Matchups===\n")
+                    print("\n===Find Matchups for Streaks===\n")
 
-                    print(streak)
-
-                    stat = streak[0].split(' ')[0].lower() #'pts'
-                    print("stat: " + stat)
-                    #all_matchup_ratings = { 'all':{}, 'pg':{}, 'sg':{}, 'sf':{}, 'pf':{}, 'c':{} } # { 'pg': { 'values': [source1,source2,..], 'ranks': [source1,source2,..] }, 'sg': {}, ... }
-                    #position_matchup_rating = { 'values':[], 'ranks':[] } # comparing results from different sources
-                    # current_matchup_data = { pos: [source results] }
-                    #  sources_results={values:[],ranks:[]}
-                    current_matchup_data = determiner.determine_matchup_rating(opponent, stat, all_matchup_data) # first show matchups from easiest to hardest position for stat. 
                     
-                    # loop thru position in matchup data by position
-                    # to get matchup table for a given opponent and position
-                    matchup_dict = {} # {pg:0, sg:0, ..}, for given opponent
-                    for pos, sources_results in current_matchup_data.items():
-                        print("Position: " + pos.upper())
+                    for streak in streak_tables:
 
-                        matchup_table_header_row = ['Sources'] # [source1, source2, ..]
-                        num_sources = len(sources_results['averages']) #len(source_vals)
+                        print("\nstreak:" + str(streak))
 
-                        for source_idx in range(num_sources):
-                            source_num = source_idx + 1
-                            source_header = 'Source ' + str(source_num)
-                            matchup_table_header_row.append(source_header)
-
-                        #{pg:0, sg:0, ..}, for given opponent
-                        matchup_dict[pos] = sources_results['ranks'][0] #for example test take idx 0
-
-                        matchup_table = [matchup_table_header_row]
-                        for result, source_vals in sources_results.items():
-                            source_vals.insert(0, result.title())
-                            matchup_table.append(source_vals)
-
-                            
-
-                        #source_matchup_ratings={ source1: {positions:[], averages:[], ranks:[], avg_ranks:[]}, source2...}
-                        avg_source_matchup_ratings = {} # so we can sort by average rank
-                        source_matchup_ratings = {}
-
-
-                        print(tabulate(matchup_table))
-                    print("matchup_dict: " + str(matchup_dict))
-
-                    # ====== once for each streak, after created matchup dict for opponent ======
-
-                    # add matchup dict to all matchup dicts so we can access matchups by opponent, stat and position
-                    for pos, rank in matchup_dict.items():
-                        # init dicts
-                        if not pos in all_matchups_dicts.keys():
-                            print('position ' + pos + ' not in all matchups so it is first loop')
-                            all_matchups_dicts[pos] = {}
-                        if not stat in all_matchups_dicts[pos].keys():
-                            print('stat ' + stat + ' not in position so it is new stat')
-                            all_matchups_dicts[pos][stat] = {}
-                        # if we do not have rank yet then set it
-                        if not opponent in all_matchups_dicts[pos][stat].keys():
-                            all_matchups_dicts[pos][stat][opponent] = rank
+                        stat = streak[0].split(' ')[0].lower() #'pts'
+                        print("stat: " + stat)
+                        #all_matchup_ratings = { 'all':{}, 'pg':{}, 'sg':{}, 'sf':{}, 'pf':{}, 'c':{} } # { 'pg': { 'values': [source1,source2,..], 'ranks': [source1,source2,..] }, 'sg': {}, ... }
+                        #position_matchup_rating = { 'values':[], 'ranks':[] } # comparing results from different sources
+                        # current_matchup_data = { pos: [source results] }
+                        #  sources_results={values:[],ranks:[]}
+                        current_matchup_data = determiner.determine_matchup_rating(opponent, stat, all_matchup_data) # first show matchups from easiest to hardest position for stat. 
                         
-                    
-                    
-                    # if key not in dict then add it
-                    #if not opponent in all_matchups_dicts.keys():
-                        #all_matchups_dicts[opponent] = matchup_dict # init bc player name key not in dict so if we attempt to set its val it is error
+                        # loop thru position in matchup data by position
+                        # to get matchup table for a given opponent and position
+                        matchup_dict = {} # {pg:0, sg:0, ..}, for given opponent
+                        for pos, sources_results in current_matchup_data.items():
+                            print("Position: " + pos.upper())
 
-                        #opponent_matchups_dicts = all_matchups_dicts[opponent] # {team name: { position : rank } }
+                            matchup_table_header_row = ['Sources'] # [source1, source2, ..]
+                            num_sources = len(sources_results['averages']) #len(source_vals)
 
-                    print("all_matchups_dicts: " + str(all_matchups_dicts))
-                    
-                # add matchups in prediction, for position
-                # currently pre_dict from valid streaks but eventually will be narrowed down further into valid preidctions=streaks+matchups+avg+range etc
-                for pre_dict in all_valid_streaks_list: # all_valid_streaks_list.append(pre_dict)
-                    stat = pre_dict['prediction'].split()[-1].lower()
-                    print("stat from prediction: " + stat)
-                    player_name = ' '.join(pre_dict['prediction'].split()[:-2]).lower()
-                    print("player_name from prediction: " + player_name)
-                    position = all_player_positions[player_name] #'pg' # get player position from easiest source such as game log webpage already visited
-                    print("position from all_player_positions: " + position)
-                    #pre_dict['matchup'] = ''
-                    if opponent in all_matchups_dicts[position][stat].keys():
-                        matchup_rank = all_matchups_dicts[position][stat][opponent] # stat eg 'pts' is given for the streak
-                        print("matchup_rank: " + str(matchup_rank))
-                        pre_dict['matchup'] = matchup_rank
+                            for source_idx in range(num_sources):
+                                source_num = source_idx + 1
+                                source_header = 'Source ' + str(source_num)
+                                matchup_table_header_row.append(source_header)
+
+                            #{pg:0, sg:0, ..}, for given opponent
+                            s1_matchup_rank = sources_results['ranks'][0] #for example test take idx 0
+                            s2_matchup_rank = sources_results['ranks'][1]
+                            s3_matchup_rank = sources_results['ranks'][2]
+                            
+                            # matchup_dict = { pg: { s1: 0 }, sg: { s1: 0 }, .. }
+                            matchup_dict[pos] = { 's1': s1_matchup_rank, 's2': s2_matchup_rank, 's3': s3_matchup_rank }
+
+                            matchup_table = [matchup_table_header_row]
+                            for result, source_vals in sources_results.items():
+                                source_vals.insert(0, result.title())
+                                matchup_table.append(source_vals)
+
+                                
+
+                            #source_matchup_ratings={ source1: {positions:[], averages:[], ranks:[], avg_ranks:[]}, source2...}
+                            avg_source_matchup_ratings = {} # so we can sort by average rank
+                            source_matchup_ratings = {}
+
+
+                            print(tabulate(matchup_table))
+                        
+
+                        # ====== once for each streak, after created matchup dict for opponent ======
+
+                        # add matchup dict to all matchup dicts so we can access matchups by opponent, stat and position
+                        # we could just populate all matchups dict from all matchups data at the beginning instead of this loop for each streak
+                        print("matchup_dict: " + str(matchup_dict))
+                        # matchup_dict = { pg: { s1: 0, s2: 0, .. }, sg: { s1: 0 }, .. }
+                        for pos, rank_dict in matchup_dict.items():
+                            s1_matchup_rank = rank_dict['s1']
+                            s2_matchup_rank = rank_dict['s2']
+                            s3_matchup_rank = rank_dict['s3']
+                            # init dicts
+                            print("all_matchups_dicts: " + str(all_matchups_dicts))
+
+                            rank_avgs = determiner.determine_rank_avgs(pos, matchup_dict)
+                            matchup_rank_mean = rank_avgs['mean']
+                            matchup_rank_combined_mean = rank_avgs['combined mean']
+
+                            if not pos in all_matchups_dicts.keys():
+
+                                
+
+                                #print('position ' + pos + ' not in all matchups so it is first loop')
+                                all_matchups_dicts[pos] = {}
+                                #print("all_matchups_dicts: " + str(all_matchups_dicts))
+                                all_matchups_dicts[pos][stat] = {}
+                                #print("all_matchups_dicts: " + str(all_matchups_dicts))
+                                all_matchups_dicts[pos][stat][opponent] = { 's1': s1_matchup_rank, 's2': s2_matchup_rank, 's3': s3_matchup_rank, 'mean': matchup_rank_mean, 'combined mean': matchup_rank_combined_mean }
+                                print("all_matchups_dicts: " + str(all_matchups_dicts))
+                            else: # pos in matchups dict so check for stat in pos
+                                print('position ' + pos + ' in matchups dict')
+
+                                
+
+                                # all_matchups_dicts = { 'pg': {} }
+                                if not stat in all_matchups_dicts[pos].keys():
+                                    print('stat ' + stat + ' not in position so it is new stat')
+
+                                    # rank_avgs = determiner.determine_rank_avgs(pos, matchup_dict)
+                                    # matchup_rank_mean = rank_avgs['mean']
+                                    # matchup_rank_combined_mean = rank_avgs['combined mean']
+
+                                    all_matchups_dicts[pos][stat] = {}
+                                    all_matchups_dicts[pos][stat][opponent] = { 's1': s1_matchup_rank, 's2': s2_matchup_rank, 's3': s3_matchup_rank, 'mean': matchup_rank_mean, 'combined mean': matchup_rank_combined_mean }
+                                    print("all_matchups_dicts: " + str(all_matchups_dicts))
+                                else: # stat is in pos matchups so check if opp in stats
+                                    print('stat ' + stat + ' in position matchups dict')
+                                    if not opponent in all_matchups_dicts[pos][stat].keys():
+                                        print('opponent ' + opponent + ' not in stat so it is new opponent')
+
+                                        # rank_avgs = determiner.determine_rank_avgs(pos, matchup_dict)
+                                        # matchup_rank_mean = rank_avgs['mean']
+                                        # matchup_rank_combined_mean = rank_avgs['combined mean']
+
+                                        all_matchups_dicts[pos][stat][opponent] = { 's1': s1_matchup_rank, 's2': s2_matchup_rank, 's3': s3_matchup_rank, 'mean': matchup_rank_mean, 'combined mean': matchup_rank_combined_mean }
+                                        print("all_matchups_dicts: " + str(all_matchups_dicts))
+                                    else:
+                                        print('opponent rating added already so continue to next streak')
+                                        break
+
+                            # if we do not have rank yet then set it
+                            # if not opponent in all_matchups_dicts[pos][stat].keys():
+                            #     all_matchups_dicts[pos][stat][opponent] = rank
+                            
+                        
+                        
+                        # if key not in dict then add it
+                        #if not opponent in all_matchups_dicts.keys():
+                            #all_matchups_dicts[opponent] = matchup_dict # init bc player name key not in dict so if we attempt to set its val it is error
+
+                            #opponent_matchups_dicts = all_matchups_dicts[opponent] # {team name: { position : rank } }
+
+                        print("all_matchups_dicts: " + str(all_matchups_dicts))
+
+
+if find_matchups:    
+    # add matchups in prediction, for position
+    # currently pre_dict from valid streaks but eventually will be narrowed down further into valid preidctions=streaks+matchups+avg+range etc
+    print('\n===Add Matchups to Predictions===\n')
+    print('We went through all streaks to get matchups so add matchups to predictions. ') # should we do this for each player or even each condition or can we do this 1 big loop after we populate all matchups dict?
+    print("all_matchups_dicts: " + str(all_matchups_dicts))
+
+    for pre_dict in all_valid_streaks_list: # all_valid_streaks_list.append(pre_dict)
+        prediction = pre_dict['prediction']
+        print('prediction: ' + prediction)
+        stat = prediction.split()[-1].lower()
+        print("stat from prediction: " + stat)
+        player_name = ' '.join(pre_dict['prediction'].split()[:-2]).lower()
+        print("player_name from prediction: " + player_name)
+
+        player_lines = projected_lines_dict[player_name]
+        opponent = player_lines['OPP'].lower()
+
+        position = all_player_positions[player_name] #'pg' # get player position from easiest source such as game log webpage already visited
+        print("position from all_player_positions: " + position)
+        pre_dict['s1 matchup'] = ''
+        pre_dict['s2 matchup'] = ''
+        pre_dict['s3 matchup'] = ''
+        pre_dict['matchup mean'] = ''
+        pre_dict['matchup combined mean'] = ''
+
+        # pre_dict['matchup relative rank'] = '' # x/5, 5 positions
+        # pre_dict['matchup combined relative rank'] = '' # x/3, guard, forward, center bc often combined
+        # pre_dict['matchup overall mean'] = ''
+
+        if opponent in all_matchups_dicts[position][stat].keys():
+            s1_matchup_rank = all_matchups_dicts[position][stat][opponent]['s1'] # stat eg 'pts' is given for the streak
+            print("s1_matchup_rank: " + str(s1_matchup_rank))
+            s2_matchup_rank = all_matchups_dicts[position][stat][opponent]['s2'] # stat eg 'pts' is given for the streak
+            s3_matchup_rank = all_matchups_dicts[position][stat][opponent]['s3'] # stat eg 'pts' is given for the streak
+            pre_dict['s1 matchup'] = s1_matchup_rank
+            pre_dict['s2 matchup'] = s2_matchup_rank
+            pre_dict['s3 matchup'] = s3_matchup_rank
+
+            matchup_rank_mean = all_matchups_dicts[position][stat][opponent]['mean'] # stat eg 'pts' is given for the streak
+            matchup_rank_combined_mean = all_matchups_dicts[position][stat][opponent]['combined mean'] # stat eg 'pts' is given for the streak
+            pre_dict['matchup mean'] = matchup_rank_mean
+            pre_dict['matchup combined mean'] = matchup_rank_combined_mean
+
+            # Determine Relative Rank
+            # opp_matchup_dict = {} # {pos:{stat:rank,..},..}
+            # print('all_matchups_dicts: ' + str(all_matchups_dicts))
+            # for pos, pos_matchup_dict in all_matchups_dicts.items():
+            #     if pos not in opp_matchup_dict.keys():
+            #         opp_matchup_dict[pos] = {}
+            #     opp_matchup_dict[pos][stat] = pos_matchup_dict[stat][opponent]
+            # print('opp_matchup_dict: ' + str(opp_matchup_dict))
+
+            # matchup_relative_rank = 1 # 1-5 bc 5 positions, from hardest to easiest bc defense
+            # pre_dict['matchup relative rank'] = matchup_relative_rank 
+        else:
+            print("Warning: opponent " + opponent + " not found in all matchups dict! ")
+        
+        print('pre_dict: ' + str(pre_dict))
+
 
 print("\n===Game Data===\n")
 # all_player_pre_dicts = [{'prediction':val,'overall record':[],..},{},..]
