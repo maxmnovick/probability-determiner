@@ -15,13 +15,20 @@ from datetime import timedelta
 
 import pandas as pd # see when was prev game
 
+
+import writer # display game data
+
 # main settings
 read_all_seasons = False
 find_matchups = False
-input_type = '3_2' # date as mth_day
+input_type = '3/3' # date as mth/day will become mth_day in file
+
+todays_games_date = input_type + '/23'
+
+
 
 data_type = "Player Lines"
-todays_games_date = '3/2/23'
+
 todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
 current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lower()
 
@@ -308,8 +315,20 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
 
                     # matchup against opponent
                     # only add key for current opp bc we dont need to see all opps here
-                    if re.search(opponent,player_game_log.loc[game_idx, 'OPP'].lower()):
-                        # look for irregular abbrevs like NO and NY
+                    # look for irregular abbrevs like NO and NY
+                    # opponent in form 'gsw' but game log in form 'gs'
+                    game_log_team_abbrev = re.sub('vs|@','',player_game_log.loc[game_idx, 'OPP'].lower()) # eg 'gs'
+                    print('game_log_team_abbrev: ' + game_log_team_abbrev)
+                    opp_abbrev = opponent # default if regular
+                    print('opp_abbrev: ' + opp_abbrev)
+
+                    irregular_abbrevs = {'nop':'no', 'nyk':'ny', 'sas': 'sa', 'gsw':'gs' } # for these match the first 3 letters of team name instead
+                    if opp_abbrev in irregular_abbrevs.keys():
+                        #print("irregular abbrev: " + team_abbrev)
+                        opp_abbrev = irregular_abbrevs[opp_abbrev]
+
+                    if opp_abbrev == game_log_team_abbrev:
+                        print('opp_abbrev == game_log_team_abbrev')
                         for stat_idx in range(len(all_stats_dicts.values())):
                             stat_dict = list(all_stats_dicts.values())[stat_idx]
                             stat = game_stats[stat_idx]
@@ -515,33 +534,82 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                     if stat_name == '3p':
                         stat_name = '3pm'
 
+                    # for now assume if all means dicts is populated then median, mode, min and max are as well
                     if not player_name in all_means_dicts.keys():
                         all_means_dicts[player_name] = {} # init bc player name key not in dict so if we attempt to set its val it is error
+                        all_medians_dicts[player_name] = {}
+                        all_modes_dicts[player_name] = {}
+                        all_mins_dicts[player_name] = {}
+                        all_maxes_dicts[player_name] = {}
 
                         player_means_dicts = all_means_dicts[player_name] # {player name: { condition: { year: { stat: [1/1,2/2,...],.. },.. },.. },.. }
+                        player_medians_dicts = all_medians_dicts[player_name]
+                        player_modes_dicts = all_modes_dicts[player_name]
+                        player_mins_dicts = all_mins_dicts[player_name]
+                        player_maxes_dicts = all_maxes_dicts[player_name]
 
                         player_means_dicts[conditions] = {}
+                        player_medians_dicts[conditions] = {}
+                        player_modes_dicts[conditions] = {}
+                        player_mins_dicts[conditions] = {}
+                        player_maxes_dicts[conditions] = {}
                         player_all_means_dicts = player_means_dicts[conditions]
+                        player_all_medians_dicts = player_medians_dicts[conditions]
+                        player_all_modes_dicts = player_modes_dicts[conditions]
+                        player_all_mins_dicts = player_mins_dicts[conditions]
+                        player_all_maxes_dicts = player_maxes_dicts[conditions]
                         
                         player_all_means_dicts[season_year] = { stat_name: stat_mean }
+                        player_all_medians_dicts[season_year] = { stat_name: stat_median }
+                        player_all_modes_dicts[season_year] = { stat_name: stat_mode }
+                        player_all_mins_dicts[season_year] = { stat_name: stat_min }
+                        player_all_maxes_dicts[season_year] = { stat_name: stat_max }
 
                     else: # player already in list
 
                         player_means_dicts = all_means_dicts[player_name]
+                        player_medians_dicts = all_medians_dicts[player_name]
+                        player_modes_dicts = all_modes_dicts[player_name]
+                        player_mins_dicts = all_mins_dicts[player_name]
+                        player_maxes_dicts = all_maxes_dicts[player_name]
                         if conditions in player_means_dicts.keys():
                             #print("conditions " + conditions + " in streak tables")
                             player_all_means_dicts = player_means_dicts[conditions]
+                            player_all_medians_dicts = player_medians_dicts[conditions]
+                            player_all_modes_dicts = player_modes_dicts[conditions]
+                            player_all_mins_dicts = player_mins_dicts[conditions]
+                            player_all_maxes_dicts = player_maxes_dicts[conditions]
                             if season_year in player_all_means_dicts.keys():
                                 player_all_means_dicts[season_year][stat_name] = stat_mean
+                                player_all_medians_dicts[season_year][stat_name] = stat_median
+                                player_all_modes_dicts[season_year][stat_name] = stat_mode
+                                player_all_mins_dicts[season_year][stat_name] = stat_min
+                                player_all_maxes_dicts[season_year][stat_name] = stat_max
                             else:
                                 player_all_means_dicts[season_year] = { stat_name: stat_mean }
+                                player_all_medians_dicts[season_year] = { stat_name: stat_median }
+                                player_all_modes_dicts[season_year] = { stat_name: stat_mode }
+                                player_all_mins_dicts[season_year] = { stat_name: stat_min }
+                                player_all_maxes_dicts[season_year] = { stat_name: stat_max }
 
                             #player_streak_tables[conditions].append(prob_table) # append all stats for given key
                         else:
                             #print("conditions " + conditions + " not in streak tables")
                             player_means_dicts[conditions] = {}
+                            player_medians_dicts[conditions] = {}
+                            player_modes_dicts[conditions] = {}
+                            player_mins_dicts[conditions] = {}
+                            player_maxes_dicts[conditions] = {}
                             player_all_means_dicts = player_means_dicts[conditions]
+                            player_all_medians_dicts = player_medians_dicts[conditions]
+                            player_all_modes_dicts = player_modes_dicts[conditions]
+                            player_all_mins_dicts = player_mins_dicts[conditions]
+                            player_all_maxes_dicts = player_maxes_dicts[conditions]
                             player_all_means_dicts[season_year] = { stat_name: stat_mean }
+                            player_all_medians_dicts[season_year] = { stat_name: stat_median }
+                            player_all_modes_dicts[season_year] = { stat_name: stat_mode }
+                            player_all_mins_dicts[season_year] = { stat_name: stat_min }
+                            player_all_maxes_dicts[season_year] = { stat_name: stat_max }
 
 
 
@@ -1008,6 +1076,30 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     location_record = determiner.determine_record_outline(location_record)
                     pre_dict['location record'] = location + ': ' + str(location_record)
 
+                    # add avg and range in prediction, for current condition, all
+                    pre_dict['location mean'] = ''
+                    pre_dict['location median'] = ''
+                    pre_dict['location mode'] = ''
+                    pre_dict['location min'] = ''
+                    pre_dict['location max'] = ''
+
+                    if p_name in all_means_dicts.keys():
+                        print("all_means_dicts: " + str(all_means_dicts))
+                        location_mean = all_means_dicts[p_name][location][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+                        pre_dict['location mean'] = location_mean
+                    if p_name in all_medians_dicts.keys():
+                        location_median = all_medians_dicts[p_name][location][year][stat_name]
+                        pre_dict['location median'] = location_median
+                    if p_name in all_modes_dicts.keys():
+                        location_mode = all_modes_dicts[p_name][location][year][stat_name]
+                        pre_dict['location mode'] = location_mode
+                    if p_name in all_mins_dicts.keys():
+                        location_min = all_mins_dicts[p_name][location][year][stat_name]
+                        pre_dict['location min'] = location_min
+                    if p_name in all_maxes_dicts.keys():
+                        location_max = all_maxes_dicts[p_name][location][year][stat_name]
+                        pre_dict['location max'] = location_max
+
                     pre_dict['opponent record'] = ''
                     print('Add opponent ' + opponent + ' record. ')
                     print("all_records_dicts: " + str(all_records_dicts))
@@ -1015,11 +1107,68 @@ for p_name, p_streak_tables in all_streak_tables.items():
                         opp_record = all_records_dicts[p_name][opponent][year][stat_name]
                         pre_dict['opponent record'] = opponent + ': ' + str(opp_record)
 
+                    # add avg and range in prediction, for current condition, all
+                    pre_dict['opponent mean'] = ''
+                    pre_dict['opponent median'] = ''
+                    pre_dict['opponent mode'] = ''
+                    pre_dict['opponent min'] = ''
+                    pre_dict['opponent max'] = ''
+
+                    if p_name in all_means_dicts.keys():
+                        print("all_means_dicts: " + str(all_means_dicts))
+                        if opponent in all_means_dicts[p_name].keys():
+                            opponent_mean = all_means_dicts[p_name][opponent][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+                            pre_dict['opponent mean'] = opponent_mean
+                    if p_name in all_medians_dicts.keys():
+                        if opponent in all_medians_dicts[p_name].keys():
+                            opponent_median = all_medians_dicts[p_name][opponent][year][stat_name]
+                            pre_dict['opponent median'] = opponent_median
+                    if p_name in all_modes_dicts.keys():
+                        if opponent in all_modes_dicts[p_name].keys():
+                            opponent_mode = all_modes_dicts[p_name][opponent][year][stat_name]
+                            pre_dict['opponent mode'] = opponent_mode
+                    if p_name in all_mins_dicts.keys():
+                        if opponent in all_mins_dicts[p_name].keys():
+                            opponent_min = all_mins_dicts[p_name][opponent][year][stat_name]
+                            pre_dict['opponent min'] = opponent_min
+                    if p_name in all_maxes_dicts.keys():
+                        if opponent in all_maxes_dicts[p_name].keys():
+                            opponent_max = all_maxes_dicts[p_name][opponent][year][stat_name]
+                            pre_dict['opponent max'] = opponent_max
+
                     pre_dict['time after record'] = ''
                     if time_after in all_records_dicts[p_name].keys():
                         time_after_record = all_records_dicts[p_name][time_after][year][stat_name]
                         time_after_record = determiner.determine_record_outline(time_after_record)
                         pre_dict['time after record'] = time_after + ': ' + str(time_after_record)
+
+                    pre_dict['time after mean'] = ''
+                    pre_dict['time after median'] = ''
+                    pre_dict['time after mode'] = ''
+                    pre_dict['time after min'] = ''
+                    pre_dict['time after max'] = ''
+
+                    if p_name in all_means_dicts.keys():
+                        print("all_means_dicts: " + str(all_means_dicts))
+                        if time_after in all_means_dicts[p_name].keys():
+                            time_after_mean = all_means_dicts[p_name][time_after][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+                            pre_dict['time after mean'] = time_after_mean
+                    if p_name in all_medians_dicts.keys():
+                        if time_after in all_medians_dicts[p_name].keys():
+                            time_after_median = all_medians_dicts[p_name][time_after][year][stat_name]
+                            pre_dict['time after median'] = time_after_median
+                    if p_name in all_modes_dicts.keys():
+                        if time_after in all_modes_dicts[p_name].keys():
+                            time_after_mode = all_modes_dicts[p_name][time_after][year][stat_name]
+                            pre_dict['time after mode'] = time_after_mode
+                    if p_name in all_mins_dicts.keys():
+                        if time_after in all_mins_dicts[p_name].keys():
+                            time_after_min = all_mins_dicts[p_name][time_after][year][stat_name]
+                            pre_dict['time after min'] = time_after_min
+                    if p_name in all_maxes_dicts.keys():
+                        if time_after in all_maxes_dicts[p_name].keys():
+                            time_after_max = all_maxes_dicts[p_name][time_after][year][stat_name]
+                            pre_dict['time after max'] = time_after_max
 
                     pre_dict['day record'] = ''
                     if current_dow in all_records_dicts[p_name].keys():
@@ -1029,6 +1178,29 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     else:
                         print("current_dow " + current_dow + " NOT in all records dicts")
                     #print("pre_dict: " + str(pre_dict))
+
+                    pre_dict['day mean'] = ''
+                    pre_dict['day median'] = ''
+                    pre_dict['day mode'] = ''
+                    pre_dict['day min'] = ''
+                    pre_dict['day max'] = ''
+
+                    if p_name in all_means_dicts.keys():
+                        print("all_means_dicts: " + str(all_means_dicts))
+                        day_mean = all_means_dicts[p_name][current_dow][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+                        pre_dict['day mean'] = day_mean
+                    if p_name in all_medians_dicts.keys():
+                        day_median = all_medians_dicts[p_name][current_dow][year][stat_name]
+                        pre_dict['day median'] = day_median
+                    if p_name in all_modes_dicts.keys():
+                        day_mode = all_modes_dicts[p_name][current_dow][year][stat_name]
+                        pre_dict['day mode'] = day_mode
+                    if p_name in all_mins_dicts.keys():
+                        day_min = all_mins_dicts[p_name][current_dow][year][stat_name]
+                        pre_dict['day min'] = day_min
+                    if p_name in all_maxes_dicts.keys():
+                        day_max = all_maxes_dicts[p_name][current_dow][year][stat_name]
+                        pre_dict['day max'] = day_max
 
 
 
@@ -1241,46 +1413,77 @@ if find_matchups:
         print('pre_dict: ' + str(pre_dict))
 
 
-print("\n===Game Data===\n")
-# all_player_pre_dicts = [{'prediction':val,'overall record':[],..},{},..]
-# get headers
-# header_row = ['Prediction']
-# for pre_dict in all_player_pre_dicts.values():
-#     for key in pre_dict:
-#         header_row.append(key.title())
-#     break
-# game_data = [header_row]
-
-# print("all_player_pre_dicts: " + str(all_player_pre_dicts))
-# for prediction, pre_dict in all_player_pre_dicts.items():
-#     prediction_row = [prediction]
-#     for val in pre_dict.values():
-#         prediction_row.append(val)
-#     game_data.append(prediction_row)
-
-# get headers
-header_row = []
-header_string = '' # separate by semicolons and delimit in spreadsheet
-streak1 = all_valid_streaks_list[0]
-for key in streak1.keys():
-    header_row.append(key.title())
-    header_string += key.title() + ";"
-
-game_data = [header_row]
-game_data_strings = []
-for streak in all_valid_streaks_list:
-    streak_row = []
-    streak_string = ''
-    for val in streak.values():
-        streak_row.append(val)
-        streak_string += str(val) + ";"
-    game_data.append(streak_row)
-    game_data_strings.append(streak_string)
+writer.display_game_data(all_valid_streaks_list)
 
 
-#print(tabulate(game_data))
 
-print("Export")
-print(header_string)
-for game_data in game_data_strings:
-    print(game_data)
+# now that we have all streaks with potential exploitation, classify types of streak
+# -Avoid for all:
+# –-Avoid ½ in any streak condition and top 5 hard matchup, unless multiple significant streaks and high margin for error:
+# –-Avoid 1/2!! even if 99/100 bc recent change may affect
+# —if any question:
+# —-avoid over for away and avoid under for home
+# —-avoid over for low total and avoid under for high total
+
+# –10/10 or 0/10
+# –9/10 or 1/10 - avoid if <=6/10 overall, as well as above avoidances
+# –6/6,13/15
+# –-13/15 or 2/15
+# —3/3,8/10
+# –-8/10 or 2/10,
+# –6/6 or 0/6
+
+prediction_prob_dict = {} # {'10/10':[pre_dict1,pre_dict2,..],..}
+
+print("\n===10/10 Streaks===\n")
+all_ten_of_ten_streaks = []
+for pre_dict in all_valid_streaks_list:
+    # if any streak is 10/10 
+    overall_record = pre_dict['overall record'] # ['1/1',..,'10/10']
+    if len(overall_record) > 9:
+        tenth_val = int(overall_record[9].split('/')[0])
+        if tenth_val == 10:
+            all_ten_of_ten_streaks.append(pre_dict)
+
+    location_record_string = re.sub('\'','',pre_dict['location record'].split(':')[1].strip()) # home: ['1/1',..,'10/10'] -> ['1/1',..,'10/10']
+    print('location_record_string: ' + location_record_string)
+    location_record = location_record_string.strip('][').split(', ')
+    if len(location_record) > 9:
+        tenth_val = int(location_record[9].split('/')[0])
+        if tenth_val == 10:
+            all_ten_of_ten_streaks.append(pre_dict)
+
+#print('all_ten_of_ten_streaks: ' + str(all_ten_of_ten_streaks))
+if len(all_ten_of_ten_streaks) == 0:
+    print('No 10/10 streaks found. ')
+else:
+    writer.display_game_data(all_ten_of_ten_streaks)
+
+
+print("\n===0/10 Streaks===\n")
+all_o_of_ten_streaks = []
+for pre_dict in all_valid_streaks_list:
+    # if any streak is 0/10 
+    overall_record = pre_dict['overall record'] # ['0/1',..,'0/10']
+    if len(overall_record) > 9:
+        tenth_val = int(overall_record[9].split('/')[0])
+        if tenth_val == 0:
+            all_o_of_ten_streaks.append(pre_dict)
+
+    location_record_string = re.sub('\'','',pre_dict['location record'].split(':')[1].strip()) # home: ['1/1',..,'10/10'] -> ['1/1',..,'10/10']
+    location_record = location_record_string.strip('][').split(', ')
+    print('location_record: ' + str(location_record))
+    if len(location_record) > 9:
+        tenth_val = int(location_record[9].split('/')[0])
+        print('tenth_val: ' + str(tenth_val))
+        if tenth_val == 0:
+            all_o_of_ten_streaks.append(pre_dict)
+
+#print('all_o_of_ten_streaks: ' + str(all_o_of_ten_streaks))
+if len(all_o_of_ten_streaks) == 0:
+    print('No 0/10 streaks found. ')
+else:
+    writer.display_game_data(all_o_of_ten_streaks)
+
+
+all_substantial_streaks = [all_ten_of_ten_streaks,all_o_of_ten_streaks] # display all substantive streaks together in file for review

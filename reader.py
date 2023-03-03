@@ -22,7 +22,10 @@ import isolator # isolate_player_game_data to read data from file
 # input such as Game Data - All Games
 # or Game Log - All Players
 def extract_data(data_type, input_type, extension='csv', header=False):
+	input_type = re.sub('/','_',input_type)
 	catalog_filename = "data/" + data_type.title() + " - " + input_type.title() + "." + extension
+
+	
 
 	lines = []
 	data = []
@@ -109,7 +112,7 @@ def read_all_player_espn_ids(player_names):
 
 # get game log from espn.com
 def read_player_season_log(player_name, season_year=2023, player_url='', player_id=''):
-	print("\n===Read Player Game Log===\n")
+	print("\n===Read Player Game Log: " + player_name.title() + "===\n")
 
 	# get espn player id from google so we can get url
 	if player_url == '':
@@ -253,7 +256,7 @@ def read_all_players_season_logs(player_names, read_all_seasons=True, player_esp
 
 # get player position from espn game log page bc we already have urls for each player
 def read_player_position(player_name, player_id, season_year=2023):
-	print("\n===Read Player Position: " + player_name + "===\n")
+	print("\n===Read Player Position: " + player_name.title() + "===\n")
 	position = ''
 
 	try:

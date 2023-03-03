@@ -164,7 +164,8 @@ def determine_all_team_abbrevs(position_matchup_data):
 # rating or ranking bc shows average value and orders from easiest ot hardest by position and stat
 def determine_matchup_rating(opponent, stat, all_matchup_data):
     print("\n===Determine Matchup Rating for " + opponent.upper() + ", " + stat + "===\n")
-
+    if stat == '3pm':
+        stat = '3p'
     
 
     positions = ['pg','sg','sf','pf','c']
