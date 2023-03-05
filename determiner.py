@@ -21,30 +21,43 @@ def determine_consistent_streak(stat_counts):
     print("stat_counts: " + str(stat_counts))
     consistent = False
 
+    strict_streak = True
+
     # even if it is consistent it does not mean they will hit it next game
     # instead we must determine if likely to hit next game based on previous game pattern
-    if len(stat_counts) >= 10:
-        if stat_counts[9] >= 7: # arbitrary 7/10
-            consistent = True
-        elif stat_counts[9] <= 3: # arbitrary 7/10
-            consistent = True
 
-        if stat_counts[2] == 3: # arbitrary 3/3
-            consistent = True
-        elif stat_counts[2] == 0: # arbitrary 0/3
-            consistent = True
-    elif len(stat_counts) >= 7: # 5 <= x <= 10
-        if stat_counts[6] <= 1 or stat_counts[6] >= 6: # arbitrary 1/7 or 6/7
-            consistent = True
-    elif len(stat_counts) == 4: # x=4
-        if stat_counts[3] == 4 or stat_counts[3] == 0: # arbitrary 4/4 or 0/4. if only 4 samples for the whole season and both are same then check other seasons for extended streak
-            consistent = True
-    elif len(stat_counts) == 3: # x=3
-        if stat_counts[2] == 3 or stat_counts[2] == 0: # arbitrary 3/3. if only 3 samples for the whole season and both are same then check other seasons for extended streak
-            consistent = True
-    elif len(stat_counts) == 2: # x=2
-        if stat_counts[1] == 2 or stat_counts[1] == 0: # arbitrary 2/2. if only 2 samples for the whole season and both are same then check other seasons for extended streak
-            consistent = True
+    if strict_streak:
+        if len(stat_counts) > 1:
+            if stat_counts[1] != 1: # avoid 1/2
+                if len(stat_counts) > 3:
+                    if stat_counts[3] != 2: # avoid 2/4
+                        if len(stat_counts) > 9:
+                            if stat_counts[9] > 7 or stat_counts[9] < 3: # 8/10,9/10,10/10 or 2/10,1/10,0/10
+                                consistent = True
+                
+    else:
+        if len(stat_counts) >= 10:
+            if stat_counts[9] >= 7: # arbitrary 7/10
+                consistent = True
+            elif stat_counts[9] <= 3: # arbitrary 7/10
+                consistent = True
+
+            if stat_counts[2] == 3: # arbitrary 3/3
+                consistent = True
+            elif stat_counts[2] == 0: # arbitrary 0/3
+                consistent = True
+        elif len(stat_counts) >= 7: # 5 <= x <= 10
+            if stat_counts[6] <= 1 or stat_counts[6] >= 6: # arbitrary 1/7 or 6/7
+                consistent = True
+        elif len(stat_counts) == 4: # x=4
+            if stat_counts[3] == 4 or stat_counts[3] == 0: # arbitrary 4/4 or 0/4. if only 4 samples for the whole season and both are same then check other seasons for extended streak
+                consistent = True
+        elif len(stat_counts) == 3: # x=3
+            if stat_counts[2] == 3 or stat_counts[2] == 0: # arbitrary 3/3. if only 3 samples for the whole season and both are same then check other seasons for extended streak
+                consistent = True
+        elif len(stat_counts) == 2: # x=2
+            if stat_counts[1] == 2 or stat_counts[1] == 0: # arbitrary 2/2. if only 2 samples for the whole season and both are same then check other seasons for extended streak
+                consistent = True
 
     if consistent:
         print('consistent')

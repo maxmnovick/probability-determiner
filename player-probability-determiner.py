@@ -21,11 +21,9 @@ import writer # display game data
 # main settings
 read_all_seasons = False
 find_matchups = False
-input_type = '3/3' # date as mth/day will become mth_day in file
+input_type = '3/5' # date as mth/day will become mth_day in file
 
 todays_games_date = input_type + '/23'
-
-
 
 data_type = "Player Lines"
 
@@ -62,15 +60,25 @@ s_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 
 
+# v2: copy paste raw projected lines direct from website
+raw_projected_lines = reader.extract_data(data_type, input_type, extension='tsv') # tsv no header
 
-projected_lines = reader.extract_data(data_type, input_type, header=True)
+# convert raw projected lines to projected lines
+
+# v1: copy from website by hand into organized format
+projected_lines = reader.extract_data(data_type, input_type, header=True) # csv w/ header
+
+
+
 if input_type == '': # for testing we make input type blank ''
 #projected_lines = reader.read_projected_lines(date)
     projected_lines = [['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP'], ['Giannis Antetokounmpo', '34', '13', '6', '1', '1', '1', '1', 'Home', 'ATL']]
 print("projected_lines: " + str(projected_lines))
 
+# if copy pasted from website
+header_row = ['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP']
+
 projected_lines_dict = {}
-player_lines_dict = {}
 header_row = projected_lines[0]
 for player_lines in projected_lines[1:]:
     player_name = player_lines[0]
@@ -97,9 +105,19 @@ player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
 
 all_player_season_logs_dict = reader.read_all_players_season_logs(player_names, read_all_seasons, player_espn_ids_dict)
 
+# get position and team from same source espn game
 all_player_positions = {}
+all_player_teams = {}
+all_player_info = {'positions':{}, 'teams':{}}
+
+
+
 if find_matchups == True:
     all_player_positions = reader.read_all_players_positions(player_espn_ids_dict)
+    #all_player_info['positions'] = reader.read_all_players_positions(player_espn_ids_dict)
+
+    # get team schedules from espn so we can get next game opponent and location and date 
+    # so we can see performance against opponent and at location and next game after date 
 
 # for p_name in player_names:
 
@@ -1055,7 +1073,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     pre_dict['overall max'] = ''
 
                     if p_name in all_means_dicts.keys():
-                        print("all_means_dicts: " + str(all_means_dicts))
+                       #print("all_means_dicts: " + str(all_means_dicts))
                         overall_mean = all_means_dicts[p_name]['all'][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
                         pre_dict['overall mean'] = overall_mean
                     if p_name in all_medians_dicts.keys():
@@ -1084,7 +1102,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     pre_dict['location max'] = ''
 
                     if p_name in all_means_dicts.keys():
-                        print("all_means_dicts: " + str(all_means_dicts))
+                        #print("all_means_dicts: " + str(all_means_dicts))
                         location_mean = all_means_dicts[p_name][location][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
                         pre_dict['location mean'] = location_mean
                     if p_name in all_medians_dicts.keys():
@@ -1101,8 +1119,8 @@ for p_name, p_streak_tables in all_streak_tables.items():
                         pre_dict['location max'] = location_max
 
                     pre_dict['opponent record'] = ''
-                    print('Add opponent ' + opponent + ' record. ')
-                    print("all_records_dicts: " + str(all_records_dicts))
+                    #print('Add opponent ' + opponent + ' record. ')
+                    #print("all_records_dicts: " + str(all_records_dicts))
                     if opponent in all_records_dicts[p_name].keys():
                         opp_record = all_records_dicts[p_name][opponent][year][stat_name]
                         pre_dict['opponent record'] = opponent + ': ' + str(opp_record)
@@ -1115,7 +1133,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     pre_dict['opponent max'] = ''
 
                     if p_name in all_means_dicts.keys():
-                        print("all_means_dicts: " + str(all_means_dicts))
+                        #print("all_means_dicts: " + str(all_means_dicts))
                         if opponent in all_means_dicts[p_name].keys():
                             opponent_mean = all_means_dicts[p_name][opponent][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
                             pre_dict['opponent mean'] = opponent_mean
@@ -1149,7 +1167,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     pre_dict['time after max'] = ''
 
                     if p_name in all_means_dicts.keys():
-                        print("all_means_dicts: " + str(all_means_dicts))
+                        #print("all_means_dicts: " + str(all_means_dicts))
                         if time_after in all_means_dicts[p_name].keys():
                             time_after_mean = all_means_dicts[p_name][time_after][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
                             pre_dict['time after mean'] = time_after_mean
@@ -1186,7 +1204,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
                     pre_dict['day max'] = ''
 
                     if p_name in all_means_dicts.keys():
-                        print("all_means_dicts: " + str(all_means_dicts))
+                        #print("all_means_dicts: " + str(all_means_dicts))
                         day_mean = all_means_dicts[p_name][current_dow][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
                         pre_dict['day mean'] = day_mean
                     if p_name in all_medians_dicts.keys():
