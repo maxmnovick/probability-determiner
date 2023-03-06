@@ -119,7 +119,7 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
             team_abbrev = irregular_abbrevs[team_abbrev]
     else:
         for abbrev, name in team_abbrevs_dict.items():
-            if team_name.lower() == name:
+            if re.search(team_name.lower(),name): # name is full name but we may be given partial team name
                 team_abbrev = abbrev
                 break
 

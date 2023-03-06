@@ -18,13 +18,15 @@ import json # we need projected lines table to be json so we can refer to player
 import determiner # determine played season before reading webpage to avoid exception/error
 import isolator # isolate_player_game_data to read data from file
 
+import math # round up to nearest integer while reading
+
 # get data from a file and format into a list (same as generator version of this fcn but more general)
 # input such as Game Data - All Games
 # or Game Log - All Players
 def extract_data(data_type, input_type, extension='csv', header=False):
 	input_type = re.sub('/','_',input_type)
 	catalog_filename = "data/" + data_type.title() + " - " + input_type.title() + "." + extension
-	print("catalog_filename: " + catalog_filename)
+	#print("catalog_filename: " + catalog_filename)
 	
 
 	lines = []
@@ -38,7 +40,7 @@ def extract_data(data_type, input_type, extension='csv', header=False):
 			current_line = ""
 			for catalog_info in catalog_file:
 				current_line = catalog_info.strip()
-				print("current_line: " + str(current_line))
+				#print("current_line: " + str(current_line))
 				lines.append(current_line)
 
 			catalog_file.close()
@@ -49,7 +51,7 @@ def extract_data(data_type, input_type, extension='csv', header=False):
 			read_lines = lines[1:]
 
 		for line in read_lines:
-			print("line: " + str(line))
+			#print("line: " + str(line))
 			if len(line) > 0:
 				if extension == "csv":
 					data = line.split(",")
@@ -92,10 +94,10 @@ def read_player_espn_id(player_name):
 
 		espn_id = re.findall(r'\d+', espn_id_link)[0]
 
-		print('Success', espn_id, player_name)
+		print('Success', espn_id, player_name.title())
 
 	except Exception as e:
-		print('Error', espn_id, player_name)
+		print('Error', espn_id, player_name.title())
 
 	print("espn_id: " + espn_id)
 	return espn_id
@@ -271,7 +273,7 @@ def read_team_season_schedule(team_name, season_year=2023, team_url='', team_id=
 
 	#try:
 
-	html_results = pd.read_html(player_url)
+	html_results = pd.read_html(team_url)
 	#print("html_results: " + str(html_results))
 
 	parts_of_season = [] # pre season, regular season, post season
@@ -397,10 +399,10 @@ def read_player_position(player_name, player_id, season_year=2023):
 
 		# position = re.findall(r'\d+', espn_id_link)[0]
 
-		print('Success', position, player_name)
+		print('Success', position.upper(), player_name.title())
 
 	except Exception as e:
-		print('Error', position, player_name)
+		print('Error', position.upper(), player_name.title())
 
 	print("position: " + position)
 	return position
@@ -412,6 +414,55 @@ def read_all_players_positions(player_espn_ids_dict):
 	for name, id in player_espn_ids_dict.items():
 		pos = read_player_position(name, id)
 		players_positions[name] = pos
+
+	#print("players_positions: " + str(players_positions))
+	return players_positions
+
+# get player position from espn game log page bc we already have urls for each player
+def read_player_team(player_name, player_id, season_year=2023):
+	print("\n===Read Player Team: " + player_name.title() + "===\n")
+	team = ''
+
+	try:
+		
+		site = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_id + '/type/nba/year/' + str(season_year)
+
+		req = Request(site, headers={
+			'User-Agent': 'Mozilla/5.0',
+		})
+
+		page = urlopen(req) # open webpage given request
+
+		soup = BeautifulSoup(page, features="lxml")
+
+		# find last element of ul with class PlayerHeader__Team_Info
+		team = str(list(soup.find("ul", {"class": "PlayerHeader__Team_Info"}).descendants)[0]).strip()#.split('<')[0]#.split('>')[-1]
+		#print("team_element:\n" + str(team))
+		
+		#<li class="truncate min-w-0"><a class="AnchorLink clr-black" data-clubhouse-uid="s:40~l:46~t:21" href="https://www.espn.com/nba/team/_/name/phx/phoenix-suns" tabindex="0">Phoenix Suns</a></li>
+
+		team_name = re.split('</',str(team))[0]
+		team_name = re.split('>',team_name)[-1]
+		#print("team_name: " + team_name)
+		team_abbrev = determiner.determine_team_abbrev(team_name)
+
+		print('Success', team_abbrev.upper(), player_name.title())
+
+	except Exception as e:
+		print('Error', team_abbrev.upper(), player_name.title())
+
+	
+
+	#print("final team: " + team_abbrev)
+	return team_abbrev
+
+def read_all_players_teams(player_espn_ids_dict):
+	#print("\n===Read All Players Positions===\n")
+	players_positions = {}
+
+	for name, id in player_espn_ids_dict.items():
+		team = read_player_team(name, id)
+		players_positions[name] = team
 
 	#print("players_positions: " + str(players_positions))
 	return players_positions
@@ -839,3 +890,178 @@ def read_season_log_from_file(data_type, player_name, ext):
 		print("Warning: No player games data!")
 
 	return all_stats
+
+def read_projected_lines(raw_projected_lines, all_player_teams):
+	# convert raw projected lines to projected lines
+	header_row = ['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP']
+
+	all_game_lines_dicts = {} # each stat separately
+	# split columns in raw projected lines so we can loop thru each stat separately
+	pts_projected_lines = []
+	reb_projected_lines = []
+	ast_projected_lines = []
+	three_projected_lines = []
+	blk_projected_lines = []
+	stl_projected_lines = []
+	to_projected_lines = []
+
+	for line in raw_projected_lines:
+		print('raw line: ' + str(line))
+		pts_line = line[:3]
+		pts_projected_lines.append(line[:3])
+		reb_projected_lines.append(line[3:6])
+		ast_projected_lines.append(line[6:9])
+		three_projected_lines.append(line[9:12])
+		blk_projected_lines.append(line[12:15])
+		stl_projected_lines.append(line[15:18])
+		to_projected_lines.append(line[18:21])
+
+	separate_projected_lines = { 'pts':pts_projected_lines, 'reb':reb_projected_lines, 'ast':ast_projected_lines, 'three':three_projected_lines, 'blk':blk_projected_lines, 'stl':stl_projected_lines, 'to':to_projected_lines }
+	print('separate_projected_lines: ' + str(separate_projected_lines))
+	
+	all_player_lines = [header_row]
+
+	#game_lines_dict = {} # { 'PHO SunsatDAL MavericksTODAY 1:10PM': [['Chris Paul', 'O 9.5  +105', 'U 9.5  −135'],..]}
+
+	# raw_projected_lines: [['PHO SunsatDAL MavericksTODAY 1:10PM'], ['PLAYER', 'OVER', 'UNDER'], ['Chris Paul', 'O 9.5  +105', 'U 9.5  −135']]
+	# assign player lines to a game so we can get loc and opp from game info key
+	for stat_name, projected_lines in separate_projected_lines.items():
+		if len(projected_lines[0]) > 0:
+			print('stat_name: ' + stat_name)
+			game_key = ''
+			game_lines_dict = {} # { 'PHO SunsatDAL MavericksTODAY 1:10PM': [['Chris Paul', 'O 9.5  +105', 'U 9.5  −135'],..]}
+		
+			for row in projected_lines:
+				# loop thru rows until we see header. then make header key in dict and add next rows to list of values until next header
+				# if first item = 'PLAYER' skip bc not needed header
+				# then if first 3 letters are uppercase we know it is team matchup header w/ needed info
+				print('row: ' + str(row))
+				if len(row) > 0:
+					if row[0] != 'PLAYER' and row[0].lower() != 'na':
+						if row[0][:3].isupper():
+							#print('found header: ' + str(row) + ', ' + row[0][:3])
+							game_key = row[0]
+							# if not game_key in game_lines_dict.keys():
+							#     game_lines_dict[game_key] = []
+
+						else:
+							#print('found player line: ' + str(row))
+							if game_key in game_lines_dict.keys():
+								game_lines_dict[game_key].append(row)
+							else:
+								game_lines_dict[game_key] = [row]
+
+			#print("game_lines_dict: " + str(game_lines_dict))
+			all_game_lines_dicts[stat_name] = game_lines_dict
+
+	print("all_game_lines_dicts: " + str(all_game_lines_dicts))
+
+	# for now set unavailable stats=1, until we have basic fcns working
+	reb = 1
+	ast = 1
+	three = 1
+	blk = 1
+	stl = 1
+	to = 1
+
+	all_player_lines_dicts = {} # {'player name':{pts:0,reb:0,..}}
+
+	# game info = 'PHO SunsatDAL MavericksTODAY 1:10PM'
+	for stat_name, game_lines_dict in all_game_lines_dicts.items():
+
+		print('stat_name: ' + stat_name)
+
+		for game_info, game_lines in game_lines_dict.items():
+			teams = game_info.split('at')
+			away_team = teams[0]
+			home_team = teams[1]
+			#print("away_team: " + str(away_team))
+			#print("home_team: " + str(home_team))
+
+			irregular_abbrevs = {'bro':'bkn', 'okl':'okc', 'nor':'nop', 'pho':'phx', 'was':'wsh', 'uth': 'uta' } # for these match the first 3 letters of team name instead
+
+			away_abbrev = away_team.split()[0].lower()
+			if len(away_abbrev) == 2:
+				away_abbrev = away_abbrev + away_team.split()[1][0].lower()
+
+			if away_abbrev in irregular_abbrevs.keys():
+				#print("irregular abbrev: " + team_abbrev)
+				away_abbrev = irregular_abbrevs[away_abbrev]
+
+			home_abbrev = home_team.split()[0].lower()
+			if len(home_abbrev) == 2:
+				home_abbrev = home_abbrev + home_team.split()[1][0].lower()
+			if home_abbrev in irregular_abbrevs.keys():
+				#print("irregular abbrev: " + team_abbrev)
+				home_abbrev = irregular_abbrevs[home_abbrev]
+
+			print("away_abbrev: " + str(away_abbrev))
+			print("home_abbrev: " + str(home_abbrev))
+
+			for raw_player_line in game_lines:
+
+				# each stat has 3 columns pts, reb, ast,...
+				# but not all players have all stats so the lines do not line up
+				# so we must divide each stat and sort by player name
+
+				player_name = raw_player_line[0].lower()
+				print("player_name: " + str(player_name))
+				#if player_name in all_player_teams.keys():
+
+				player_team_abbrev = all_player_teams[player_name]
+				print("player_team_abbrev: " + str(player_team_abbrev))
+				# determine opponent from game info by eliminating player's team from list of 2 teams
+				loc = 'home'
+				opp = away_abbrev
+				if player_team_abbrev == away_abbrev:
+					loc = 'away'
+					opp = home_abbrev
+				# only add loc and opp once per player per game
+				if not player_name in all_player_lines_dicts.keys():
+					all_player_lines_dicts[player_name] = { 'loc': loc, 'opp': opp }
+				else:
+					all_player_lines_dicts[player_name]['loc'] = loc 
+					all_player_lines_dicts[player_name]['opp'] = opp
+
+				
+
+				stat = math.ceil(float(raw_player_line[1].split()[1])) # O 10.5 +100
+				#print("pts: " + str(pts))
+				#reb = math.ceil(float(raw_player_line[4].split()[1])) # O 10.5 +100
+
+				all_player_lines_dicts[player_name][stat_name] = stat
+
+
+	print("all_player_lines_dicts: " + str(all_player_lines_dicts))
+
+	for player_name, player_lines in all_player_lines_dicts.items():
+		#header_row = ['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP']
+		pts = 10
+		if 'pts' in player_lines.keys():
+			pts = player_lines['pts']
+		reb = 2
+		if 'reb' in player_lines.keys():
+			reb = player_lines['reb']
+		ast = 2
+		if 'ast' in player_lines.keys():
+			ast = player_lines['ast']
+		three = 1
+		if 'three' in player_lines.keys():
+			three = player_lines['three']
+		blk = 1
+		if 'blk' in player_lines.keys():
+			blk = player_lines['blk']
+		stl = 1
+		if 'stl' in player_lines.keys():
+			stl = player_lines['stl']
+		to = 1
+		if 'to' in player_lines.keys():
+			to = player_lines['to']
+		
+		loc = player_lines['loc']
+		opp = player_lines['opp']
+		player_line = [player_name, pts, reb, ast, three, blk, stl, to, loc, opp]
+		all_player_lines.append(player_line)
+		
+	print("all_player_lines:\n" + tabulate(all_player_lines))
+	return all_player_lines

@@ -61,12 +61,39 @@ to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 
 
 # v2: copy paste raw projected lines direct from website
-raw_projected_lines = reader.extract_data(data_type, input_type, extension='tsv') # tsv no header
+# raw projected lines in format: [['Player Name', 'O 10 +100', 'U 10 +100', 'Player Name', 'O 10 +100', 'U 10 +100', Name', 'O 10 +100', 'U 10 +100']]
+raw_projected_lines = reader.extract_data(data_type, input_type, extension='tsv', header=True) # tsv no header
+print("raw_projected_lines: " + str(raw_projected_lines))
+
+
+# get all player names so we can get their espn IDs and from that get team, position, game log, and schedule
+player_names = []
+for row in raw_projected_lines:
+    if row[0] != 'PLAYER' and row[0].lower() != 'na' and not row[0][:3].isupper(): # uppercase indicates team abbrev like CHI
+        #print('found player line')
+        player_names.append(row[0].lower())
+
+# check for players with no points line but rebounds line
+for row in raw_projected_lines:
+    if len(row) > 3:
+        if row[3] != 'PLAYER' and row[3].lower() != 'na' and not row[3][:3].isupper(): # uppercase indicates team abbrev like CHI
+            #print('found player line')
+        
+            player_name = row[3].lower()
+            if player_name not in player_names:
+                print('found player with no pts line: ' + player_name)
+                player_names.append(player_name)
+
+#print("player_names: " + str(player_names))
+
+player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
+all_player_teams = reader.read_all_players_teams(player_espn_ids_dict)
 
 # convert raw projected lines to projected lines
+projected_lines = reader.read_projected_lines(raw_projected_lines, all_player_teams)
 
 # v1: copy from website by hand into organized format
-projected_lines = reader.extract_data(data_type, input_type, header=True) # csv w/ header
+#projected_lines = reader.extract_data(data_type, input_type, header=True) # csv w/ header
 
 
 
@@ -81,7 +108,7 @@ header_row = ['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP'
 projected_lines_dict = {}
 header_row = projected_lines[0]
 for player_lines in projected_lines[1:]:
-    player_name = player_lines[0]
+    player_name = player_lines[0].lower()
     projected_lines_dict[player_name] = dict(zip(header_row[1:],player_lines[1:]))
 print("projected_lines_dict: " + str(projected_lines_dict))
 
@@ -101,7 +128,7 @@ opponents = isolator.isolate_data_field("opp",projected_lines) # format OKC
 
 
 # get all player season logs
-player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
+#player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
 
 all_player_season_logs_dict = reader.read_all_players_season_logs(player_names, read_all_seasons, player_espn_ids_dict)
 
@@ -146,6 +173,8 @@ all_medians_dicts = {}
 all_modes_dicts = {}
 all_mins_dicts = {}
 all_maxes_dicts = {}
+
+all_players_stats_dicts = {} # similar format as all_means_dicts but for actual stat values so we can display plot stat val over time/game
 
 for player_name, player_season_logs in all_player_season_logs_dict.items():
 #for player_idx in range(len(all_player_game_logs)):
@@ -925,8 +954,10 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                 # eg last 10 games
 
         season_year -= 1
+
+    all_players_stats_dicts[player_name] = all_stats_dicts
             
-    
+print('all_players_stats_dicts: ' + str(all_players_stats_dicts))
 
 if find_matchups:
     print("\n===Find Matchups===\n")
@@ -968,7 +999,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
     #all_player_pre_dicts[p_name] = player_pre_dict
     if p_name in injury_prone_players:
         print("\n===Warning: Injury Prone Player: " + p_name + "!===\n")
-        player_pre_dict['warning'] = 'Warning: ' + p_name + ' is an Injury Prone Player!'
+        #player_pre_dict['warning'] = 'Warning: ' + p_name + ' is an Injury Prone Player!'
 
     
 
@@ -1376,7 +1407,7 @@ if find_matchups:
     print('\n===Add Matchups to Predictions===\n')
     print('We went through all streaks to get matchups so add matchups to predictions. ') # should we do this for each player or even each condition or can we do this 1 big loop after we populate all matchups dict?
     print("all_matchups_dicts: " + str(all_matchups_dicts))
-
+    print("projected_lines_dict: " + str(projected_lines_dict))
     for pre_dict in all_valid_streaks_list: # all_valid_streaks_list.append(pre_dict)
         prediction = pre_dict['prediction']
         print('prediction: ' + prediction)
@@ -1384,6 +1415,7 @@ if find_matchups:
         print("stat from prediction: " + stat)
         player_name = ' '.join(pre_dict['prediction'].split()[:-2]).lower()
         print("player_name from prediction: " + player_name)
+
 
         player_lines = projected_lines_dict[player_name]
         opponent = player_lines['OPP'].lower()
@@ -1464,7 +1496,7 @@ for pre_dict in all_valid_streaks_list:
             all_ten_of_ten_streaks.append(pre_dict)
 
     location_record_string = re.sub('\'','',pre_dict['location record'].split(':')[1].strip()) # home: ['1/1',..,'10/10'] -> ['1/1',..,'10/10']
-    print('location_record_string: ' + location_record_string)
+    #print('location_record_string: ' + location_record_string)
     location_record = location_record_string.strip('][').split(', ')
     if len(location_record) > 9:
         tenth_val = int(location_record[9].split('/')[0])
@@ -1490,10 +1522,10 @@ for pre_dict in all_valid_streaks_list:
 
     location_record_string = re.sub('\'','',pre_dict['location record'].split(':')[1].strip()) # home: ['1/1',..,'10/10'] -> ['1/1',..,'10/10']
     location_record = location_record_string.strip('][').split(', ')
-    print('location_record: ' + str(location_record))
+    #print('location_record: ' + str(location_record))
     if len(location_record) > 9:
         tenth_val = int(location_record[9].split('/')[0])
-        print('tenth_val: ' + str(tenth_val))
+        #print('tenth_val: ' + str(tenth_val))
         if tenth_val == 0:
             all_o_of_ten_streaks.append(pre_dict)
 
