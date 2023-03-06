@@ -1537,3 +1537,53 @@ else:
 
 
 all_substantial_streaks = [all_ten_of_ten_streaks,all_o_of_ten_streaks] # display all substantive streaks together in file for review
+
+
+
+
+print('\n===Plot Stats===\n')
+#Three lines to make our compiler able to draw:
+import matplotlib.pyplot as plt
+
+# display player stat values so we can see plot
+# columns: game num, stat val, over average record
+print('all_players_stats_dicts: ' + str(all_players_stats_dicts))
+for valid_streak in all_valid_streaks_list:
+    print('valid_streak: ' + str(valid_streak))
+    player_name = ' '.join(pre_dict['prediction'].split()[:-2]).lower() # anthony davis 12+ pts
+    print("player_name from prediction: " + player_name)
+    stat_name = pre_dict['prediction'].split()[-1].lower()
+    condition = 'all'
+    stat_vals_dict = all_players_stats_dicts[player_name][stat_name][condition]
+    print('stat_vals_dict: ' + str(stat_vals_dict))
+
+    game_nums = list(stat_vals_dict.keys())
+    print('game_nums: ' + str(game_nums))
+    stat_vals = list(stat_vals_dict.values())
+    stat_vals.reverse()
+    print('stat_vals: ' + str(stat_vals))
+
+    stat_line = int(pre_dict['prediction'].split()[-2][:-1])
+    print('stat_line: ' + str(stat_line))
+
+    plot_stat_line = [stat_line] * len(game_nums)
+    print('plot_stat_line: ' + str(plot_stat_line))
+
+    # x = np.array(game_nums)
+    # y = np.array(stat_vals)
+
+    plt.plot(game_nums, stat_vals, label = "Stat Vals") # reverse bc input from recent to distant but we plot left to right
+    plt.plot(game_nums, plot_stat_line,  label = "Stat Line")
+
+    plt.title(player_name.title() + " " + stat_name.upper() + " over Time")
+    plt.xlabel("Game Num")
+    plt.ylabel(stat_name.upper())
+
+    plt.legend()
+    plt.show()
+
+    #Two  lines to make our compiler able to draw:
+    # plt.savefig(sys.stdout.buffer)
+    # sys.stdout.flush()
+
+    
