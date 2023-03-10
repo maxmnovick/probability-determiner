@@ -28,7 +28,12 @@ def determine_consistent_streak(stat_counts):
 
     if strict_streak:
         if len(stat_counts) > 1:
-            if stat_counts[1] != 1: # avoid 1/2
+            # if 100%, no matter length of streak
+            final_count = stat_counts[-1]
+            final_total = len(stat_counts)
+            if final_count == final_total or final_count == 0: # eg 1/1,3/3,13/13 etc or 0/10, etc
+                consistent = True
+            elif stat_counts[1] != 1: # avoid 1/2
                 if len(stat_counts) > 3:
                     if stat_counts[3] != 2: # avoid 2/4
                         if len(stat_counts) > 9:
@@ -63,6 +68,51 @@ def determine_consistent_streak(stat_counts):
         print('consistent')
 
     return consistent
+
+# streak is in form of prediction dictionary
+def determine_high_streak(streak_dict):
+    print('\n===Determine High Streak===\n')
+    #print('streak_dict: ' + str(streak_dict))
+
+    high_streak = False
+
+    # if overall record is 1/2 and less than 9/10 then not high streak unless another condition has perfect record
+    overall_record = streak_dict['overall record']
+    #if overall_record[1] < 2: #0/2,1/2
+
+    streak = streak_dict['streak']
+    print('streak: ' + str(streak))
+
+    #if 100%, eg 10/10
+    final_count = int(streak[-1].split('/')[0])
+    final_total = int(streak[-1].split('/')[1])
+    if final_count == final_total: # eg 13/13 or 3/3
+        high_streak = True
+    elif len(streak) > 9: # 9/10, 1/10
+        count_10 = int(streak[9].split('/')[0])
+        if count_10 > 8 or count_10 < 2:
+            high_streak = True
+
+    if high_streak:
+        print('high_streak')
+
+    return high_streak
+
+
+# determine high streaks which are 10/10, 9/10 and combined streaks like 4/4,8/10
+def determine_high_streaks(all_valid_streaks_list):
+    print('\n===Determine High Streaks===\n')
+    high_streaks = []
+
+    for streak in all_valid_streaks_list:
+
+        if determine_high_streak(streak):
+            high_streaks.append(streak)
+
+    
+    print('high_streaks: ' + str(high_streaks))
+
+    return high_streaks
 
 def determine_col_name(keyword,data):
     #print("\n===Determine Column Name===\n")
@@ -333,26 +383,38 @@ def determine_regular_season_games(player_game_log):
 # is it an over or under? above 7/10 or 4/5 or 3/3, or below 3/10 and not 2/2 bc maybe teammate injury so more playing time?
 def determine_streak_direction(streak):
     direction = '+'
-    # 1st idx header like [pts 10+,1/1,2/2,..]
-    out_of_10 = 0
-    out_of_5 = 0
-    out_of_3 = 0
-    out_of_2 = 0
-    if len(streak) > 10:
-        out_of_10 = int(streak[10].split('/')[0])
-    if len(streak) > 5:
-        out_of_5 = int(streak[5].split('/')[0])
-    if len(streak) > 3:
-        out_of_3 = int(streak[3].split('/')[0])
-    if len(streak) > 2:
-        out_of_2 = int(streak[2].split('/')[0])
 
-    if out_of_10 >= 7 or out_of_5 >= 4 or out_of_3 >= 3:
+    final_count = int(streak[-1].split('/')[0])
+    final_total = int(streak[-1].split('/')[1])
+    if final_count == final_total:
         direction = '+'
-    elif out_of_10 <= 3 and out_of_2 < 2: # if 3/10 but 2/2 then maybe recent change causing beginning of over streak
+    elif final_count == 0:
         direction = '-'
-    elif out_of_3 == 0:
-        direction = '-'
+    else:
+
+        # 1st idx header like [pts 10+,1/1,2/2,..]
+        out_of_10 = 0
+        out_of_5 = 0
+        out_of_3 = 0
+        out_of_2 = 0
+        if len(streak) > 10:
+            out_of_10 = int(streak[10].split('/')[0])
+        if len(streak) > 5:
+            out_of_5 = int(streak[5].split('/')[0])
+        if len(streak) > 3:
+            out_of_3 = int(streak[3].split('/')[0])
+        if len(streak) > 2:
+            out_of_2 = int(streak[2].split('/')[0])
+
+        if out_of_10 >= 7 or out_of_5 >= 4 or out_of_3 >= 3:
+            direction = '+'
+        elif out_of_10 <= 3 and out_of_2 < 2: # if 3/10 but 2/2 then maybe recent change causing beginning of over streak
+            direction = '-'
+        elif out_of_3 == 0:
+            direction = '-'
+
+    
+
 
     return direction
 
@@ -413,3 +475,56 @@ def determine_rank_avgs(pos, matchup_dict):
 
 
     return rank_avgs
+
+def determine_all_player_names(raw_projected_lines):
+    print('\n===Determine All Player Names===\n')
+    # get all player names so we can get their espn IDs and from that get team, position, game log, and schedule
+    player_names = []
+    player_initials = ['og','cj','pj','rj']
+    for row in raw_projected_lines:
+        if row[0] != 'PLAYER' and row[0].lower() != 'na': # uppercase indicates team abbrev like CHI
+            #print('found player line')
+            if not row[0][:3].isupper(): 
+                player_names.append(row[0].lower())
+            elif row[0][:2].lower() in player_initials: # if uppercase but player initials
+                player_names.append(row[0].lower())
+
+    # check for players with no points line but rebounds line
+    for row in raw_projected_lines:
+        if len(row) > 3:
+            if row[3] != 'PLAYER' and row[3].lower() != 'na': # uppercase indicates team abbrev like CHI
+                #print('found player line')
+
+                
+                player_name = row[3].lower()
+                if not row[3][:3].isupper(): 
+                    if player_name not in player_names:
+                        print('found player with no pts line: ' + player_name)
+                        player_names.append(player_name)
+                elif row[3][:2].lower() in player_initials: # if uppercase but player initials
+                    if player_name not in player_names:
+                        print('found player with no pts line: ' + player_name)
+                        player_names.append(player_name)
+
+    #print("player_names: " + str(player_names))
+    return player_names
+
+# give streak prediction, a degree of belief score based on all streaks, avgs, range, matchup, location, and all other conditions
+def determine_degree_of_belief(streak):
+
+    deg_of_bel = 0
+
+    return deg_of_bel
+
+def determine_all_degrees_of_belief(streaks):
+    degrees_of_belief = {}
+
+    for streak in streaks:
+
+        deg_of_bel = determine_degree_of_belief(streak)
+
+        prediction = streak['prediction'] # eg 'julius randle 10+ reb'
+
+        degrees_of_belief[prediction] = deg_of_bel # eg 7
+
+    return degrees_of_belief

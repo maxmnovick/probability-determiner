@@ -21,7 +21,11 @@ import writer # display game data
 # main settings
 read_all_seasons = False
 find_matchups = False
-input_type = '3/5' # date as mth/day will become mth_day in file
+input_type = '3/9' # date as mth/day will become mth_day in file
+
+player_of_interest = 'haliburton'
+stat_of_interest = '3p'
+allow_all = False # allow all stats to get to plot fcn so we can focus on single player
 
 todays_games_date = input_type + '/23'
 
@@ -65,27 +69,7 @@ to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 raw_projected_lines = reader.extract_data(data_type, input_type, extension='tsv', header=True) # tsv no header
 print("raw_projected_lines: " + str(raw_projected_lines))
 
-
-# get all player names so we can get their espn IDs and from that get team, position, game log, and schedule
-player_names = []
-for row in raw_projected_lines:
-    if row[0] != 'PLAYER' and row[0].lower() != 'na' and not row[0][:3].isupper(): # uppercase indicates team abbrev like CHI
-        #print('found player line')
-        player_names.append(row[0].lower())
-
-# check for players with no points line but rebounds line
-for row in raw_projected_lines:
-    if len(row) > 3:
-        if row[3] != 'PLAYER' and row[3].lower() != 'na' and not row[3][:3].isupper(): # uppercase indicates team abbrev like CHI
-            #print('found player line')
-        
-            player_name = row[3].lower()
-            if player_name not in player_names:
-                print('found player with no pts line: ' + player_name)
-                player_names.append(player_name)
-
-#print("player_names: " + str(player_names))
-
+player_names = determiner.determine_all_player_names(raw_projected_lines)
 player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
 all_player_teams = reader.read_all_players_teams(player_espn_ids_dict)
 
@@ -94,9 +78,6 @@ projected_lines = reader.read_projected_lines(raw_projected_lines, all_player_te
 
 # v1: copy from website by hand into organized format
 #projected_lines = reader.extract_data(data_type, input_type, header=True) # csv w/ header
-
-
-
 if input_type == '': # for testing we make input type blank ''
 #projected_lines = reader.read_projected_lines(date)
     projected_lines = [['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP'], ['Giannis Antetokounmpo', '34', '13', '6', '1', '1', '1', '1', 'Home', 'ATL']]
@@ -176,8 +157,11 @@ all_maxes_dicts = {}
 
 all_players_stats_dicts = {} # similar format as all_means_dicts but for actual stat values so we can display plot stat val over time/game
 
+# loop through player season logs
 for player_name, player_season_logs in all_player_season_logs_dict.items():
 #for player_idx in range(len(all_player_game_logs)):
+
+    print('\n===' + player_name.title() + '===\n')
 
     season_year = 2023
 
@@ -669,7 +653,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                 elif re.search('after',conditions):
                     output_title = re.sub('After','days after previous game', output_title).title()
                 
-                print("\n===" + player_name + " Average and Range===\n")
+                print("\n===" + player_name.title() + " Average and Range===\n")
                 print(output_title)
                 print(tabulate(output_table))
 
@@ -824,7 +808,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
 
                 #prob_row = [over_line, probability_over_line]
 
-                print("\n===" + player_name + " Probabilities===\n")
+                print("\n===" + player_name.title() + " Probabilities===\n")
 
                 game_num_table = [game_num_row, game_day_row, game_date_row]
                 print(tabulate(game_num_table))
@@ -865,7 +849,8 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                     #print('stat_line: ' + str(stat_line))
                     if stat_line < 2: # may need to change for 3 pointers if really strong likelihood to get 1
                         continue
-                    if determiner.determine_consistent_streak(stat_counts):
+                    
+                    if determiner.determine_consistent_streak(stat_counts) or allow_all:
                         # { 'player name': { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} } }
                         # at first there will not be this player name in the dict so we add it
                         if player_name in all_streak_tables.keys():
@@ -1083,7 +1068,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
 
                     valid_streaks.append(player_pre_dict)
 
-                #print("valid_streaks: " + str(valid_streaks))
+                print("valid_streaks: " + str(valid_streaks))
 
                 for pre_dict in valid_streaks:
                     
@@ -1538,108 +1523,31 @@ else:
 
 all_substantial_streaks = [all_ten_of_ten_streaks,all_o_of_ten_streaks] # display all substantive streaks together in file for review
 
+# from valid streaks which are consistent, find the highest streaks
+high_streaks = determiner.determine_high_streaks(all_valid_streaks_list)
+writer.display_game_data(high_streaks)
 
 
 
-print('\n===Plot Stats===\n')
-#Three lines to make our compiler able to draw:
-import matplotlib.pyplot as plt
 
-# display player stat values so we can see plot
-# columns: game num, stat val, over average record
-print('all_players_stats_dicts: ' + str(all_players_stats_dicts))
-for valid_streak in all_valid_streaks_list:
-    print('valid_streak: ' + str(valid_streak))
-    player_name = ' '.join(pre_dict['prediction'].split()[:-2]).lower() # anthony davis 12+ pts
-    print("player_name from prediction: " + player_name)
-    stat_name = pre_dict['prediction'].split()[-1].lower()
-    condition = 'all'
-    stat_vals_dict = all_players_stats_dicts[player_name][stat_name][condition]
-    print('stat_vals_dict: ' + str(stat_vals_dict))
+# for all player lines, get top 3 easiest and hardest matchups
 
-    game_nums = list(stat_vals_dict.keys())
-    print('game_nums: ' + str(game_nums))
-    stat_vals = list(stat_vals_dict.values())
-    stat_vals.reverse()
-    print('stat_vals: ' + str(stat_vals))
-
-    stat_line = int(pre_dict['prediction'].split()[-2][:-1])
-    print('stat_line: ' + str(stat_line))
-
-    plot_stat_line = [stat_line] * len(game_nums)
-    print('plot_stat_line: ' + str(plot_stat_line))
-
-    # x = np.array(game_nums)
-    # y = np.array(stat_vals)
-
-    plt.plot(game_nums, stat_vals, label = "Stat Vals") # reverse bc input from recent to distant but we plot left to right
-    plt.plot(game_nums, plot_stat_line,  label = "Stat Line")
-
-    # also plot avg over time to compare trend of avg
-    # bc just seeing season avg is barely useful almost useless unless we see either avg in last few games (and multiple subset) or we can simply see if avg is increasing or decreasing
-    # the avg for the first game must be based on previous seasons
-    # but for now arbitrary number
-    #init_mean_stat_val
-    prev_stat_vals = []
-    mean_stat_vals = [] # how mean changes over time
-    past_ten_stat_vals = []
-    past_ten_mean_stat_vals = [] # mean over last 10 games to get more recent relevant picture
-    past_three_stat_vals = []
-    past_three_mean_stat_vals = []
-    for stat_val_idx in range(len(stat_vals)):
-        stat_val = stat_vals[stat_val_idx]
-        print('prev_stat_vals: ' + str(prev_stat_vals))
-        print('past_ten_stat_vals: ' + str(past_ten_stat_vals))
-        # compute avg of this and previous vals
-        if stat_val_idx == 0:
-            mean_stat_val = stat_val
-            past_ten_mean_stat_val = stat_val
-            past_three_mean_stat_val = stat_val
-
-        else:
-            mean_stat_val = round(numpy.mean(prev_stat_vals), 1)
-            print('mean_stat_val: ' + str(mean_stat_val))
-            past_ten_mean_stat_val = round(numpy.mean(past_ten_stat_vals), 1)
-            print('past_ten_mean_stat_val: ' + str(past_ten_mean_stat_val))
-            past_three_mean_stat_val = round(numpy.mean(past_three_stat_vals), 1)
-            print('past_three_mean_stat_val: ' + str(past_three_mean_stat_val))
-
-        mean_stat_vals.append(mean_stat_val)
-        past_ten_mean_stat_vals.append(past_ten_mean_stat_val)
-        past_three_mean_stat_vals.append(past_three_mean_stat_val)
-
-        prev_stat_vals.append(stat_val)
-
-        if stat_val_idx < 10: # add vals to list until we reach 10 bc we only want past 10 games
-            past_ten_stat_vals.append(stat_val)
-        else: # replace in list instead of adding
-            past_ten_stat_vals.pop(0)
-            past_ten_stat_vals.append(stat_val)
-        if stat_val_idx < 3: # add vals to list until we reach 10 bc we only want past 10 games
-            past_three_stat_vals.append(stat_val)
-        else: # replace in list instead of adding
-            past_three_stat_vals.pop(0)
-            past_three_stat_vals.append(stat_val)
-        
-
-    print('mean_stat_vals: ' + str(mean_stat_vals))
-    print('past_ten_mean_stat_vals: ' + str(past_ten_mean_stat_vals))
-    print('past_three_mean_stat_vals: ' + str(past_three_mean_stat_vals))
-
-    plt.plot(game_nums, mean_stat_vals,  label = "Overall Mean")
-    plt.plot(game_nums, past_ten_mean_stat_vals,  label = "Past 10 Mean")
-    plt.plot(game_nums, past_three_mean_stat_vals,  label = "Past 3 Mean")
+writer.display_stat_plot(all_valid_streaks_list, all_players_stats_dicts, stat_of_interest, player_of_interest)
 
 
-    plt.title(player_name.title() + " " + stat_name.upper() + " over Time")
-    plt.xlabel("Game Num")
-    plt.ylabel(stat_name.upper())
 
-    plt.legend()
-    plt.show()
+
+
+        # display table so we can export to files and view graphs in spreadsheet
 
     #Two  lines to make our compiler able to draw:
     # plt.savefig(sys.stdout.buffer)
     # sys.stdout.flush()
 
     
+
+# give high streak prediction, a degree of belief score based on all streaks, avgs, range, matchup, location, and all other conditions
+# degrees of belief = { prediction: deg of bel, .. }, 
+# where prediction is 'player name stat val, stat direction, stat name' in form 'julius randle 10+ reb'
+# and deg of bel is integer
+degrees_of_belief = determiner.determine_all_degrees_of_belief(high_streaks)

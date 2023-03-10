@@ -102,8 +102,11 @@ def read_player_espn_id(player_name):
 	print("espn_id: " + espn_id)
 	return espn_id
 
-def read_all_player_espn_ids(player_names):
+def read_all_player_espn_ids(player_names, player_of_interest=''):
 	espn_ids_dict = {}
+
+	if player_of_interest != '':
+		player_names = [player_of_interest]
 
 	for name in player_names:
 		espn_id = read_player_espn_id(name)
@@ -699,10 +702,10 @@ def read_all_matchup_data(matchup_data_sources):
 
 	return all_matchup_data
 
-def read_projected_lines(date):
-	lines = []
+# def read_projected_lines(date):
+# 	lines = []
 
-	return lines
+# 	return lines
 
 
 def extract_json_from_file(data_type, input_type, extension='csv'):
@@ -891,7 +894,7 @@ def read_season_log_from_file(data_type, player_name, ext):
 
 	return all_stats
 
-def read_projected_lines(raw_projected_lines, all_player_teams):
+def read_projected_lines(raw_projected_lines, all_player_teams, player_of_interest=''):
 	# convert raw projected lines to projected lines
 	header_row = ['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP']
 
@@ -935,10 +938,11 @@ def read_projected_lines(raw_projected_lines, all_player_teams):
 				# loop thru rows until we see header. then make header key in dict and add next rows to list of values until next header
 				# if first item = 'PLAYER' skip bc not needed header
 				# then if first 3 letters are uppercase we know it is team matchup header w/ needed info
+				player_initials = ['og','cj','pj','rj']
 				print('row: ' + str(row))
 				if len(row) > 0:
 					if row[0] != 'PLAYER' and row[0].lower() != 'na':
-						if row[0][:3].isupper():
+						if row[0][:3].isupper() and row[0][:2].lower() not in player_initials:
 							#print('found header: ' + str(row) + ', ' + row[0][:3])
 							game_key = row[0]
 							# if not game_key in game_lines_dict.keys():
@@ -972,6 +976,7 @@ def read_projected_lines(raw_projected_lines, all_player_teams):
 		print('stat_name: ' + stat_name)
 
 		for game_info, game_lines in game_lines_dict.items():
+			print('game_info: ' + str(game_info))
 			teams = game_info.split('at')
 			away_team = teams[0]
 			home_team = teams[1]
@@ -1008,28 +1013,38 @@ def read_projected_lines(raw_projected_lines, all_player_teams):
 				print("player_name: " + str(player_name))
 				#if player_name in all_player_teams.keys():
 
-				player_team_abbrev = all_player_teams[player_name]
-				print("player_team_abbrev: " + str(player_team_abbrev))
-				# determine opponent from game info by eliminating player's team from list of 2 teams
-				loc = 'home'
-				opp = away_abbrev
-				if player_team_abbrev == away_abbrev:
-					loc = 'away'
-					opp = home_abbrev
-				# only add loc and opp once per player per game
-				if not player_name in all_player_lines_dicts.keys():
-					all_player_lines_dicts[player_name] = { 'loc': loc, 'opp': opp }
-				else:
-					all_player_lines_dicts[player_name]['loc'] = loc 
-					all_player_lines_dicts[player_name]['opp'] = opp
-
 				
 
-				stat = math.ceil(float(raw_player_line[1].split()[1])) # O 10.5 +100
-				#print("pts: " + str(pts))
-				#reb = math.ceil(float(raw_player_line[4].split()[1])) # O 10.5 +100
+				if player_name != '':
+					if player_name in all_player_teams.keys():
+						player_team_abbrev = all_player_teams[player_name]
+						print("player_team_abbrev: " + str(player_team_abbrev))
+						# determine opponent from game info by eliminating player's team from list of 2 teams
+						loc = 'home'
+						opp = away_abbrev
+						if player_team_abbrev == away_abbrev:
+							loc = 'away'
+							opp = home_abbrev
+						# only add loc and opp once per player per game
+						if not player_name in all_player_lines_dicts.keys():
+							all_player_lines_dicts[player_name] = { 'loc': loc, 'opp': opp }
+						else:
+							all_player_lines_dicts[player_name]['loc'] = loc 
+							all_player_lines_dicts[player_name]['opp'] = opp
 
-				all_player_lines_dicts[player_name][stat_name] = stat
+						
+
+						stat = math.ceil(float(raw_player_line[1].split()[1])) # O 10.5 +100
+						#print("pts: " + str(pts))
+						#reb = math.ceil(float(raw_player_line[4].split()[1])) # O 10.5 +100
+
+						all_player_lines_dicts[player_name][stat_name] = stat
+					else:
+						print('Warning: No player name ' + player_name + ' not in teams dict while reading projected lines!')
+						print("raw_player_line: " + str(raw_player_line))
+				else:
+					print('Warning: No player name while reading projected lines!')
+					print("raw_player_line: " + str(raw_player_line))
 
 
 	print("all_player_lines_dicts: " + str(all_player_lines_dicts))
@@ -1061,7 +1076,12 @@ def read_projected_lines(raw_projected_lines, all_player_teams):
 		loc = player_lines['loc']
 		opp = player_lines['opp']
 		player_line = [player_name, pts, reb, ast, three, blk, stl, to, loc, opp]
-		all_player_lines.append(player_line)
+
+		# if certain players of interest, keep only their lines for analysis
+		if player_of_interest == '': # get all players
+			all_player_lines.append(player_line)
+		elif player_of_interest == player_name:
+			all_player_lines.append(player_line)
 		
 	print("all_player_lines:\n" + tabulate(all_player_lines))
 	return all_player_lines
