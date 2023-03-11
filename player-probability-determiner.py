@@ -17,14 +17,15 @@ import pandas as pd # see when was prev game
 
 
 import writer # display game data
+import sorter # sort predictions by degree of belief
 
 # main settings
 read_all_seasons = False
-find_matchups = False
-input_type = '3/9' # date as mth/day will become mth_day in file
+find_matchups = True
+input_type = '3/11' # date as mth/day will become mth_day in file
 
-player_of_interest = 'haliburton'
-stat_of_interest = '3p'
+player_of_interest = 'vanvleet'
+stat_of_interest = 'ast'
 allow_all = False # allow all stats to get to plot fcn so we can focus on single player
 
 todays_games_date = input_type + '/23'
@@ -1290,9 +1291,16 @@ for p_name, p_streak_tables in all_streak_tables.items():
                                 matchup_table_header_row.append(source_header)
 
                             #{pg:0, sg:0, ..}, for given opponent
-                            s1_matchup_rank = sources_results['ranks'][0] #for example test take idx 0
-                            s2_matchup_rank = sources_results['ranks'][1]
-                            s3_matchup_rank = sources_results['ranks'][2]
+                            ranks = sources_results['ranks']
+                            s1_matchup_rank = 0
+                            s2_matchup_rank = 0
+                            s3_matchup_rank = 0
+                            if len(ranks) > 0:
+                                s1_matchup_rank = ranks[0] #for example test take idx 0
+                            if len(ranks) > 1:
+                                s2_matchup_rank = ranks[1]
+                            if len(ranks) > 2:
+                                s3_matchup_rank = ranks[2]
                             
                             # matchup_dict = { pg: { s1: 0 }, sg: { s1: 0 }, .. }
                             matchup_dict[pos] = { 's1': s1_matchup_rank, 's2': s2_matchup_rank, 's3': s3_matchup_rank }
@@ -1525,24 +1533,14 @@ all_substantial_streaks = [all_ten_of_ten_streaks,all_o_of_ten_streaks] # displa
 
 # from valid streaks which are consistent, find the highest streaks
 high_streaks = determiner.determine_high_streaks(all_valid_streaks_list)
-writer.display_game_data(high_streaks)
+
 
 
 
 
 # for all player lines, get top 3 easiest and hardest matchups
 
-writer.display_stat_plot(all_valid_streaks_list, all_players_stats_dicts, stat_of_interest, player_of_interest)
-
-
-
-
-
-        # display table so we can export to files and view graphs in spreadsheet
-
-    #Two  lines to make our compiler able to draw:
-    # plt.savefig(sys.stdout.buffer)
-    # sys.stdout.flush()
+#writer.display_stat_plot(all_valid_streaks_list, all_players_stats_dicts, stat_of_interest, player_of_interest)
 
     
 
@@ -1550,4 +1548,17 @@ writer.display_stat_plot(all_valid_streaks_list, all_players_stats_dicts, stat_o
 # degrees of belief = { prediction: deg of bel, .. }, 
 # where prediction is 'player name stat val, stat direction, stat name' in form 'julius randle 10+ reb'
 # and deg of bel is integer
-degrees_of_belief = determiner.determine_all_degrees_of_belief(high_streaks)
+# init streaks as only high streaks unless allow all
+streaks = high_streaks
+if allow_all:
+    streaks = all_valid_streaks_list
+
+degrees_of_belief = determiner.determine_all_degrees_of_belief(streaks)
+# attach deg of bel to high streak prediction dict
+deg_of_bel_key = 'degree of belief'
+for streak in streaks:
+    streak[deg_of_bel_key] = degrees_of_belief[streak['prediction']]
+
+sorted_streaks = sorter.sort_dicts_by_key(streaks,deg_of_bel_key) #sorter.sort_predictions_by_deg_of_bel(streaks)
+
+writer.display_game_data(sorted_streaks)

@@ -99,7 +99,7 @@ def read_player_espn_id(player_name):
 	except Exception as e:
 		print('Error', espn_id, player_name.title())
 
-	print("espn_id: " + espn_id)
+	#print("espn_id: " + espn_id)
 	return espn_id
 
 def read_all_player_espn_ids(player_names, player_of_interest=''):
@@ -895,6 +895,8 @@ def read_season_log_from_file(data_type, player_name, ext):
 	return all_stats
 
 def read_projected_lines(raw_projected_lines, all_player_teams, player_of_interest=''):
+	print('\n===Read Projected Lines===\n')
+
 	# convert raw projected lines to projected lines
 	header_row = ['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP']
 
@@ -941,8 +943,10 @@ def read_projected_lines(raw_projected_lines, all_player_teams, player_of_intere
 				player_initials = ['og','cj','pj','rj']
 				print('row: ' + str(row))
 				if len(row) > 0:
-					if row[0] != 'PLAYER' and row[0].lower() != 'na':
-						if row[0][:3].isupper() and row[0][:2].lower() not in player_initials:
+					first_element_wo_punctuation = re.sub('\'|\.','',row[0])
+					#print('first_element_wo_punctuation: ' + str(first_element_wo_punctuation))
+					if first_element_wo_punctuation != 'PLAYER' and first_element_wo_punctuation.lower() != 'na':
+						if first_element_wo_punctuation[:3].isupper() and first_element_wo_punctuation[:2].lower() not in player_initials:# and not re.search('\'',row[0][:3]): # if apostrophe then player name like D'Angelo, not header
 							#print('found header: ' + str(row) + ', ' + row[0][:3])
 							game_key = row[0]
 							# if not game_key in game_lines_dict.keys():
@@ -977,11 +981,16 @@ def read_projected_lines(raw_projected_lines, all_player_teams, player_of_intere
 
 		for game_info, game_lines in game_lines_dict.items():
 			print('game_info: ' + str(game_info))
-			teams = game_info.split('at')
+			teams = game_info.split('at') 
+			# make exception for MIA Heatat bc heat ends with at
 			away_team = teams[0]
-			home_team = teams[1]
-			#print("away_team: " + str(away_team))
-			#print("home_team: " + str(home_team))
+			home_team_idx = 1
+			if away_team.lower() == 'mia he':
+				away_team = 'MIA Heat'
+				home_team_idx = 2
+			home_team = teams[home_team_idx]
+			print("away_team: " + str(away_team))
+			print("home_team: " + str(home_team))
 
 			irregular_abbrevs = {'bro':'bkn', 'okl':'okc', 'nor':'nop', 'pho':'phx', 'was':'wsh', 'uth': 'uta' } # for these match the first 3 letters of team name instead
 

@@ -36,6 +36,9 @@ def determine_consistent_streak(stat_counts):
             elif stat_counts[1] != 1: # avoid 1/2
                 if len(stat_counts) > 3:
                     if stat_counts[3] != 2: # avoid 2/4
+                        if len(stat_counts) > 6: 
+                            if stat_counts[6] == 7 or stat_counts[6] == 0: # 7/7 or 0/7 bc key number 7
+                                consistent = True
                         if len(stat_counts) > 9:
                             if stat_counts[9] > 7 or stat_counts[9] < 3: # 8/10,9/10,10/10 or 2/10,1/10,0/10
                                 consistent = True
@@ -90,7 +93,10 @@ def determine_high_streak(streak_dict):
         high_streak = True
     elif len(streak) > 9: # 9/10, 1/10
         count_10 = int(streak[9].split('/')[0])
+        count_7 = int(streak[6].split('/')[0])
         if count_10 > 8 or count_10 < 2:
+            high_streak = True
+        elif count_7 == 7 or count_7 == 0:
             high_streak = True
 
     if high_streak:
@@ -127,7 +133,7 @@ def determine_col_name(keyword,data):
     return final_col_name
 
 def determine_team_abbrev(team_name, team_abbrevs_dict={}):
-    #print("\n===Determine Team Abbrev===\n")
+    #print("\n===Determine Team Abbrev: " + team_name + "===\n")
     team_abbrevs_dict = {'atl':'atlanta hawks', 
                     'bos':'boston celtics', 
                     'bkn':'brooklyn nets', 
@@ -141,7 +147,9 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
                     'hou':'houston rockets',
                     'ind':'indiana pacers',
                     'lac':'los angeles clippers',
+                    'lac':'la clippers',
                     'lal':'los angeles lakers',
+                    'lal':'la lakers',
                     'mem':'memphis grizzlies',
                     'mia':'miami heat',
                     'mil':'milwaukee bucks',
@@ -160,7 +168,11 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
                     'wsh':'washington wizards'} # could get from fantasy pros table but simpler to make once bc only 30 immutable vals
 
     team_abbrev = ''
-    if team_name[:3].isupper():
+    # problem with LA Clippers bc space is considered uppercase
+    if team_name.lower() == 'la clippers':
+        team_abbrev = 'lac'
+    elif team_name[:3].isupper(): 
+        #print('first 3 letters uppercase')
         team_abbrev = team_name[:3].lower()
 
         irregular_abbrevs = {'bro':'bkn', 'okl':'okc', 'nor':'nop', 'pho':'phx', 'was':'wsh', 'uth': 'uta' } # for these match the first 3 letters of team name instead
@@ -482,26 +494,28 @@ def determine_all_player_names(raw_projected_lines):
     player_names = []
     player_initials = ['og','cj','pj','rj']
     for row in raw_projected_lines:
-        if row[0] != 'PLAYER' and row[0].lower() != 'na': # uppercase indicates team abbrev like CHI
+        first_element_wo_punctuation = re.sub('\'|\.','',row[0])
+        if first_element_wo_punctuation != 'PLAYER' and first_element_wo_punctuation.lower() != 'na': # uppercase indicates team abbrev like CHI
             #print('found player line')
-            if not row[0][:3].isupper(): 
+            if not first_element_wo_punctuation[:3].isupper(): # allow if first 3 letters uppercase but one of them is apostrphe in player name like D'Angelo
                 player_names.append(row[0].lower())
-            elif row[0][:2].lower() in player_initials: # if uppercase but player initials
+            elif first_element_wo_punctuation[:2].lower() in player_initials: # if uppercase but player initials
                 player_names.append(row[0].lower())
 
     # check for players with no points line but rebounds line
     for row in raw_projected_lines:
         if len(row) > 3:
-            if row[3] != 'PLAYER' and row[3].lower() != 'na': # uppercase indicates team abbrev like CHI
+            first_element_wo_punctuation = re.sub('\'|\\.','',row[3])
+            if first_element_wo_punctuation != 'PLAYER' and first_element_wo_punctuation.lower() != 'na': # uppercase indicates team abbrev like CHI
                 #print('found player line')
 
                 
-                player_name = row[3].lower()
-                if not row[3][:3].isupper(): 
+                player_name = row[3].lower() #keep punctuation in key
+                if not first_element_wo_punctuation[:3].isupper(): 
                     if player_name not in player_names:
                         print('found player with no pts line: ' + player_name)
                         player_names.append(player_name)
-                elif row[3][:2].lower() in player_initials: # if uppercase but player initials
+                elif first_element_wo_punctuation[:2].lower() in player_initials: # if uppercase but player initials
                     if player_name not in player_names:
                         print('found player with no pts line: ' + player_name)
                         player_names.append(player_name)
@@ -509,11 +523,244 @@ def determine_all_player_names(raw_projected_lines):
     #print("player_names: " + str(player_names))
     return player_names
 
+# may come in format away: [record] so split and convert string to list
+def determine_record_score(record):
+    print('\n===Determime Record Score===\n')
+    print('record: ' + str(record))
+    score = 0
+    
+
+    # if 0/2,1/4,4/10, then -1
+    # if 2/2,2/4,4/10, then 0 bc recent success
+    # if 2/2,2/4,2/10, then still 0 bc recent success
+    stat_counts = [] # [0,0,1,..]
+    for partial_record in record:
+        stat_count = int(partial_record.split('/')[0])
+        stat_counts.append(stat_count)
+    #print('stat_counts: ' + str(stat_counts))
+
+    if len(record) > 0:
+        final_count = stat_counts[-1]
+        final_total = int(record[-1].split('/')[1])
+        #print('final_count: ' + str(final_count))
+        #print('final_total: ' + str(final_total))
+        if final_count == final_total:
+            score = 1
+        elif final_count == 0:
+            score = -1
+        else:
+            #print('check record not 0 or 100')
+            if len(record) > 4: # 1/5
+                if stat_counts[4] < 2:
+                    score = -1
+
+            if len(record) > 7: 
+                if stat_counts[1] == 0 and stat_counts[7] < 3: # 0/2,2/8
+                    score = -1
+
+            if len(record) > 8: 
+                if stat_counts[1] == 0 and stat_counts[3] < 3 and stat_counts[8] < 4: # 0/2,2/4,3/9
+                    score = -1
+
+            if len(record) > 9:
+                #print('length of record > 9')
+                #print('stat_counts[1]: ' + str(stat_counts[1]))
+
+                # negative score
+                if stat_counts[1] == 0 and stat_counts[9] < 5: # 0/2,4/10
+                    score = -1
+                elif stat_counts[2] == 0 and stat_counts[9] < 7: # 0/3,6/10
+                    score = -1
+                elif stat_counts[1] < 2 and stat_counts[9] < 3: # 1/1,1/2,1/5,2/10
+                    score = -1
+                elif stat_counts[0] == 0 and stat_counts[1] < 2 and stat_counts[4] < 3 and stat_counts[9] < 5: # 0/1,1/2,2/5,4/10
+                    score = -1
+
+                # positive score
+                elif stat_counts[6] == 7: # 7/7,7/10
+                    score = 1
+                elif stat_counts[1] == 2 and stat_counts[4] > 3 and stat_counts[9] > 7: # 2/2,4/5,8/10
+                    score = 1
+                elif len(record) > 10:
+                    print('length of record > 10') # since record outline, must check total in denominator to be sure we are referring to correct stat count bc if greater than 15 samples we use outline skipping some samples so see determine record outline fcn
+                    if stat_counts[1] > 0 and stat_counts[3] > 1 and stat_counts[4] > 2 and stat_counts[9] > 7 and stat_counts[10] > 10: # 1/2,2/4,3/5,8/10,11/15
+                        score = 1
+                    
+                    elif stat_counts[3] == 4 and stat_counts[9] > 6 and stat_counts[10] > 11: # 4/4,7/10,12/15
+                        score = 1
+
+                    elif stat_counts[1] == 2 and stat_counts[9] > 6 and stat_counts[10] > 12: # 2/2,7/10,13/15
+                        score = 1
+
+                    elif stat_counts[1] == 2 and stat_counts[4] > 2 and stat_counts[9] > 5 and stat_counts[10] > 12: # 2/2,3/5,6/10,13/15
+                        score = 1
+
+
+                    # elif stat_counts[1] == 2:
+                    #     if stat_counts[9] > 6: # 2/2,7/10
+                    #         score = 1
+                    #     elif stat_counts[4] > 2 and stat_counts[9] > 5: # 2/2,3/5,6/10
+                    #         score = 1
+                    # elif stat_counts[6] == 7 and stat_counts[9] > 6: # 7/7,7/10 if we want to do 2/2,8/10 instead above more strict
+                    #     score = 1
+
+    
+
+    print('score: ' + str(score))
+    return score
+
+def determine_average_range_score(prediction, median, mode):
+    print('\n===Determine Average Range Score===\n')
+    score = 0
+
+    prediction_stat_val = int(re.sub('[+-]','',prediction.split()[-2]))
+    print('prediction_stat_val: ' + str(prediction_stat_val))
+    print('median: ' + str(median))
+    print('mode: ' + str(mode))
+    
+    # assuming streak direction positive/over bc later we will reverse for under
+    # if median or mode are greater than player line, and the other is not below line, score +1
+    # if one at or above line and the other above, then score +1
+    if median - prediction_stat_val > 0 and not mode - prediction_stat_val < 0:
+        score = 1
+    elif mode - prediction_stat_val > 0 and not median - prediction_stat_val < 0:
+        score = 1
+    # if median or mode less than player line, and the other is not above line, score -1.
+    # if one at or below line and the other below, then score -1
+    elif median - prediction_stat_val < 0 and not mode - prediction_stat_val > 0: 
+        score = -1
+    elif mode - prediction_stat_val < 0 and not median - prediction_stat_val > 0:
+        score = -1
+    
+
+    print('score: ' + str(score))
+    return score
+
 # give streak prediction, a degree of belief score based on all streaks, avgs, range, matchup, location, and all other conditions
 def determine_degree_of_belief(streak):
 
+    print('\n===Determine Degree of Belief===\n')
+    print('streak: ' + str(streak))
+
     deg_of_bel = 0
 
+    prediction = streak['prediction'] # eg 'julius randle 10+ reb'
+    print('prediction: ' + str(prediction))
+
+    # use streak direction to determine if matchup and location are good or bad for prediction
+    streak_direction = re.sub('\d','',prediction.split()[-2]) # + or -
+    print('streak_direction: ' + streak_direction)
+
+    # if matchup info is given then score matchup
+    matchup_score = 0
+    if 's1 matchup' in streak.keys():
+
+        matchup_mean = streak['matchup mean']
+        if matchup_mean > 20: # if easy matchup >20/30
+            matchup_score = 1
+            # if streak_direction == '+': # and projected over, then matchup score +1
+            #     matchup_score = 1
+            # else: # but projected under, then matchup score -1 bc projected under but easy matchup so they could over
+            #     matchup_score = -1
+        elif matchup_mean < 10: # if hard matchup <10/30
+            matchup_score = -1
+            # if streak_direction == '+': # but projected over, then matchup score -1
+            #     matchup_score = -1
+            # else: # and projected under, then matchup score +1 bc projected under and hard matchup so they should go under
+            #     matchup_score = 1
+        
+    print('matchup_score: ' + str(matchup_score))
+
+    # if home and over then +1, etc
+    location_score = 0
+    location = streak['location record'].split(':')[0]
+    print('location: ' + str(location))
+    if location == 'home':
+        location_score = 1
+    else:
+        location_score = -1
+    #     if streak_direction == '+': # and projected over, then loc score +1
+    #         location_score = 1
+    #     else: # but projected under, then loc score -1 bc projected under but easy loc so they could over
+    #         location_score = -1
+    # else: # away
+    #     if streak_direction == '+': # but projected over, then loc score -1
+    #         location_score = -1
+    #     else: # and projected under, then loc score +1 bc projected under and hard loc so they should go under
+    #         location_score = 1
+    print('location_score: ' + str(location_score))
+
+    all_record_score = determine_record_score(streak['overall record'])
+    # if re.search(':',record):
+    #     record = list(streak['location record'].split(':')[1].strip())
+    #     print('corrected record: ' + str(record))
+
+    location_record_string = re.sub('\'','',streak['location record'].split(':')[1].strip()) # home: ['1/1',..,'10/10'] -> ['1/1',..,'10/10']
+    location_record = location_record_string.strip('][').split(', ')
+    #print('loc_record: \'' + str(location_record) + '\'')
+    loc_record_score = determine_record_score(location_record)
+
+    opp_record_score = 0
+    if len(streak['opponent record']) > 0:
+        opp_record_string = re.sub('\'','',streak['opponent record'].split(':')[1].strip()) # home: ['1/1',..,'10/10'] -> ['1/1',..,'10/10']
+        opp_record = opp_record_string.strip('][').split(', ')
+        opp_record_score = determine_record_score(opp_record)
+
+    time_after_record_score = 0
+    if len(streak['time after record']) > 0:
+        time_after_record_string = re.sub('\'','',streak['time after record'].split(':')[1].strip()) # home: ['1/1',..,'10/10'] -> ['1/1',..,'10/10']
+        time_after_record = time_after_record_string.strip('][').split(', ')
+        time_after_record_score = determine_record_score(time_after_record)
+
+    dow_record_score = 0
+    if len(streak['day record']) > 0:
+        dow_record_string = re.sub('\'','',streak['day record'].split(':')[1].strip()) # home: ['1/1',..,'10/10'] -> ['1/1',..,'10/10']
+        dow_record = dow_record_string.strip('][').split(', ')
+        dow_record_score = determine_record_score(dow_record)
+
+    overall_median = streak['overall median']
+    overall_mode = streak['overall mode']
+    all_avg_score = determine_average_range_score(prediction, overall_median, overall_mode)
+
+    loc_median = streak['location median']
+    loc_mode = streak['location mode']
+    loc_avg_score = determine_average_range_score(prediction, loc_median, loc_mode)
+
+    opp_avg_score = 0
+    if streak['opponent median'] != '':
+        opp_median = streak['opponent median']
+        opp_mode = streak['opponent mode']
+        opp_avg_score = determine_average_range_score(prediction, opp_median, opp_mode)
+
+    time_after_avg_score = 0
+    if streak['time after median'] != '':
+        time_after_median = streak['time after median']
+        time_after_mode = streak['time after mode']
+        time_after_avg_score = determine_average_range_score(prediction, time_after_median, time_after_mode)
+
+    dow_avg_score = 0
+    if streak['day median'] != '':
+        dow_median = streak['day median']
+        dow_mode = streak['day mode']
+        dow_avg_score = determine_average_range_score(prediction, dow_median, dow_mode)
+
+    sub_scores = [matchup_score, location_score, all_record_score,loc_record_score,opp_record_score,time_after_record_score,dow_record_score,all_avg_score,loc_avg_score,opp_avg_score,time_after_avg_score,dow_avg_score]
+    print('sub_scores: ' + str(sub_scores))
+    corrected_sub_scores = []
+    # reverse scores for negative direction/unders
+    for score in sub_scores:
+        if streak_direction == '-':
+            score = score * -1
+        corrected_sub_scores.append(score)
+
+    print('corrected_sub_scores: ' + str(corrected_sub_scores))
+
+
+    deg_of_bel = 0 #matchup_score + location_score + all_record_score + loc_record_score + opp_record_score + time_after_record_score + dow_record_score + all_avg_score + loc_avg_score + opp_avg_score + time_after_avg_score + dow_avg_score
+    for score in corrected_sub_scores:
+        deg_of_bel += score
+
+    print('deg_of_bel: ' + str(deg_of_bel))
     return deg_of_bel
 
 def determine_all_degrees_of_belief(streaks):

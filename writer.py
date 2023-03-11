@@ -159,3 +159,9 @@ def display_stat_plot(all_valid_streaks_list, all_players_stats_dicts, stat_of_i
 
             plt.legend()
             plt.show()
+
+            # display table so we can export to files and view graphs in spreadsheet
+
+            #Two  lines to make our compiler able to draw:
+            # plt.savefig(sys.stdout.buffer)
+            # sys.stdout.flush()
