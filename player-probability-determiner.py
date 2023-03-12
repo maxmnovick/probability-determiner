@@ -22,7 +22,7 @@ import sorter # sort predictions by degree of belief
 # main settings
 read_all_seasons = False
 find_matchups = True
-input_type = '3/11' # date as mth/day will become mth_day in file
+input_type = '3/12' # date as mth/day will become mth_day in file
 
 player_of_interest = 'vanvleet'
 stat_of_interest = 'ast'
@@ -1542,6 +1542,9 @@ high_streaks = determiner.determine_high_streaks(all_valid_streaks_list)
 
 #writer.display_stat_plot(all_valid_streaks_list, all_players_stats_dicts, stat_of_interest, player_of_interest)
 
+
+# given a single prediction dictionary, display relevant tables so we can view stat plots
+# pre_dict = {'prediction':'',..}
     
 
 # give high streak prediction, a degree of belief score based on all streaks, avgs, range, matchup, location, and all other conditions

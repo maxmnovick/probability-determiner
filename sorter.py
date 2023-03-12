@@ -10,4 +10,4 @@ def sort_predictions_by_deg_of_bel(predictions):
 
 def sort_dicts_by_key(dicts, key):
 
-    return sorted(dicts, key=lambda d: d[key])
+    return sorted(dicts, key=lambda d: d[key], reverse=True) # reverse so we see highest first
