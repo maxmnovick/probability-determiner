@@ -22,6 +22,7 @@ y = [10,10,3,4,5]
 
 # scatter plot
 
+# use basic regression for numerical data like game num in season, comparing bt seasons:
 # linear regression
 print('\n===Linear Regression===\n')
 slope, intercept, r, p, std_err = stats.linregress(x, y)
@@ -66,3 +67,9 @@ plt.show()
 
 # multiple regression, so we can predict based on multiple variables
 
+
+
+# todo: categorical data like opponent name
+
+# todo: compare predicted value from regression based on conditions vs predicting next stat value in sequence given past stat vals
+# see predicting next word in text for similarity with predicting sequence

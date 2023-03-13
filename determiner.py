@@ -147,9 +147,7 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
                     'hou':'houston rockets',
                     'ind':'indiana pacers',
                     'lac':'los angeles clippers',
-                    'lac':'la clippers',
                     'lal':'los angeles lakers',
-                    'lal':'la lakers',
                     'mem':'memphis grizzlies',
                     'mia':'miami heat',
                     'mil':'milwaukee bucks',
@@ -171,6 +169,8 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
     # problem with LA Clippers bc space is considered uppercase
     if team_name.lower() == 'la clippers':
         team_abbrev = 'lac'
+    elif team_name.lower() == 'la lakers':
+        team_abbrev = 'lal'
     elif team_name[:3].isupper(): 
         #print('first 3 letters uppercase')
         team_abbrev = team_name[:3].lower()
@@ -181,7 +181,9 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
             team_abbrev = irregular_abbrevs[team_abbrev]
     else:
         for abbrev, name in team_abbrevs_dict.items():
+            #print('name: ' + str(name))
             if re.search(team_name.lower(),name): # name is full name but we may be given partial team name
+                #print('found match')
                 team_abbrev = abbrev
                 break
 

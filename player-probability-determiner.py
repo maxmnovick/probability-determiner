@@ -19,25 +19,31 @@ import pandas as pd # see when was prev game
 import writer # display game data
 import sorter # sort predictions by degree of belief
 
-# main settings
-read_all_seasons = False
-find_matchups = True
-input_type = '3/12' # date as mth/day will become mth_day in file
+import generator # generate stats dicts, all records dicts, all means dicts, all streaks dicts, etc
 
+
+
+
+# === main settings ===
+read_all_seasons = False
+find_matchups = False
+input_type = '3/13' # date as mth/day will become mth_day in file
+# graph settings
 player_of_interest = 'vanvleet'
 stat_of_interest = 'ast'
 allow_all = False # allow all stats to get to plot fcn so we can focus on single player
 
-todays_games_date = input_type + '/23'
-
 data_type = "Player Lines"
 
+todays_games_date = input_type + '/23'
 todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
 current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lower()
 
 # input: game log
 # player name
 # date, opponent, result, min, fg, fg%, 3pt, 3p%, ft, ft%, reb, ast, blk, stl, pf, to, pts
+#print("\n===" + player_name + "===\n")
+#row1 = ['Tue 2/7','vs OKC','L 133-130', '34','13-20','65.0','4-6','66.7','8-10','80.0','7','3','0','3','3','4','38']
 
 # for testing
 # data_type = 'Player Data'
@@ -46,23 +52,14 @@ current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lo
 # pts_line = 1
 # r_line = 3
 # a_line = 1
-
-#print("\n===" + player_name + "===\n")
-#row1 = ['Tue 2/7','vs OKC','L 133-130', '34','13-20','65.0','4-6','66.7','8-10','80.0','7','3','0','3','3','4','38']
-
-#all_player_game_logs = []
-#all_player_game_logs_dict = {}
-#all_player_season_logs_dict = {}
-
-
-player_names = ['Julius Randle', 'Jalen Brunson', 'RJ Barrett', 'Demar Derozan', 'Paolo Banchero', 'Zach Lavine', 'Franz Wagner', 'Nikola Vucevic', 'Wendell Carter Jr', 'Ayo Dosunmu', 'Markelle Fultz', 'Patrick Williams', 'Brandon Ingram', 'Shai Gilgeous Alexander', 'CJ Mccollum', 'Josh Giddey', 'Trey Murphy III', 'Jalen Williams', 'Herbert Jones', 'Anthony Edwards', 'Luka Doncic', 'Rudy Gobert', 'Kyrie Irving', 'Mike Conley', 'Jaden Mcdaniels', 'Jordan Poole', 'Klay Thompson', 'Draymond Green', 'Kevon Looney','Gary Harris'] #['Bojan Bogdanovic', 'Jaden Ivey', 'Killian Hayes', 'Pascal Siakam', 'Fred Vanvleet', 'Gary Trent Jr', 'Scottie Barnes', 'Isaiah Stewart', 'Jalen Duren', 'Chris Boucher'] #['Ja Morant', 'Desmond Bane', 'Jaren Jackson Jr', 'Dillon Brooks', 'Jayson Tatum', 'Derrick White', 'Robert Williams', 'Malcolm Brogdon', 'Al Horford', 'Xavier Tillman', 'Brandon Clarke']
-pts_lines = [25,25,19,23,19,24,16,19,15,9,14,11,31,18,13,28,33,14,25,11,11,26,26,9,7,10] #[22, 16, 13, 25, 22, 20, 17, 12, 11, 10] #[28, 21, 16, 13, 33, 18, 10, 15, 9, 8, 10]
-r_lines = [10,4,5,5,7,5,2,12,8,2,4,5,2,5,2,8,2,2,2,6,9,11,4,3,4,2,2,8,9,2] #[4, 4, 3, 7, 4, 3, 7, 9, 10, 6] #[7, 5, 7, 3, 9, 5, 10, 5, 6, 7, 6]
-a_lines = [2,6,2,5,2,4,2,2,3,2,6,2,2,6,2,6,2,3,2,2,7,2,6,6,2,5,3,7,2,2] #[3, 6, 7, 6, 7, 2, 5, 2, 2, 2] #[8, 4, 2, 2, 6, 6, 2, 4, 3, 2, 2]
-threes_lines = [3,1,1,1,1,3,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,1,1,1,5,1,1,2]
-b_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-s_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
+# player_names = ['Julius Randle', 'Jalen Brunson', 'RJ Barrett', 'Demar Derozan', 'Paolo Banchero', 'Zach Lavine', 'Franz Wagner', 'Nikola Vucevic', 'Wendell Carter Jr', 'Ayo Dosunmu', 'Markelle Fultz', 'Patrick Williams', 'Brandon Ingram', 'Shai Gilgeous Alexander', 'CJ Mccollum', 'Josh Giddey', 'Trey Murphy III', 'Jalen Williams', 'Herbert Jones', 'Anthony Edwards', 'Luka Doncic', 'Rudy Gobert', 'Kyrie Irving', 'Mike Conley', 'Jaden Mcdaniels', 'Jordan Poole', 'Klay Thompson', 'Draymond Green', 'Kevon Looney','Gary Harris'] #['Bojan Bogdanovic', 'Jaden Ivey', 'Killian Hayes', 'Pascal Siakam', 'Fred Vanvleet', 'Gary Trent Jr', 'Scottie Barnes', 'Isaiah Stewart', 'Jalen Duren', 'Chris Boucher'] #['Ja Morant', 'Desmond Bane', 'Jaren Jackson Jr', 'Dillon Brooks', 'Jayson Tatum', 'Derrick White', 'Robert Williams', 'Malcolm Brogdon', 'Al Horford', 'Xavier Tillman', 'Brandon Clarke']
+# pts_lines = [25,25,19,23,19,24,16,19,15,9,14,11,31,18,13,28,33,14,25,11,11,26,26,9,7,10] #[22, 16, 13, 25, 22, 20, 17, 12, 11, 10] #[28, 21, 16, 13, 33, 18, 10, 15, 9, 8, 10]
+# r_lines = [10,4,5,5,7,5,2,12,8,2,4,5,2,5,2,8,2,2,2,6,9,11,4,3,4,2,2,8,9,2] #[4, 4, 3, 7, 4, 3, 7, 9, 10, 6] #[7, 5, 7, 3, 9, 5, 10, 5, 6, 7, 6]
+# a_lines = [2,6,2,5,2,4,2,2,3,2,6,2,2,6,2,6,2,3,2,2,7,2,6,6,2,5,3,7,2,2] #[3, 6, 7, 6, 7, 2, 5, 2, 2, 2] #[8, 4, 2, 2, 6, 6, 2, 4, 3, 2, 2]
+# threes_lines = [3,1,1,1,1,3,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,1,1,1,5,1,1,2]
+# b_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+# s_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+# to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 
 
 # v2: copy paste raw projected lines direct from website
@@ -94,24 +91,11 @@ for player_lines in projected_lines[1:]:
     projected_lines_dict[player_name] = dict(zip(header_row[1:],player_lines[1:]))
 print("projected_lines_dict: " + str(projected_lines_dict))
 
-player_names = isolator.isolate_data_field("name",projected_lines)
-pts_lines = isolator.isolate_data_field("pts",projected_lines)
-r_lines = isolator.isolate_data_field("reb",projected_lines)
-a_lines = isolator.isolate_data_field("ast",projected_lines)
-threes_lines = isolator.isolate_data_field("3",projected_lines)
-#print("threes_lines: " + str(threes_lines))
-b_lines = isolator.isolate_data_field("blk",projected_lines)
-#print("b_lines: " + str(b_lines))
-s_lines = isolator.isolate_data_field("stl",projected_lines)
-to_lines = isolator.isolate_data_field("to",projected_lines)
-locations = isolator.isolate_data_field("loc",projected_lines) # home/away
-opponents = isolator.isolate_data_field("opp",projected_lines) # format OKC
-
 
 
 # get all player season logs
-#player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
-
+# use player espn ids from above
+# all_player_season_logs_dict = { player name: { year: df, .. }, .. }
 all_player_season_logs_dict = reader.read_all_players_season_logs(player_names, read_all_seasons, player_espn_ids_dict)
 
 # get position and team from same source espn game
@@ -125,23 +109,12 @@ if find_matchups == True:
     all_player_positions = reader.read_all_players_positions(player_espn_ids_dict)
     #all_player_info['positions'] = reader.read_all_players_positions(player_espn_ids_dict)
 
-    # get team schedules from espn so we can get next game opponent and location and date 
-    # so we can see performance against opponent and at location and next game after date 
-
-# for p_name in player_names:
-
-#     # player_season_logs = reader.read_player_season_logs(p_name) # list of game logs for each season played by p_name
-#     # all_player_season_logs_dict[p_name] = player_season_logs
+# todo:
+# get team schedules from espn so we can get next game opponent and location and date 
+# so we can see performance against opponent and at location and next game after date 
 
 
-#     player_game_log = reader.read_player_season_log(p_name) # construct player url from name
-
-#     all_player_game_logs.append(player_game_log) # could continue to process in this loop or save all player game logs to process in next loop
-
-#     #all_player_game_logs_dict[p_name] = player_game_log
-
-
-print("\n===All Players===\n")
+print("\n===All Players Season Logs===\n")
 
 #player_game_log = all_player_game_logs[0] # init
 # player game log from espn, for 1 season or all seasons
@@ -150,6 +123,7 @@ all_streak_tables = { } # { 'player name': { 'all': {year:[streaks],...}, 'home'
 # need to store all records in dict so we can refer to it by player, condition, year, and stat
 all_records_dicts = { } # { 'player name': { 'all': {year: { pts: '1/1,2/2..', stat: record, .. },...}, 'home':{year:{ stat: record, .. },.. }, 'away':{year:{ stat: record, .. }} } }
 
+# { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
 all_means_dicts = {}
 all_medians_dicts = {}
 all_modes_dicts = {}
@@ -159,6 +133,12 @@ all_maxes_dicts = {}
 all_players_stats_dicts = {} # similar format as all_means_dicts but for actual stat values so we can display plot stat val over time/game
 
 # loop through player season logs
+# to organize stats in dicts by condition
+# generate stats dicts from game logs, organized by condition
+# essentially if game log input is organized by condition=season, we are organizing by condition=home games, current season, all seasons, etc
+# { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+all_players_stats_dicts = generator.generate_all_players_stats_dicts(all_player_season_logs_dict)
+ 
 for player_name, player_season_logs in all_player_season_logs_dict.items():
 #for player_idx in range(len(all_player_game_logs)):
 
@@ -973,7 +953,7 @@ all_valid_streaks_list = []
 
 all_matchups_dicts = {} # store all matchup data (avg and rank) for each opponent/team
 
-
+# loop through all player streaks to determine next value in sequence, bc it may be easier to determine next value if it is a clear streak
 # p_streak_tables = { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} }
 for p_name, p_streak_tables in all_streak_tables.items():
     print("\n===" + p_name.title() + "===\n")
@@ -1019,6 +999,7 @@ for p_name, p_streak_tables in all_streak_tables.items():
         if str(condition) == 'all' or str(condition) == location or str(condition) == opponent or str(condition) == time_after or str(condition) == current_dow: # current conditions we are interested in
             print('\n===' + str(condition).title() + '===\n')
             
+            # streak_dicts = { year: [[],..], ..}
             #streak_tables=[[],..]
             for year, streak_tables in streak_dicts.items():
                 print('\n===' + str(year) + '===\n')
@@ -1240,12 +1221,6 @@ for p_name, p_streak_tables in all_streak_tables.items():
 
 
                     
-
-
-
-
-                    
-
 
 
                     # once we set values in pre_dict (prediction dictionary) we add pre_dict to all player pre dicts
