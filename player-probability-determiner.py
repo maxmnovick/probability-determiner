@@ -27,11 +27,20 @@ import generator # generate stats dicts, all records dicts, all means dicts, all
 # === main settings ===
 read_all_seasons = False
 find_matchups = False
-input_type = '3/13' # date as mth/day will become mth_day in file
+# optional settings
+todays_games_date_str = '' # format: m/d/y, like 3/14/23. set if we want to look at games in advance
+todays_games_date_obj = datetime.today() # by default assume todays game is actually today and we are not analyzing in advance
+if todays_games_date_str != '':
+    todays_games_date_obj = datetime.strptime(todays_games_date_str, '%m/%d/%y')
+input_type = str(todays_games_date_obj.month) + '/' + str(todays_games_date_obj.day)
+#print('input type from date object: ' + input_type)
+#input_type = '3/14' # date as mth/day will become mth_day in file
+
 # graph settings
 player_of_interest = 'vanvleet'
 stat_of_interest = 'ast'
 allow_all = False # allow all stats to get to plot fcn so we can focus on single player
+display_plots = False # true if we want to use matplotlib to show plot automatically instead of outputting to spreadsheet
 
 data_type = "Player Lines"
 
@@ -136,8 +145,9 @@ all_players_stats_dicts = {} # similar format as all_means_dicts but for actual 
 # to organize stats in dicts by condition
 # generate stats dicts from game logs, organized by condition
 # essentially if game log input is organized by condition=season, we are organizing by condition=home games, current season, all seasons, etc
-# { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
-all_players_stats_dicts = generator.generate_all_players_stats_dicts(all_player_season_logs_dict)
+# { 'player name': { 'all': {year: { pts: 1, stat: stat val, .. },...}, 'home':{year:{ stat: stat val, .. },.. }, 'away':{year:{ stat: stat val, .. }} } }
+
+#all_players_stats_dicts = generator.generate_all_players_stats_dicts(all_player_season_logs_dict, projected_lines_dict, todays_games_date_obj)
  
 for player_name, player_season_logs in all_player_season_logs_dict.items():
 #for player_idx in range(len(all_player_game_logs)):
@@ -147,16 +157,18 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
     season_year = 2023
 
     # get no. games played this season
-    num_games_played = 0 # see performance at this point in previous seasons
     current_season_log = player_season_logs[0]
-    for game_idx, row in current_season_log.iterrows():
+    current_reg_season_log = determiner.determine_regular_season_games(current_season_log)
+    num_games_played = len(current_reg_season_log.index) # see performance at this point in previous seasons
+
+    # for game_idx, row in current_season_log.iterrows():
                 
-        if re.search('\\*',current_season_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
-            #print("game excluded")
-            continue
+    #     if re.search('\\*',current_season_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
+    #         #print("game excluded")
+    #         continue
         
-        if current_season_log.loc[game_idx, 'Type'] == 'Regular':
-            num_games_played += 1
+    #     if current_season_log.loc[game_idx, 'Type'] == 'Regular':
+    #         num_games_played += 1
 
 
     all_seasons_pts_dicts = {}
@@ -216,7 +228,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
         # for season in all seasons
         if len(player_game_log) > 0:
             #season_year = '23'
-            print("player_game_log:\n" + str(player_game_log))
+            #print("player_game_log:\n" + str(player_game_log))
             # we pulled game log from internet
 
             opponent = projected_lines_dict[player_name]['OPP'].lower() # collect data against opponent to see previous matchups
@@ -225,259 +237,263 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
             # or just append to subset array predefined such as all_home_pts = []
             next_game_date_obj = datetime.today() # need to see if back to back games 1 day apart
 
-            reg_season_games = determiner.determine_regular_season_games(player_game_log)
+            reg_season_game_log = determiner.determine_regular_season_games(player_game_log)
 
-            total_season_games = 0 # so we can get game num from game idx
-            for game_idx, row in player_game_log.iterrows():
-                
-                #game = player_game_log[game_idx, row]
-                #print("game:\n" + str(game))
-                #print("player_game_log.loc[game_idx, 'Type']: " + player_game_log.loc[game_idx, 'Type'])
-
-                if re.search('\\*',player_game_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
-                    #print("game excluded")
-                    continue
-                
-                if player_game_log.loc[game_idx, 'Type'] == 'Regular':
-                    #print("Current Game Num: " + str(game_idx))
-                    total_season_games += 1
+            total_season_games = len(reg_season_game_log.index) # so we can get game num from game idx
+            # for game_idx, row in reg_season_game_log.iterrows(): 
+            #     total_season_games += 1
+            # print('total_season_games with module: ' + str(total_season_games))
+            # total_season_games = 0 # reset for test
+            # for game_idx, row in player_game_log.iterrows():
+            #     #game = player_game_log[game_idx, row]
+            #     #print("game:\n" + str(game))
+            #     #print("player_game_log.loc[game_idx, 'Type']: " + player_game_log.loc[game_idx, 'Type'])
+            #     if re.search('\\*',player_game_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
+            #         #print("game excluded")
+            #         continue
+            #     if player_game_log.loc[game_idx, 'Type'] == 'Regular':
+            #         #print("Current Game Num: " + str(game_idx))
+            #         total_season_games += 1
+            #print('total_season_games from length: ' + str(total_season_games))
             
-            for game_idx, row in player_game_log.iterrows():
+            for game_idx, row in reg_season_game_log.iterrows():
                 
                 #game = player_game_log[game_idx, row]
                 #print("game:\n" + str(game))
                 #print("player_game_log.loc[game_idx, 'Type']: " + player_game_log.loc[game_idx, 'Type'])
 
-                if re.search('\\*',player_game_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
-                    #print("game excluded")
-                    continue
+                # if re.search('\\*',player_game_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
+                #     #print("game excluded")
+                #     continue
                 
                 # group reg season games together for analysis
-                if player_game_log.loc[game_idx, 'Type'] == 'Regular':
-                    #print("Current Game Num: " + str(game_idx))
+                #if player_game_log.loc[game_idx, 'Type'] == 'Regular':
+                    #print("Current Game Num: " + str(game_idx))   
 
-                    
-                    
+                # === Collect Stats for Current Game ===
 
-                    pts = int(player_game_log.loc[game_idx, 'PTS'])
-                    rebs = int(player_game_log.loc[game_idx, 'REB'])
-                    asts = int(player_game_log.loc[game_idx, 'AST'])
+                pts = int(player_game_log.loc[game_idx, 'PTS'])
+                rebs = int(player_game_log.loc[game_idx, 'REB'])
+                asts = int(player_game_log.loc[game_idx, 'AST'])
 
-                    results = player_game_log.loc[game_idx, 'Result']
-                    #print("results: " + results)
-                    results = re.sub('[a-zA-Z]', '', results)
-                    # remove #OT from result string
-                    results = re.split("\\s+", results)[0]
-                    #print("results_data: " + str(results_data))
-                    score_data = results.split('-')
-                    #print("score_data: " + str(score_data))
-                    winning_score = int(score_data[0])
-                    losing_score = int(score_data[1])
+                results = player_game_log.loc[game_idx, 'Result']
+                #print("results: " + results)
+                results = re.sub('[a-zA-Z]', '', results)
+                # remove #OT from result string
+                results = re.split("\\s+", results)[0]
+                #print("results_data: " + str(results_data))
+                score_data = results.split('-')
+                #print("score_data: " + str(score_data))
+                winning_score = int(score_data[0])
+                losing_score = int(score_data[1])
 
-                    minutes = int(player_game_log.loc[game_idx, 'MIN'])
+                minutes = int(player_game_log.loc[game_idx, 'MIN'])
 
-                    fgs = player_game_log.loc[game_idx, 'FG']
-                    fg_data = fgs.split('-')
-                    fgm = int(fg_data[0])
-                    fga = int(fg_data[1])
-                    fg_rate = round(float(player_game_log.loc[game_idx, 'FG%']), 1)
+                fgs = player_game_log.loc[game_idx, 'FG']
+                fg_data = fgs.split('-')
+                fgm = int(fg_data[0])
+                fga = int(fg_data[1])
+                fg_rate = round(float(player_game_log.loc[game_idx, 'FG%']), 1)
 
-                    #threes = game[three_idx]
-                    #threes_data = threes.split('-')
-                    #print("threes_data: " + str(threes_data))
-                    threes_made = int(player_game_log.loc[game_idx, '3PT_SA'])
-                    threes_attempts = int(player_game_log.loc[game_idx, '3PT_A'])
-                    three_rate = round(float(player_game_log.loc[game_idx, '3P%']), 1)
+                #threes = game[three_idx]
+                #threes_data = threes.split('-')
+                #print("threes_data: " + str(threes_data))
+                threes_made = int(player_game_log.loc[game_idx, '3PT_SA'])
+                threes_attempts = int(player_game_log.loc[game_idx, '3PT_A'])
+                three_rate = round(float(player_game_log.loc[game_idx, '3P%']), 1)
 
-                    fts = player_game_log.loc[game_idx, 'FT']
-                    ft_data = fts.split('-')
-                    ftm = int(ft_data[0])
-                    fta = int(ft_data[1])
-                    ft_rate = round(float(player_game_log.loc[game_idx, 'FT%']), 1)
+                fts = player_game_log.loc[game_idx, 'FT']
+                ft_data = fts.split('-')
+                ftm = int(ft_data[0])
+                fta = int(ft_data[1])
+                ft_rate = round(float(player_game_log.loc[game_idx, 'FT%']), 1)
 
-                    bs = int(player_game_log.loc[game_idx, 'BLK'])
-                    ss = int(player_game_log.loc[game_idx, 'STL'])
-                    fs = int(player_game_log.loc[game_idx, 'PF'])
-                    tos = int(player_game_log.loc[game_idx, 'TO'])
+                bs = int(player_game_log.loc[game_idx, 'BLK'])
+                ss = int(player_game_log.loc[game_idx, 'STL'])
+                fs = int(player_game_log.loc[game_idx, 'PF'])
+                tos = int(player_game_log.loc[game_idx, 'TO'])
 
-                    game_stats = [pts,rebs,asts,winning_score,losing_score,minutes,fgm,fga,fg_rate,threes_made,threes_attempts,three_rate,ftm,fta,ft_rate,bs,ss,fs,tos] # make list to loop through so we can add all stats to dicts with 1 fcn
+                game_stats = [pts,rebs,asts,winning_score,losing_score,minutes,fgm,fga,fg_rate,threes_made,threes_attempts,three_rate,ftm,fta,ft_rate,bs,ss,fs,tos] # make list to loop through so we can add all stats to dicts with 1 fcn
 
-                    # now that we have game stats add them to dict
+
+                # === Add Stats to Dict ===
+
+                # now that we have game stats add them to dict by condition
+
+                for stat_idx in range(len(all_stats_dicts.values())):
+                    stat_dict = list(all_stats_dicts.values())[stat_idx]
+                    stat = game_stats[stat_idx]
+                    stat_dict['all'][game_idx] = stat
+
+                if re.search('vs',player_game_log.loc[game_idx, 'OPP']):
 
                     for stat_idx in range(len(all_stats_dicts.values())):
                         stat_dict = list(all_stats_dicts.values())[stat_idx]
                         stat = game_stats[stat_idx]
-                        stat_dict['all'][game_idx] = stat
+                        stat_dict['home'][game_idx] = stat
 
-                    if re.search('vs',player_game_log.loc[game_idx, 'OPP']):
+                    
+                else: # if not home then away
+                    for stat_idx in range(len(all_stats_dicts.values())):
+                        stat_dict = list(all_stats_dicts.values())[stat_idx]
+                        stat = game_stats[stat_idx]
+                        stat_dict['away'][game_idx] = stat
 
-                        for stat_idx in range(len(all_stats_dicts.values())):
-                            stat_dict = list(all_stats_dicts.values())[stat_idx]
-                            stat = game_stats[stat_idx]
-                            stat_dict['home'][game_idx] = stat
+                    
 
-                        
-                    else: # if not home then away
-                        for stat_idx in range(len(all_stats_dicts.values())):
-                            stat_dict = list(all_stats_dicts.values())[stat_idx]
-                            stat = game_stats[stat_idx]
-                            stat_dict['away'][game_idx] = stat
+                # matchup against opponent
+                # only add key for current opp bc we dont need to see all opps here
+                # look for irregular abbrevs like NO and NY
+                # opponent in form 'gsw' but game log in form 'gs'
+                game_log_team_abbrev = re.sub('vs|@','',player_game_log.loc[game_idx, 'OPP'].lower()) # eg 'gs'
+                #print('game_log_team_abbrev: ' + game_log_team_abbrev)
+                opp_abbrev = opponent # default if regular
+                #print('opp_abbrev: ' + opp_abbrev)
 
-                        
+                irregular_abbrevs = {'nop':'no', 'nyk':'ny', 'sas': 'sa', 'gsw':'gs' } # for these match the first 3 letters of team name instead
+                if opp_abbrev in irregular_abbrevs.keys():
+                    #print("irregular abbrev: " + team_abbrev)
+                    opp_abbrev = irregular_abbrevs[opp_abbrev]
 
-                    # matchup against opponent
-                    # only add key for current opp bc we dont need to see all opps here
-                    # look for irregular abbrevs like NO and NY
-                    # opponent in form 'gsw' but game log in form 'gs'
-                    game_log_team_abbrev = re.sub('vs|@','',player_game_log.loc[game_idx, 'OPP'].lower()) # eg 'gs'
-                    print('game_log_team_abbrev: ' + game_log_team_abbrev)
-                    opp_abbrev = opponent # default if regular
-                    print('opp_abbrev: ' + opp_abbrev)
+                if opp_abbrev == game_log_team_abbrev:
+                    #print('opp_abbrev == game_log_team_abbrev')
+                    for stat_idx in range(len(all_stats_dicts.values())):
+                        stat_dict = list(all_stats_dicts.values())[stat_idx]
+                        stat = game_stats[stat_idx]
+                        if not opponent in stat_dict.keys():
+                            stat_dict[opponent] = {}
+                        stat_dict[opponent][game_idx] = stat
 
-                    irregular_abbrevs = {'nop':'no', 'nyk':'ny', 'sas': 'sa', 'gsw':'gs' } # for these match the first 3 letters of team name instead
-                    if opp_abbrev in irregular_abbrevs.keys():
-                        #print("irregular abbrev: " + team_abbrev)
-                        opp_abbrev = irregular_abbrevs[opp_abbrev]
-
-                    if opp_abbrev == game_log_team_abbrev:
-                        print('opp_abbrev == game_log_team_abbrev')
-                        for stat_idx in range(len(all_stats_dicts.values())):
-                            stat_dict = list(all_stats_dicts.values())[stat_idx]
-                            stat = game_stats[stat_idx]
-                            if not opponent in stat_dict.keys():
-                                stat_dict[opponent] = {}
-                            stat_dict[opponent][game_idx] = stat
-
-                        
+                    
 
 
-                    # see if this game is 1st or 2nd night of back to back bc we want to see if pattern for those conditions
-                    init_game_date_string = player_game_log.loc[game_idx, 'Date'].lower().split()[1] # 'wed 2/15'[1]='2/15'
-                    game_mth = init_game_date_string.split('/')[0]
+                # see if this game is 1st or 2nd night of back to back bc we want to see if pattern for those conditions
+                init_game_date_string = player_game_log.loc[game_idx, 'Date'].lower().split()[1] # 'wed 2/15'[1]='2/15'
+                game_mth = init_game_date_string.split('/')[0]
+                final_season_year = str(season_year)
+                if int(game_mth) in range(10,13):
+                    final_season_year = str(season_year - 1)
+                game_date_string = init_game_date_string + "/" + final_season_year
+                #print("game_date_string: " + str(game_date_string))
+                game_date_obj = datetime.strptime(game_date_string, '%m/%d/%Y')
+                #print("game_date_obj: " + str(game_date_obj))
+
+                # if current loop is most recent game (idx 0) then today's game is the next game, if current season
+                # if last game of prev season then next game after idx 0 (bc from recent to distant) is next season game 1
+                if game_idx == 0: # see how many days after prev game is date of today's projected lines
+                    # already defined or passed todays_games_date_obj
+                    # todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
+                    # print("todays_games_date_obj: " + str(todays_games_date_obj))
+                    current_year = 2023
+                    if season_year == current_year: # current year
+                        next_game_date_obj = todays_games_date_obj # today's game is the next game relative to the previous game
+                    else:
+                        next_game_date_obj = game_date_obj # should be 0 unless we want to get date of next season game
+                #print("next_game_date_obj: " + str(next_game_date_obj))
+                # no need to get next game date like this bc we can see last loop
+                # else: # if not most recent game then we can see the following game in the game log at prev idx
+                #     next_game_date_string = player_game_log.loc[game_idx-1, 'Date'].lower().split()[1] + "/" + season_year
+                #     print("next_game_date_string: " + str(next_game_date_string))
+                #     next_game_date_obj = datetime.strptime(next_game_date_string, '%m/%d/%y')
+                #     print("next_game_date_obj: " + str(next_game_date_obj))
+
+                days_before_next_game_int = (next_game_date_obj - game_date_obj).days
+                days_before_next_game = str(days_before_next_game_int) + ' before'
+                #print("days_before_next_game: " + days_before_next_game)
+
+                for stat_idx in range(len(all_stats_dicts.values())):
+                    stat_dict = list(all_stats_dicts.values())[stat_idx]
+                    stat = game_stats[stat_idx]
+                    if not days_before_next_game in stat_dict.keys():
+                        stat_dict[days_before_next_game] = {}
+                    stat_dict[days_before_next_game][game_idx] = stat
+
+                init_prev_game_date_string = ''
+                if len(player_game_log.index) > game_idx+1:
+                    init_prev_game_date_string = player_game_log.loc[game_idx+1, 'Date'].lower().split()[1]
+                
+                    prev_game_mth = init_prev_game_date_string.split('/')[0]
                     final_season_year = str(season_year)
-                    if int(game_mth) in range(10,13):
+                    if int(prev_game_mth) in range(10,13):
                         final_season_year = str(season_year - 1)
-                    game_date_string = init_game_date_string + "/" + final_season_year
-                    #print("game_date_string: " + str(game_date_string))
-                    game_date_obj = datetime.strptime(game_date_string, '%m/%d/%Y')
-                    #print("game_date_obj: " + str(game_date_obj))
+                    prev_game_date_string = init_prev_game_date_string + "/" + final_season_year
+                    #print("prev_game_date_string: " + str(prev_game_date_string))
+                    prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%Y')
+                    #print("prev_game_date_obj: " + str(prev_game_date_obj))
 
-                    # if current loop is most recent game (idx 0) then today's game is the next game, if current season
-                    # if last game of prev season then next game after idx 0 (bc from recent to distant) is next season game 1
-                    if game_idx == 0: # see how many days after prev game is date of today's projected lines
-                        # already defined or passed todays_games_date_obj
-                        # todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
-                        # print("todays_games_date_obj: " + str(todays_games_date_obj))
-                        current_year = 2023
-                        if season_year == current_year: # current year
-                            next_game_date_obj = todays_games_date_obj # today's game is the next game relative to the previous game
-                        else:
-                            next_game_date_obj = game_date_obj # should be 0 unless we want to get date of next season game
-                    #print("next_game_date_obj: " + str(next_game_date_obj))
-                    # no need to get next game date like this bc we can see last loop
-                    # else: # if not most recent game then we can see the following game in the game log at prev idx
-                    #     next_game_date_string = player_game_log.loc[game_idx-1, 'Date'].lower().split()[1] + "/" + season_year
-                    #     print("next_game_date_string: " + str(next_game_date_string))
-                    #     next_game_date_obj = datetime.strptime(next_game_date_string, '%m/%d/%y')
-                    #     print("next_game_date_obj: " + str(next_game_date_obj))
-
-                    days_before_next_game_int = (next_game_date_obj - game_date_obj).days
-                    days_before_next_game = str(days_before_next_game_int) + ' before'
-                    #print("days_before_next_game: " + days_before_next_game)
+                    days_after_prev_game_int = (game_date_obj - prev_game_date_obj).days
+                    days_after_prev_game = str(days_after_prev_game_int) + ' after'
+                    #print("days_after_prev_game: " + days_after_prev_game)
 
                     for stat_idx in range(len(all_stats_dicts.values())):
                         stat_dict = list(all_stats_dicts.values())[stat_idx]
                         stat = game_stats[stat_idx]
-                        if not days_before_next_game in stat_dict.keys():
-                            stat_dict[days_before_next_game] = {}
-                        stat_dict[days_before_next_game][game_idx] = stat
+                        if not days_after_prev_game in stat_dict.keys():
+                            stat_dict[days_after_prev_game] = {}
+                        stat_dict[days_after_prev_game][game_idx] = stat
 
-                    init_prev_game_date_string = ''
-                    if len(player_game_log.index) > game_idx+1:
-                        init_prev_game_date_string = player_game_log.loc[game_idx+1, 'Date'].lower().split()[1]
-                    
-                        prev_game_mth = init_prev_game_date_string.split('/')[0]
-                        final_season_year = str(season_year)
-                        if int(prev_game_mth) in range(10,13):
-                            final_season_year = str(season_year - 1)
-                        prev_game_date_string = init_prev_game_date_string + "/" + final_season_year
-                        #print("prev_game_date_string: " + str(prev_game_date_string))
-                        prev_game_date_obj = datetime.strptime(prev_game_date_string, '%m/%d/%Y')
-                        #print("prev_game_date_obj: " + str(prev_game_date_obj))
+                
 
-                        days_after_prev_game_int = (game_date_obj - prev_game_date_obj).days
-                        days_after_prev_game = str(days_after_prev_game_int) + ' after'
-                        #print("days_after_prev_game: " + days_after_prev_game)
-
-                        for stat_idx in range(len(all_stats_dicts.values())):
-                            stat_dict = list(all_stats_dicts.values())[stat_idx]
-                            stat = game_stats[stat_idx]
-                            if not days_after_prev_game in stat_dict.keys():
-                                stat_dict[days_after_prev_game] = {}
-                            stat_dict[days_after_prev_game][game_idx] = stat
-
-                    
-
-                    
+                
 
 
-                    # add keys for each day of the week so we can see performance by day of week
-                    # only add key for current dow bc we dont need to see all dows here
-                    
-                    game_dow = player_game_log.loc[game_idx, 'Date'].lower().split()[0].lower() # 'wed 2/15'[0]='wed'
-                    if current_dow == game_dow:
-                        print("found same game day of week: " + game_dow)
-                        for stat_idx in range(len(all_stats_dicts.values())):
-                            stat_dict = list(all_stats_dicts.values())[stat_idx]
-                            stat = game_stats[stat_idx]
-                            if not game_dow in stat_dict.keys():
-                                stat_dict[game_dow] = {}
-                            stat_dict[game_dow][game_idx] = stat
-                        print("stat_dict: " + str(stat_dict))
+                # add keys for each day of the week so we can see performance by day of week
+                # only add key for current dow bc we dont need to see all dows here
+                
+                game_dow = player_game_log.loc[game_idx, 'Date'].lower().split()[0].lower() # 'wed 2/15'[0]='wed'
+                if current_dow == game_dow:
+                    print("found same game day of week: " + game_dow)
+                    for stat_idx in range(len(all_stats_dicts.values())):
+                        stat_dict = list(all_stats_dicts.values())[stat_idx]
+                        stat = game_stats[stat_idx]
+                        if not game_dow in stat_dict.keys():
+                            stat_dict[game_dow] = {}
+                        stat_dict[game_dow][game_idx] = stat
+                    print("stat_dict: " + str(stat_dict))
 
 
-                    # Career/All Seasons Stats
-                    # if we find a game played on the same day/mth previous seasons, add a key for this/today's day/mth
-                    today_date_data = todays_games_date.split('/')
-                    today_day_mth = today_date_data[0] + '/' + today_date_data[1]
-                    if init_game_date_string == today_day_mth:
-                        print("found same game day/mth in previous season")
-                        for stat_idx in range(len(all_seasons_stats_dicts.values())):
-                            stat_dict = list(all_seasons_stats_dicts.values())[stat_idx]
-                            stat = game_stats[stat_idx]
-                            if not game_date_string in stat_dict.keys():
-                                stat_dict[game_date_string] = {}
-                                stat_dict[game_date_string][game_idx] = [stat] # we cant use game idx as key bc it gets replaced instead of adding vals
+                # Career/All Seasons Stats
+                # if we find a game played on the same day/mth previous seasons, add a key for this/today's day/mth
+                today_date_data = todays_games_date.split('/')
+                today_day_mth = today_date_data[0] + '/' + today_date_data[1]
+                if init_game_date_string == today_day_mth:
+                    print("found same game day/mth in previous season")
+                    for stat_idx in range(len(all_seasons_stats_dicts.values())):
+                        stat_dict = list(all_seasons_stats_dicts.values())[stat_idx]
+                        stat = game_stats[stat_idx]
+                        if not game_date_string in stat_dict.keys():
+                            stat_dict[game_date_string] = {}
+                            stat_dict[game_date_string][game_idx] = [stat] # we cant use game idx as key bc it gets replaced instead of adding vals
+                        else:
+                            if game_idx in stat_dict[game_date_string].keys():
+                                stat_dict[game_date_string][game_idx].append(stat)
                             else:
-                                if game_idx in stat_dict[game_date_string].keys():
-                                    stat_dict[game_date_string][game_idx].append(stat)
-                                else:
-                                    stat_dict[game_date_string][game_idx] = [stat]
-                        print("all_seasons_stats_dicts: " + str(all_seasons_stats_dicts))
-                    # add key for the current game number for this season and add games played from previous seasons (1 per season)
-                    game_num = total_season_games - game_idx # bc going from recent to past
-                    if game_num == num_games_played:
-                        print("found same game num in previous season")
-                        for stat_idx in range(len(all_seasons_stats_dicts.values())):
-                            stat_dict = list(all_seasons_stats_dicts.values())[stat_idx]
-                            stat = game_stats[stat_idx]
-                            if not num_games_played in stat_dict.keys():
-                                stat_dict[num_games_played] = {}
-                                stat_dict[num_games_played][game_idx] = [stat] # we cant use game idx as key bc it gets replaced instead of adding vals
+                                stat_dict[game_date_string][game_idx] = [stat]
+                    print("all_seasons_stats_dicts: " + str(all_seasons_stats_dicts))
+                # add key for the current game number for this season and add games played from previous seasons (1 per season)
+                game_num = total_season_games - game_idx # bc going from recent to past
+                if game_num == num_games_played:
+                    print("found same game num in previous season")
+                    for stat_idx in range(len(all_seasons_stats_dicts.values())):
+                        stat_dict = list(all_seasons_stats_dicts.values())[stat_idx]
+                        stat = game_stats[stat_idx]
+                        if not num_games_played in stat_dict.keys():
+                            stat_dict[num_games_played] = {}
+                            stat_dict[num_games_played][game_idx] = [stat] # we cant use game idx as key bc it gets replaced instead of adding vals
+                        else:
+                            if game_idx in stat_dict[num_games_played].keys():
+                                stat_dict[num_games_played][game_idx].append(stat)
                             else:
-                                if game_idx in stat_dict[num_games_played].keys():
-                                    stat_dict[num_games_played][game_idx].append(stat)
-                                else:
-                                    stat_dict[num_games_played][game_idx] = [stat]
-                        print("all_seasons_stats_dicts: " + str(all_seasons_stats_dicts))
+                                stat_dict[num_games_played][game_idx] = [stat]
+                    print("all_seasons_stats_dicts: " + str(all_seasons_stats_dicts))
 
 
 
 
 
 
-                    # after all keys are set, set next game as current game for next loop
-                    next_game_date_obj = game_date_obj # next game bc we loop from most to least recent
+                # after all keys are set, set next game as current game for next loop
+                next_game_date_obj = game_date_obj # next game bc we loop from most to least recent
 
         else:
             # if getting data from file
@@ -1515,7 +1531,10 @@ high_streaks = determiner.determine_high_streaks(all_valid_streaks_list)
 
 # for all player lines, get top 3 easiest and hardest matchups
 
-#writer.display_stat_plot(all_valid_streaks_list, all_players_stats_dicts, stat_of_interest, player_of_interest)
+
+
+if display_plots:
+    writer.display_stat_plot(all_valid_streaks_list, all_players_stats_dicts, stat_of_interest, player_of_interest)
 
 
 # given a single prediction dictionary, display relevant tables so we can view stat plots
@@ -1523,6 +1542,7 @@ high_streaks = determiner.determine_high_streaks(all_valid_streaks_list)
     
 
 # give high streak prediction, a degree of belief score based on all streaks, avgs, range, matchup, location, and all other conditions
+# note: it is only partial degree of belief bc there are other factors the program does not yet have access to like consultant input and projected total score and win/loss
 # degrees of belief = { prediction: deg of bel, .. }, 
 # where prediction is 'player name stat val, stat direction, stat name' in form 'julius randle 10+ reb'
 # and deg of bel is integer

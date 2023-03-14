@@ -378,20 +378,28 @@ def determine_played_season(player_url):
 
 def determine_regular_season_games(player_game_log):
 
+    #print('\n===Determine Regular Season Games for Player===\n')
+
+    # select reg season games by type
+    reg_season_games_df = player_game_log[player_game_log['Type'].str.startswith('Regular')]
+    #print("partial reg_season_games_df:\n" + str(reg_season_games_df) + '\n')
+    # remove all star and exception games with *
+    reg_season_games_df = reg_season_games_df[~reg_season_games_df['OPP'].str.endswith('*')]
+
     #reg_season_games_df = pd.DataFrame()
-    reg_season_games = []
+    # reg_season_games = []
 
-    for game_idx, row in player_game_log.iterrows():
-        if re.search('\\*',player_game_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
-            #print("game excluded")
-            continue
+    # for game_idx, row in player_game_log.iterrows():
+    #     if re.search('\\*',player_game_log.loc[game_idx, 'OPP']): # all star stats not included in regular season stats
+    #         #print("game excluded")
+    #         continue
         
-        if player_game_log.loc[game_idx, 'Type'] == 'Regular':
-            reg_season_games.append(row)
+    #     if player_game_log.loc[game_idx, 'Type'] == 'Regular':
+    #         reg_season_games.append(row)
 
-    reg_season_games_df = pd.concat(reg_season_games)
+    # reg_season_games_df = pd.concat(reg_season_games)
 
-    print("reg_season_games_df:\n" + str(reg_season_games_df))
+    #print("final reg_season_games_df:\n" + str(reg_season_games_df) + '\n')
     return reg_season_games_df
 
 # is it an over or under? above 7/10 or 4/5 or 3/3, or below 3/10 and not 2/2 bc maybe teammate injury so more playing time?
