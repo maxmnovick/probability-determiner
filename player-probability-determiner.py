@@ -26,7 +26,7 @@ import generator # generate stats dicts, all records dicts, all means dicts, all
 
 # === main settings ===
 read_all_seasons = False
-find_matchups = False
+find_matchups = True
 # optional settings
 todays_games_date_str = '' # format: m/d/y, like 3/14/23. set if we want to look at games in advance
 todays_games_date_obj = datetime.today() # by default assume todays game is actually today and we are not analyzing in advance
@@ -46,7 +46,10 @@ data_type = "Player Lines"
 
 todays_games_date = input_type + '/23'
 todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
-current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lower()
+current_dow = todays_games_date_obj.strftime('%a').lower()
+# print('current_dow: ' + str(current_dow))
+# current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lower()
+# print('current_dow: ' + str(current_dow))
 
 # input: game log
 # player name
@@ -128,6 +131,14 @@ print("\n===All Players Season Logs===\n")
 #player_game_log = all_player_game_logs[0] # init
 # player game log from espn, for 1 season or all seasons
 
+#v1
+all_players_stats_dicts = {} # similar format as all_means_dicts but for actual stat values so we can display plot stat val over time/game
+#v2
+# all_players_stats_dicts = generator.generate_all_players_stats_dicts(all_player_season_logs_dict, projected_lines_dict, todays_games_date_obj)
+
+all_players_records_dicts = generator.generate_all_players_records_dicts(all_player_season_logs_dict, projected_lines_dict) # aligned with stats, but record of over projected stat line
+
+
 all_streak_tables = { } # { 'player name': { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} } }
 # need to store all records in dict so we can refer to it by player, condition, year, and stat
 all_records_dicts = { } # { 'player name': { 'all': {year: { pts: '1/1,2/2..', stat: record, .. },...}, 'home':{year:{ stat: record, .. },.. }, 'away':{year:{ stat: record, .. }} } }
@@ -139,7 +150,6 @@ all_modes_dicts = {}
 all_mins_dicts = {}
 all_maxes_dicts = {}
 
-all_players_stats_dicts = {} # similar format as all_means_dicts but for actual stat values so we can display plot stat val over time/game
 
 # loop through player season logs
 # to organize stats in dicts by condition
@@ -147,7 +157,6 @@ all_players_stats_dicts = {} # similar format as all_means_dicts but for actual 
 # essentially if game log input is organized by condition=season, we are organizing by condition=home games, current season, all seasons, etc
 # { 'player name': { 'all': {year: { pts: 1, stat: stat val, .. },...}, 'home':{year:{ stat: stat val, .. },.. }, 'away':{year:{ stat: stat val, .. }} } }
 
-#all_players_stats_dicts = generator.generate_all_players_stats_dicts(all_player_season_logs_dict, projected_lines_dict, todays_games_date_obj)
  
 for player_name, player_season_logs in all_player_season_logs_dict.items():
 #for player_idx in range(len(all_player_game_logs)):
@@ -454,8 +463,11 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
 
                 # Career/All Seasons Stats
                 # if we find a game played on the same day/mth previous seasons, add a key for this/today's day/mth
-                today_date_data = todays_games_date.split('/')
-                today_day_mth = today_date_data[0] + '/' + today_date_data[1]
+                #today_date_data = todays_games_date.split('/')
+                #today_day_mth = today_date_data[0] + '/' + today_date_data[1]
+                #print("today_day_mth: " + str(today_day_mth))
+                today_day_mth = str(todays_games_date_obj.month) + '/' + str(todays_games_date_obj.day)
+                #print("today_day_mth: " + str(today_day_mth))
                 if init_game_date_string == today_day_mth:
                     print("found same game day/mth in previous season")
                     for stat_idx in range(len(all_seasons_stats_dicts.values())):
@@ -962,7 +974,7 @@ if find_matchups:
 
 print("\n===Consistent Streaks===\n")
 
-injury_prone_players = ['dangelo russell', 'anthony davis', 'joel embiid']
+injury_prone_players = ['dangelo russell', 'anthony davis', 'joel embiid', 'kevin durant']
 all_player_pre_dicts = {} # could we use list bc player has multiple props so dont group by name?
 all_valid_streak_dict = {} # cannot use streak name as key bc multiple streaks with different conditions. could combine all streak conditions and into a list under 1 key or keep each 1 separate as unkeyed list. {'streak key':AD 3-a:{'streak condition':all, 'streak outline':1/1,...}, ..}
 all_valid_streaks_list = []
@@ -1219,20 +1231,25 @@ for p_name, p_streak_tables in all_streak_tables.items():
 
                     if p_name in all_means_dicts.keys():
                         #print("all_means_dicts: " + str(all_means_dicts))
-                        day_mean = all_means_dicts[p_name][current_dow][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
-                        pre_dict['day mean'] = day_mean
+                        if current_dow in all_means_dicts[p_name].keys():
+                            day_mean = all_means_dicts[p_name][current_dow][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+                            pre_dict['day mean'] = day_mean
                     if p_name in all_medians_dicts.keys():
-                        day_median = all_medians_dicts[p_name][current_dow][year][stat_name]
-                        pre_dict['day median'] = day_median
+                        if current_dow in all_means_dicts[p_name].keys():
+                            day_median = all_medians_dicts[p_name][current_dow][year][stat_name]
+                            pre_dict['day median'] = day_median
                     if p_name in all_modes_dicts.keys():
-                        day_mode = all_modes_dicts[p_name][current_dow][year][stat_name]
-                        pre_dict['day mode'] = day_mode
+                        if current_dow in all_means_dicts[p_name].keys():
+                            day_mode = all_modes_dicts[p_name][current_dow][year][stat_name]
+                            pre_dict['day mode'] = day_mode
                     if p_name in all_mins_dicts.keys():
-                        day_min = all_mins_dicts[p_name][current_dow][year][stat_name]
-                        pre_dict['day min'] = day_min
+                        if current_dow in all_means_dicts[p_name].keys():
+                            day_min = all_mins_dicts[p_name][current_dow][year][stat_name]
+                            pre_dict['day min'] = day_min
                     if p_name in all_maxes_dicts.keys():
-                        day_max = all_maxes_dicts[p_name][current_dow][year][stat_name]
-                        pre_dict['day max'] = day_max
+                        if current_dow in all_means_dicts[p_name].keys():
+                            day_max = all_maxes_dicts[p_name][current_dow][year][stat_name]
+                            pre_dict['day max'] = day_max
 
 
 
@@ -1560,3 +1577,10 @@ for streak in streaks:
 sorted_streaks = sorter.sort_dicts_by_key(streaks,deg_of_bel_key) #sorter.sort_predictions_by_deg_of_bel(streaks)
 
 writer.display_game_data(sorted_streaks)
+
+
+all_player_predictions = {} # {name:{prediction:{stat:val}}}
+
+for player_name, player_season_logs in all_player_season_logs_dict.items():
+
+    player_prediction[player_name] = generator.generate_player_prediction(player_name, player_season_logs)

@@ -74,22 +74,24 @@ def determine_consistent_streak(stat_counts):
 
 # streak is in form of prediction dictionary
 def determine_high_streak(streak_dict):
-    print('\n===Determine High Streak===\n')
+    #print('\n===Determine High Streak===\n')
     #print('streak_dict: ' + str(streak_dict))
 
     high_streak = False
 
     # if overall record is 1/2 and less than 9/10 then not high streak unless another condition has perfect record
-    overall_record = streak_dict['overall record']
+    #overall_record = streak_dict['overall record']
     #if overall_record[1] < 2: #0/2,1/2
 
     streak = streak_dict['streak']
-    print('streak: ' + str(streak))
+    #print('streak: ' + str(streak))
 
-    #if 100%, eg 10/10
+    #if 100% or 0, eg 10/10 or 0/y
     final_count = int(streak[-1].split('/')[0])
     final_total = int(streak[-1].split('/')[1])
     if final_count == final_total: # eg 13/13 or 3/3
+        high_streak = True
+    elif final_count == 0: # 0/y
         high_streak = True
     elif len(streak) > 9: # 9/10, 1/10
         count_10 = int(streak[9].split('/')[0])
@@ -99,8 +101,8 @@ def determine_high_streak(streak_dict):
         elif count_7 == 7 or count_7 == 0:
             high_streak = True
 
-    if high_streak:
-        print('high_streak')
+    # if high_streak:
+    #     print('high_streak')
 
     return high_streak
 
@@ -115,9 +117,10 @@ def determine_high_streaks(all_valid_streaks_list):
         if determine_high_streak(streak):
             high_streaks.append(streak)
 
-    
-    print('high_streaks: ' + str(high_streaks))
+    if len(high_streaks) == 0:
+        print('Warning: No High Streaks! ')
 
+    print('high_streaks: ' + str(high_streaks))
     return high_streaks
 
 def determine_col_name(keyword,data):
@@ -785,3 +788,9 @@ def determine_all_degrees_of_belief(streaks):
         degrees_of_belief[prediction] = deg_of_bel # eg 7
 
     return degrees_of_belief
+
+# prediction is really a list of features that we must assess to determine the probability of both/all outcomes
+def determine_probability_of_prediction(prediction):
+    prob = 0
+
+    return prob
