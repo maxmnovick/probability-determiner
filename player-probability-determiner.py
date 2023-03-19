@@ -73,6 +73,16 @@ current_dow = todays_games_date_obj.strftime('%a').lower()
 # s_lines = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 # to_lines = [3,1,1,1,3,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1]
 
+# only need to get the lines for player of interest
+#if player_of_interest == '': # if blank do all players in raw projected lines
+# determine player outcome probability
+# first generate player outcomes and then determine its prob
+players_of_interest = ['chris paul']
+player_outcomes = generator.generate_players_outcomes(players_of_interest, todays_games_date_obj)
+
+
+# todo: order players from most to least consistent so we can optimize returns by only voting on highly consistent players
+
 
 # v2: copy paste raw projected lines direct from website
 # raw projected lines in format: [['Player Name', 'O 10 +100', 'U 10 +100', 'Player Name', 'O 10 +100', 'U 10 +100', Name', 'O 10 +100', 'U 10 +100']]
@@ -90,11 +100,11 @@ projected_lines = reader.read_projected_lines(raw_projected_lines, all_player_te
 #projected_lines = reader.extract_data(data_type, input_type, header=True) # csv w/ header
 if input_type == '': # for testing we make input type blank ''
 #projected_lines = reader.read_projected_lines(date)
-    projected_lines = [['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP'], ['Giannis Antetokounmpo', '34', '13', '6', '1', '1', '1', '1', 'Home', 'ATL']]
+    projected_lines = [['Name', 'PTS', 'REB', 'AST', '3PM', 'BLK', 'STL', 'TO','LOC','OPP'], ['Giannis Antetokounmpo', '34', '13', '6', '1', '1', '1', '1', 'Home', 'ATL']]
 print("projected_lines: " + str(projected_lines))
 
 # if copy pasted from website
-header_row = ['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP']
+header_row = ['Name', 'PTS', 'REB', 'AST', '3PM', 'BLK', 'STL', 'TO','LOC','OPP']
 
 projected_lines_dict = {}
 header_row = projected_lines[0]
@@ -105,18 +115,21 @@ print("projected_lines_dict: " + str(projected_lines_dict))
 
 
 
+
+
+
 # get all player season logs
 # use player espn ids from above
 # all_player_season_logs_dict = { player name: { year: df, .. }, .. }
 all_player_season_logs_dict = reader.read_all_players_season_logs(player_names, read_all_seasons, player_espn_ids_dict)
 
 # get position and team from same source espn game
+
+# all_player_teams = {}
+# all_player_info = {'positions':{}, 'teams':{}}
+
+
 all_player_positions = {}
-all_player_teams = {}
-all_player_info = {'positions':{}, 'teams':{}}
-
-
-
 if find_matchups == True:
     all_player_positions = reader.read_all_players_positions(player_espn_ids_dict)
     #all_player_info['positions'] = reader.read_all_players_positions(player_espn_ids_dict)
@@ -124,6 +137,10 @@ if find_matchups == True:
 # todo:
 # get team schedules from espn so we can get next game opponent and location and date 
 # so we can see performance against opponent and at location and next game after date 
+
+
+
+
 
 
 print("\n===All Players Season Logs===\n")
@@ -141,6 +158,9 @@ all_players_records_dicts = generator.generate_all_players_records_dicts(all_pla
 # need all_player_season_logs_dict to get game reference info not included in stats dicts such as game date
 # display all players records dicts
 #writer.display_all_players_records_dicts(all_players_records_dicts, all_player_season_logs_dict)
+
+#all_players_avg_range_dicts = generator.generate_all_players_avg_range_dicts(all_players_stats_dicts)
+
 
 all_streak_tables = { } # { 'player name': { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} } }
 # need to store all records in dict so we can refer to it by player, condition, year, and stat
@@ -720,7 +740,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                     if asts >= int(player_projected_lines['AST']):
                         a_count += 1
 
-                    if threes >= int(player_projected_lines['3PT']):
+                    if threes >= int(player_projected_lines['3PM']):
                         threes_count += 1
                     if blks >= int(player_projected_lines['BLK']):
                         b_count += 1
@@ -748,7 +768,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                 over_rebs_line = 'REB ' + str(player_projected_lines['REB']) + "+"
                 over_asts_line = 'AST ' + str(player_projected_lines['AST']) + "+"
                 
-                over_threes_line = '3PM ' + str(player_projected_lines['3PT']) + "+"
+                over_threes_line = '3PM ' + str(player_projected_lines['3PM']) + "+"
                 over_blks_line = 'BLK ' + str(player_projected_lines['BLK']) + "+"
                 over_stls_line = 'STL ' + str(player_projected_lines['STL']) + "+"
                 over_tos_line = 'TO ' + str(player_projected_lines['TO']) + "+"

@@ -790,6 +790,7 @@ def determine_all_degrees_of_belief(streaks):
     return degrees_of_belief
 
 # prediction is really a list of features that we must assess to determine the probability of both/all outcomes
+# similar to determine degree of belief above but restructured
 def determine_probability_of_prediction(prediction):
     prob = 0
 

@@ -898,7 +898,7 @@ def read_projected_lines(raw_projected_lines, all_player_teams, player_of_intere
 	print('\n===Read Projected Lines===\n')
 
 	# convert raw projected lines to projected lines
-	header_row = ['Name', 'PTS', 'REB', 'AST', '3PT', 'BLK', 'STL', 'TO','LOC','OPP']
+	header_row = ['Name', 'PTS', 'REB', 'AST', '3PM', 'BLK', 'STL', 'TO','LOC','OPP']
 
 	all_game_lines_dicts = {} # each stat separately
 	# split columns in raw projected lines so we can loop thru each stat separately
