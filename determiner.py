@@ -794,3 +794,13 @@ def determine_probability_of_prediction(prediction):
     prob = 0
 
     return prob
+
+
+# change prediction dictionary to outcome features bc we are not predicting
+# we are determining the prob of an outcome given the features
+# eg prob player scores 10+p given stats, records, avg, range, matchups, etc
+# features = {possible outcome:'', record:[], ..}
+def determine_probability_of_outcome(features):
+    prob = 0
+
+    return prob
