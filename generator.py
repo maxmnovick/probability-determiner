@@ -855,25 +855,25 @@ def generate_all_players_avg_range_dicts(all_players_stats_dicts):
 
 # if player names is blank, use all players found in raw projected lines
 # use player_espn_ids_dict to get teams
-def generate_projected_lines_dict(player_espn_ids_dict, player_names=[]):
+def generate_projected_lines_dict(raw_projected_lines, player_espn_ids_dict={}, player_names=[]):
 
     # need data type and input type to get file name
-    data_type = "Player Lines"
+    # data_type = "Player Lines"
 
-    # optional setting game date if processing a day in advance
-    todays_games_date_str = '' # format: m/d/y, like 3/14/23. set if we want to look at games in advance
-    todays_games_date_obj = datetime.today() # by default assume todays game is actually today and we are not analyzing in advance
-    if todays_games_date_str != '':
-        todays_games_date_obj = datetime.strptime(todays_games_date_str, '%m/%d/%y')
+    # # optional setting game date if processing a day in advance
+    # todays_games_date_str = '' # format: m/d/y, like 3/14/23. set if we want to look at games in advance
+    # todays_games_date_obj = datetime.today() # by default assume todays game is actually today and we are not analyzing in advance
+    # if todays_games_date_str != '':
+    #     todays_games_date_obj = datetime.strptime(todays_games_date_str, '%m/%d/%y')
     
-    input_type = str(todays_games_date_obj.month) + '/' + str(todays_games_date_obj.day)
+    # input_type = str(todays_games_date_obj.month) + '/' + str(todays_games_date_obj.day)
 
-    # raw projected lines in format: [['Player Name', 'O 10 +100', 'U 10 +100', 'Player Name', 'O 10 +100', 'U 10 +100', Name', 'O 10 +100', 'U 10 +100']]
-    raw_projected_lines = reader.extract_data(data_type, input_type, extension='tsv', header=True) # tsv no header
-    print("raw_projected_lines: " + str(raw_projected_lines))
+    # # raw projected lines in format: [['Player Name', 'O 10 +100', 'U 10 +100', 'Player Name', 'O 10 +100', 'U 10 +100', Name', 'O 10 +100', 'U 10 +100']]
+    # raw_projected_lines = reader.extract_data(data_type, input_type, extension='tsv', header=True) # tsv no header
+    # print("raw_projected_lines: " + str(raw_projected_lines))
 
-    if len(player_names) == 0:
-        player_names = determiner.determine_all_player_names(raw_projected_lines)
+    # if len(player_names) == 0:
+    #     player_names = determiner.determine_all_player_names(raw_projected_lines)
 
     
     player_teams = reader.read_all_players_teams(player_espn_ids_dict)
@@ -1113,16 +1113,34 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
     return player_all_outcomes_dict
 
 # one outcome per stat of interest so each player has multiple outcomes
-def generate_players_outcomes(player_names, todays_games_date_obj, settings={}):
+def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.today(), settings={}):
 
     print('\n===Generate Players Outcomes===\n')
 
     player_outcomes = {}
 
     # === gather external data
+    # need data type and input type to get file name
+    data_type = "Player Lines"
+
+    # optional setting game date if processing a day in advance
+    todays_games_date_str = '' # format: m/d/y, like 3/14/23. set if we want to look at games in advance
+    todays_games_date_obj = datetime.today() # by default assume todays game is actually today and we are not analyzing in advance
+    if todays_games_date_str != '':
+        todays_games_date_obj = datetime.strptime(todays_games_date_str, '%m/%d/%y')
+    
+    input_type = str(todays_games_date_obj.month) + '/' + str(todays_games_date_obj.day)
+
+    # raw projected lines in format: [['Player Name', 'O 10 +100', 'U 10 +100', 'Player Name', 'O 10 +100', 'U 10 +100', Name', 'O 10 +100', 'U 10 +100']]
+    raw_projected_lines = reader.extract_data(data_type, input_type, extension='tsv', header=True) # tsv no header
+    print("raw_projected_lines: " + str(raw_projected_lines))
+
+    if len(player_names) == 0:
+        player_names = determiner.determine_all_player_names(raw_projected_lines)
+
     player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
 
-    projected_lines_dict = generate_projected_lines_dict(player_espn_ids_dict, player_names)
+    projected_lines_dict = generate_projected_lines_dict(raw_projected_lines, player_espn_ids_dict, player_names)
 
     read_all_seasons = False # saves time during testing other parts if we only read 1 season
     if 'read all seasons' in settings.keys():
