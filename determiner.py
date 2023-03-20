@@ -21,12 +21,26 @@ def determine_consistent_streak(stat_counts):
     print("stat_counts: " + str(stat_counts))
     consistent = False
 
+    super_strict_streak = True # only 7/7,9/10 and above
     strict_streak = True
+    
 
     # even if it is consistent it does not mean they will hit it next game
     # instead we must determine if likely to hit next game based on previous game pattern
 
-    if strict_streak:
+    if super_strict_streak:
+        if len(stat_counts) > 1:
+            # if 100%, no matter length of streak
+            if stat_counts[1] != 1: # avoid 1/2
+                if len(stat_counts) > 3:
+                    if stat_counts[3] != 2: # avoid 2/4
+                        if len(stat_counts) > 6: 
+                            if stat_counts[6] == 7 or stat_counts[6] == 0: # 7/7 or 0/7 bc key number 7
+                                consistent = True
+                        if len(stat_counts) > 9:
+                            if stat_counts[9] > 8 or stat_counts[9] < 2: # 9/10,10/10 or 1/10,0/10
+                                consistent = True
+    elif strict_streak:
         if len(stat_counts) > 1:
             # if 100%, no matter length of streak
             final_count = stat_counts[-1]
@@ -804,4 +818,28 @@ def determine_probability_of_prediction(prediction):
 def determine_probability_of_outcome(features):
     prob = 0
 
+    return prob
+
+
+# need to weigh recent samples more
+# and weigh samples more or less based on specific circumstances like teammates
+# but that may come at the next step when accounting for all conditions
+# record = ['1/1','2/2',..]
+# weigh samples after trade much more than before
+def determine_probability_from_record(record, games_traded=0):
+    #prob = 0
+
+    # most basic is take ratio of all samples
+    count = int(record[-1].split('/')[0])
+    total = int(record[-1].split('/')[1])
+
+    # weigh 10,50: 0.5,0.5
+    # weigh 3,5,7,10,13,15,20,30,50: 0.2,0.1,0.1,0.1,..
+    # determine weights of sample ranges based on no. samples
+
+
+    # display as percentage
+    prob = round(count * 100 / total) # eg 10 * 100 / 20 = 50
+
+    print('prob: ' + str(prob))
     return prob

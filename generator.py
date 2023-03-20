@@ -1163,3 +1163,4 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
     
     print('player_outcomes: ' + str(player_outcomes))
     return player_outcomes
+
