@@ -79,7 +79,7 @@ current_dow = todays_games_date_obj.strftime('%a').lower()
 # first generate player outcomes and then determine its prob
 players_of_interest = ['chris paul']
 player_outcomes = generator.generate_players_outcomes(players_of_interest, todays_games_date_obj)
-
+writer.display_player_outcomes(player_outcomes)
 
 # todo: order players from most to least consistent so we can optimize returns by only voting on highly consistent players
 

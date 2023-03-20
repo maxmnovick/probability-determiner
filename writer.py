@@ -395,3 +395,49 @@ def display_all_players_records_dicts(all_players_records_dicts, all_player_seas
                     print(tabulate(prob_tos_table))
 
             season_year -= 1
+
+# player_outcomes = {player: stat name: outcome dict}
+def display_player_outcomes(player_outcomes):
+
+    print("\n===Player Outcomes===\n")
+
+
+    # convert player outcomes dict into list
+    player_outcomes_list = []
+    for stat_outcome_dict in player_outcomes.values():
+
+        for outcome_dict in stat_outcome_dict.values():
+
+            player_outcomes_list.append(outcome_dict)
+
+    # get headers
+    header_row = []
+    header_string = '' # separate by semicolons and delimit in spreadsheet
+    if len(player_outcomes_list) > 0:
+        outcome1 = player_outcomes_list[0]
+        for key in outcome1.keys():
+            header_row.append(key.title())
+            header_string += key.title() + ";"
+
+        game_data = [header_row]
+        game_data_strings = []
+        for outcome in player_outcomes_list:
+            outcome_row = []
+            outcome_string = ''
+            for val in outcome.values():
+                outcome_row.append(val)
+                outcome_string += str(val) + ";"
+            game_data.append(outcome_row)
+            game_data_strings.append(outcome_string)
+    else:
+        print('Warning: no valid streaks!')
+
+
+    #print(tabulate(game_data))
+
+    print("Export")
+    print(header_string)
+    for game_data in game_data_strings:
+        print(game_data)
+
+    print("\n===End Player Outcomes===\n")

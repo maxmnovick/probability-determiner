@@ -910,11 +910,11 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
         player_all_avg_range_dicts[key] = generate_player_avg_range_dict(player_name, player_stat_dict, key)
     #player_avg_range_dict = generate_player_all_avg_range_dicts(player_name, player_stat_dict)
     print('player_all_avg_range_dicts: ' + str(player_all_avg_range_dicts))
-    all_means_dicts = player_all_avg_range_dicts['mean']
-    all_medians_dicts = player_all_avg_range_dicts['median']
-    all_modes_dicts = player_all_avg_range_dicts['mode']
-    all_mins_dicts = player_all_avg_range_dicts['min']
-    all_maxes_dicts = player_all_avg_range_dicts['max']
+    player_means_dicts = player_all_avg_range_dicts['mean']
+    player_medians_dicts = player_all_avg_range_dicts['median']
+    player_modes_dicts = player_all_avg_range_dicts['mode']
+    player_mins_dicts = player_all_avg_range_dicts['min']
+    player_maxes_dicts = player_all_avg_range_dicts['max']
 
 
     current_season_log = player_season_logs[0]
@@ -954,22 +954,21 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
         player_outcome_dict['overall min'] = ''
         player_outcome_dict['overall max'] = ''
 
-        if player_name in all_means_dicts.keys():
-            #print("all_means_dicts: " + str(all_means_dicts))
-            overall_mean = all_means_dicts[player_name]['all'][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
-            player_outcome_dict['overall mean'] = overall_mean
-        if player_name in all_medians_dicts.keys():
-            overall_median = all_medians_dicts[player_name]['all'][year][stat_name]
-            player_outcome_dict['overall median'] = overall_median
-        if player_name in all_modes_dicts.keys():
-            overall_mode = all_modes_dicts[player_name]['all'][year][stat_name]
-            player_outcome_dict['overall mode'] = overall_mode
-        if player_name in all_mins_dicts.keys():
-            overall_min = all_mins_dicts[player_name]['all'][year][stat_name]
-            player_outcome_dict['overall min'] = overall_min
-        if player_name in all_maxes_dicts.keys():
-            overall_max = all_maxes_dicts[player_name]['all'][year][stat_name]
-            player_outcome_dict['overall max'] = overall_max
+        #print("all_means_dicts: " + str(all_means_dicts))
+        overall_mean = player_means_dicts['all'][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+        player_outcome_dict['overall mean'] = overall_mean
+        
+        overall_median = player_medians_dicts['all'][year][stat_name]
+        player_outcome_dict['overall median'] = overall_median
+    
+        overall_mode = player_modes_dicts['all'][year][stat_name]
+        player_outcome_dict['overall mode'] = overall_mode
+    
+        overall_min = player_mins_dicts['all'][year][stat_name]
+        player_outcome_dict['overall min'] = overall_min
+    
+        overall_max = player_maxes_dicts['all'][year][stat_name]
+        player_outcome_dict['overall max'] = overall_max
 
 
         location_record = player_records_dict[location][year][stat_name]
@@ -983,22 +982,22 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
         player_outcome_dict['location min'] = ''
         player_outcome_dict['location max'] = ''
 
-        if player_name in all_means_dicts.keys():
-            #print("all_means_dicts: " + str(all_means_dicts))
-            location_mean = all_means_dicts[player_name][location][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
-            player_outcome_dict['location mean'] = location_mean
-        if player_name in all_medians_dicts.keys():
-            location_median = all_medians_dicts[player_name][location][year][stat_name]
-            player_outcome_dict['location median'] = location_median
-        if player_name in all_modes_dicts.keys():
-            location_mode = all_modes_dicts[player_name][location][year][stat_name]
-            player_outcome_dict['location mode'] = location_mode
-        if player_name in all_mins_dicts.keys():
-            location_min = all_mins_dicts[player_name][location][year][stat_name]
-            player_outcome_dict['location min'] = location_min
-        if player_name in all_maxes_dicts.keys():
-            location_max = all_maxes_dicts[player_name][location][year][stat_name]
-            player_outcome_dict['location max'] = location_max
+        
+        #print("all_means_dicts: " + str(all_means_dicts))
+        location_mean = player_means_dicts[location][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+        player_outcome_dict['location mean'] = location_mean
+    
+        location_median = player_medians_dicts[location][year][stat_name]
+        player_outcome_dict['location median'] = location_median
+    
+        location_mode = player_modes_dicts[location][year][stat_name]
+        player_outcome_dict['location mode'] = location_mode
+    
+        location_min = player_mins_dicts[location][year][stat_name]
+        player_outcome_dict['location min'] = location_min
+    
+        location_max = player_maxes_dicts[location][year][stat_name]
+        player_outcome_dict['location max'] = location_max
 
         player_outcome_dict['opponent record'] = ''
         #print('Add opponent ' + opponent + ' record. ')
@@ -1014,27 +1013,27 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
         player_outcome_dict['opponent min'] = ''
         player_outcome_dict['opponent max'] = ''
 
-        if player_name in all_means_dicts.keys():
-            #print("all_means_dicts: " + str(all_means_dicts))
-            if opponent in all_means_dicts[player_name].keys():
-                opponent_mean = all_means_dicts[player_name][opponent][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
-                player_outcome_dict['opponent mean'] = opponent_mean
-        if player_name in all_medians_dicts.keys():
-            if opponent in all_medians_dicts[player_name].keys():
-                opponent_median = all_medians_dicts[player_name][opponent][year][stat_name]
-                player_outcome_dict['opponent median'] = opponent_median
-        if player_name in all_modes_dicts.keys():
-            if opponent in all_modes_dicts[player_name].keys():
-                opponent_mode = all_modes_dicts[player_name][opponent][year][stat_name]
-                player_outcome_dict['opponent mode'] = opponent_mode
-        if player_name in all_mins_dicts.keys():
-            if opponent in all_mins_dicts[player_name].keys():
-                opponent_min = all_mins_dicts[player_name][opponent][year][stat_name]
-                player_outcome_dict['opponent min'] = opponent_min
-        if player_name in all_maxes_dicts.keys():
-            if opponent in all_maxes_dicts[player_name].keys():
-                opponent_max = all_maxes_dicts[player_name][opponent][year][stat_name]
-                player_outcome_dict['opponent max'] = opponent_max
+        
+        #print("all_means_dicts: " + str(all_means_dicts))
+        if opponent in player_means_dicts.keys():
+            opponent_mean = player_means_dicts[opponent][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+            player_outcome_dict['opponent mean'] = opponent_mean
+    
+        if opponent in player_medians_dicts.keys():
+            opponent_median = player_medians_dicts[opponent][year][stat_name]
+            player_outcome_dict['opponent median'] = opponent_median
+    
+        if opponent in player_modes_dicts.keys():
+            opponent_mode = player_modes_dicts[opponent][year][stat_name]
+            player_outcome_dict['opponent mode'] = opponent_mode
+    
+        if opponent in player_mins_dicts.keys():
+            opponent_min = player_mins_dicts[opponent][year][stat_name]
+            player_outcome_dict['opponent min'] = opponent_min
+    
+        if opponent in player_maxes_dicts.keys():
+            opponent_max = player_maxes_dicts[opponent][year][stat_name]
+            player_outcome_dict['opponent max'] = opponent_max
 
         player_outcome_dict['time after record'] = ''
         if time_after in player_records_dict.keys():
@@ -1048,27 +1047,27 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
         player_outcome_dict['time after min'] = ''
         player_outcome_dict['time after max'] = ''
 
-        if player_name in all_means_dicts.keys():
-            #print("all_means_dicts: " + str(all_means_dicts))
-            if time_after in all_means_dicts[player_name].keys():
-                time_after_mean = all_means_dicts[player_name][time_after][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
-                player_outcome_dict['time after mean'] = time_after_mean
-        if player_name in all_medians_dicts.keys():
-            if time_after in all_medians_dicts[player_name].keys():
-                time_after_median = all_medians_dicts[player_name][time_after][year][stat_name]
-                player_outcome_dict['time after median'] = time_after_median
-        if player_name in all_modes_dicts.keys():
-            if time_after in all_modes_dicts[player_name].keys():
-                time_after_mode = all_modes_dicts[player_name][time_after][year][stat_name]
-                player_outcome_dict['time after mode'] = time_after_mode
-        if player_name in all_mins_dicts.keys():
-            if time_after in all_mins_dicts[player_name].keys():
-                time_after_min = all_mins_dicts[player_name][time_after][year][stat_name]
-                player_outcome_dict['time after min'] = time_after_min
-        if player_name in all_maxes_dicts.keys():
-            if time_after in all_maxes_dicts[player_name].keys():
-                time_after_max = all_maxes_dicts[player_name][time_after][year][stat_name]
-                player_outcome_dict['time after max'] = time_after_max
+        
+        #print("all_means_dicts: " + str(all_means_dicts))
+        if time_after in player_means_dicts.keys():
+            time_after_mean = player_means_dicts[time_after][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+            player_outcome_dict['time after mean'] = time_after_mean
+    
+        if time_after in player_medians_dicts.keys():
+            time_after_median = player_medians_dicts[time_after][year][stat_name]
+            player_outcome_dict['time after median'] = time_after_median
+    
+        if time_after in player_modes_dicts.keys():
+            time_after_mode = player_modes_dicts[time_after][year][stat_name]
+            player_outcome_dict['time after mode'] = time_after_mode
+    
+        if time_after in player_mins_dicts.keys():
+            time_after_min = player_mins_dicts[time_after][year][stat_name]
+            player_outcome_dict['time after min'] = time_after_min
+    
+        if time_after in player_maxes_dicts.keys():
+            time_after_max = player_maxes_dicts[time_after][year][stat_name]
+            player_outcome_dict['time after max'] = time_after_max
 
         player_outcome_dict['day record'] = ''
         if current_dow in player_records_dict.keys():
@@ -1085,27 +1084,27 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
         player_outcome_dict['day min'] = ''
         player_outcome_dict['day max'] = ''
 
-        if player_name in all_means_dicts.keys():
-            #print("all_means_dicts: " + str(all_means_dicts))
-            if current_dow in all_means_dicts[player_name].keys():
-                day_mean = all_means_dicts[player_name][current_dow][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
-                player_outcome_dict['day mean'] = day_mean
-        if player_name in all_medians_dicts.keys():
-            if current_dow in all_means_dicts[player_name].keys():
-                day_median = all_medians_dicts[player_name][current_dow][year][stat_name]
-                player_outcome_dict['day median'] = day_median
-        if player_name in all_modes_dicts.keys():
-            if current_dow in all_means_dicts[player_name].keys():
-                day_mode = all_modes_dicts[player_name][current_dow][year][stat_name]
-                player_outcome_dict['day mode'] = day_mode
-        if player_name in all_mins_dicts.keys():
-            if current_dow in all_means_dicts[player_name].keys():
-                day_min = all_mins_dicts[player_name][current_dow][year][stat_name]
-                player_outcome_dict['day min'] = day_min
-        if player_name in all_maxes_dicts.keys():
-            if current_dow in all_means_dicts[player_name].keys():
-                day_max = all_maxes_dicts[player_name][current_dow][year][stat_name]
-                player_outcome_dict['day max'] = day_max
+        
+        #print("all_means_dicts: " + str(all_means_dicts))
+        if current_dow in player_means_dicts.keys():
+            day_mean = player_means_dicts[current_dow][year][stat_name] # { 'player name': { 'all': {year: { pts: 1, stat: mean, .. },...}, 'home':{year:{ stat: mean, .. },.. }, 'away':{year:{ stat: mean, .. }} } }
+            player_outcome_dict['day mean'] = day_mean
+    
+        if current_dow in player_means_dicts.keys():
+            day_median = player_means_dicts[current_dow][year][stat_name]
+            player_outcome_dict['day median'] = day_median
+    
+        if current_dow in player_means_dicts.keys():
+            day_mode = player_means_dicts[current_dow][year][stat_name]
+            player_outcome_dict['day mode'] = day_mode
+    
+        if current_dow in player_means_dicts.keys():
+            day_min = player_means_dicts[current_dow][year][stat_name]
+            player_outcome_dict['day min'] = day_min
+    
+        if current_dow in player_means_dicts.keys():
+            day_max = player_means_dicts[current_dow][year][stat_name]
+            player_outcome_dict['day max'] = day_max
 
 
         player_all_outcomes_dict[stat_name] = player_outcome_dict
