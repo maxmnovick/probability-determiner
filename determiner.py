@@ -16,7 +16,7 @@ import pandas as pd # read html results from webpage to determine if player play
 import numpy # mean, median
 
 # if streak resembles pattern we have seen consistently such as 3/3,3/4,4/5,5/6,6/7,6/9,7/10
-def determine_consistent_streak(stat_counts):
+def determine_consistent_streak(stat_counts, stat_name=''):
     print("\n===Determine Consistent Streak===\n")
     print("stat_counts: " + str(stat_counts))
     consistent = False
@@ -34,9 +34,10 @@ def determine_consistent_streak(stat_counts):
             if stat_counts[1] != 1: # avoid 1/2
                 if len(stat_counts) > 3:
                     if stat_counts[3] != 2: # avoid 2/4
-                        if len(stat_counts) > 6: 
-                            if stat_counts[6] == 7 or stat_counts[6] == 0: # 7/7 or 0/7 bc key number 7
-                                consistent = True
+                        if stat_name != 'reb': # except reb bc too random
+                            if len(stat_counts) > 6: 
+                                if stat_counts[6] == 7 or stat_counts[6] == 0: # 7/7 or 0/7 bc key number 7 except reb bc too random
+                                    consistent = True
                         if len(stat_counts) > 9:
                             if stat_counts[9] > 8 or stat_counts[9] < 2: # 9/10,10/10 or 1/10,0/10
                                 consistent = True
@@ -519,7 +520,7 @@ def determine_all_player_names(raw_projected_lines):
     print('\n===Determine All Player Names===\n')
     # get all player names so we can get their espn IDs and from that get team, position, game log, and schedule
     player_names = []
-    player_initials = ['og','cj','pj','rj']
+    player_initials = ['og','cj','pj','rj','tj']
     for row in raw_projected_lines:
         first_element_wo_punctuation = re.sub('\'|\.','',row[0])
         if first_element_wo_punctuation != 'PLAYER' and first_element_wo_punctuation.lower() != 'na': # uppercase indicates team abbrev like CHI

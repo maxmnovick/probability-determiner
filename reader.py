@@ -940,7 +940,7 @@ def read_projected_lines(raw_projected_lines, all_player_teams, player_of_intere
 				# loop thru rows until we see header. then make header key in dict and add next rows to list of values until next header
 				# if first item = 'PLAYER' skip bc not needed header
 				# then if first 3 letters are uppercase we know it is team matchup header w/ needed info
-				player_initials = ['og','cj','pj','rj']
+				player_initials = ['og','cj','pj','rj','tj']
 				print('row: ' + str(row))
 				if len(row) > 0:
 					first_element_wo_punctuation = re.sub('\'|\.','',row[0])

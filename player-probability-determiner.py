@@ -26,7 +26,7 @@ import generator # generate stats dicts, all records dicts, all means dicts, all
 
 # === main settings ===
 read_all_seasons = False
-find_matchups = False
+find_matchups = True
 # optional settings
 todays_games_date_str = '' # format: m/d/y, like 3/14/23. set if we want to look at games in advance
 todays_games_date_obj = datetime.today() # by default assume todays game is actually today and we are not analyzing in advance
@@ -77,9 +77,9 @@ current_dow = todays_games_date_obj.strftime('%a').lower()
 #if player_of_interest == '': # if blank do all players in raw projected lines
 # determine player outcome probability
 # first generate player outcomes and then determine its prob
-players_of_interest = ['chris paul']
-player_outcomes = generator.generate_players_outcomes(players_of_interest, todays_games_date_obj)
-writer.display_player_outcomes(player_outcomes)
+# players_of_interest = ['chris paul']
+# player_outcomes = generator.generate_players_outcomes(players_of_interest, todays_games_date_obj)
+# writer.display_player_outcomes(player_outcomes)
 
 # todo: order players from most to least consistent so we can optimize returns by only voting on highly consistent players
 
@@ -151,9 +151,9 @@ print("\n===All Players Season Logs===\n")
 #v1
 all_players_stats_dicts = {} # similar format as all_means_dicts but for actual stat values so we can display plot stat val over time/game
 #v2
-all_players_stats_dicts = generator.generate_all_players_stats_dicts(all_player_season_logs_dict, projected_lines_dict, todays_games_date_obj)
+#all_players_stats_dicts = generator.generate_all_players_stats_dicts(all_player_season_logs_dict, projected_lines_dict, todays_games_date_obj)
 
-all_players_records_dicts = generator.generate_all_players_records_dicts(all_players_stats_dicts, projected_lines_dict) # aligned with stats, but record of over projected stat line
+#all_players_records_dicts = generator.generate_all_players_records_dicts(all_players_stats_dicts, projected_lines_dict) # aligned with stats, but record of over projected stat line
 
 # need all_player_season_logs_dict to get game reference info not included in stats dicts such as game date
 # display all players records dicts
@@ -881,8 +881,12 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                     #print('stat_line: ' + str(stat_line))
                     if stat_line < 2: # may need to change for 3 pointers if really strong likelihood to get 1
                         continue
+
+                
+                    stat_name = prob_table[0].split()[0].lower() # [pts 16+, 1/1, 2/2, ..] -> pts
+                    streak = prob_table[1:] # [pts 16+, 1/1, 2/2, ..] -> [1/1,2/2,...]
                     
-                    if determiner.determine_consistent_streak(stat_counts) or allow_all:
+                    if determiner.determine_consistent_streak(stat_counts, stat_name) or allow_all:
                         # { 'player name': { 'all': {year:[streaks],...}, 'home':{year:streak}, 'away':{year:streak} } }
                         # at first there will not be this player name in the dict so we add it
                         if player_name in all_streak_tables.keys():
@@ -934,8 +938,7 @@ for player_name, player_season_logs in all_player_season_logs_dict.items():
                     # save player stats in dict for reference
                     # save for all stats, not just streaks
                     # at first there will not be this player name in the dict so we add it
-                    stat_name = prob_table[0].split()[0].lower() # [pts 16+, 1/1, 2/2, ..] -> pts
-                    streak = prob_table[1:] # [pts 16+, 1/1, 2/2, ..] -> [1/1,2/2,...]
+                    
 
                     if not player_name in all_records_dicts.keys():
                         all_records_dicts[player_name] = {} # init bc player name key not in dict so if we attempt to set its val it is error
