@@ -84,6 +84,9 @@ current_dow = todays_games_date_obj.strftime('%a').lower()
 # todo: order players from most to least consistent so we can optimize returns by only voting on highly consistent players
 
 
+# === generate highly consistent streaks for review
+# we can take a subset of all player outcomes
+
 # v2: copy paste raw projected lines direct from website
 # raw projected lines in format: [['Player Name', 'O 10 +100', 'U 10 +100', 'Player Name', 'O 10 +100', 'U 10 +100', Name', 'O 10 +100', 'U 10 +100']]
 raw_projected_lines = reader.extract_data(data_type, input_type, extension='tsv', header=True) # tsv no header
