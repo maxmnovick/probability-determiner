@@ -1162,7 +1162,7 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
                 print(tabulate(matchup_table))
             
 
-            # ====== once for each streak, after created matchup dict for opponent ======
+            # ====== once for each outcome, after created matchup dict for opponent ======
 
             # add matchup dict to all matchup dicts so we can access matchups by opponent, stat and position
             # we could just populate all matchups dict from all matchups data at the beginning instead of this loop for each streak
@@ -1181,8 +1181,6 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
 
                 if not pos in all_matchups_dicts.keys():
 
-                    
-
                     #print('position ' + pos + ' not in all matchups so it is first loop')
                     all_matchups_dicts[pos] = {}
                     #print("all_matchups_dicts: " + str(all_matchups_dicts))
@@ -1192,8 +1190,6 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
                     print("all_matchups_dicts: " + str(all_matchups_dicts))
                 else: # pos in matchups dict so check for stat in pos
                     print('position ' + pos + ' in matchups dict')
-
-                    
 
                     # all_matchups_dicts = { 'pg': {} }
                     if not stat_name in all_matchups_dicts[pos].keys():
@@ -1312,6 +1308,7 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
     if todays_games_date_str != '':
         todays_games_date_obj = datetime.strptime(todays_games_date_str, '%m/%d/%y')
     
+    # read projected lines or if unavailable get player averages
     input_type = str(todays_games_date_obj.month) + '/' + str(todays_games_date_obj.day)
 
     # raw projected lines in format: [['Player Name', 'O 10 +100', 'U 10 +100', 'Player Name', 'O 10 +100', 'U 10 +100', Name', 'O 10 +100', 'U 10 +100']]
@@ -1325,11 +1322,14 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
 
     projected_lines_dict = generate_projected_lines_dict(raw_projected_lines, player_espn_ids_dict, player_names)
 
+
+    # read game logs
     read_all_seasons = False # saves time during testing other parts if we only read 1 season
     if 'read all seasons' in settings.keys():
         read_all_seasons = settings['read all seasons']
     all_player_season_logs_dict = reader.read_all_players_season_logs(player_names, read_all_seasons, player_espn_ids_dict)
 
+    # find defensive rating/ranking by player position
     find_matchups = False
     player_position = ''
     all_matchup_data = []
@@ -1346,7 +1346,16 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
         # get matchup data for streaks to see if likely to continue streak
         matchup_data_sources = [fantasy_pros_url, hashtag_bball_url, swish_analytics_url] #, hashtag_bball_url, swish_analytics_url, betting_pros_url, draft_edge_url] # go thru each source so we can compare conflicts
         # first read all matchup data from internet and then loop through tables
-        all_matchup_data = reader.read_all_matchup_data(matchup_data_sources)
+        all_matchup_data = reader.read_all_matchup_data(matchup_data_sources) # all_matchup_data=[matchup_data1,..], where matchup_data = [pg_matchup_df, sg_matchup_df, sf_matchup_df, pf_matchup_df, c_matchup_df]
+
+
+    # find teammates and opponents for each game played by each player
+    find_players = False
+    all_players_in_games_dict = {} # {player:{game:{teammates:[],opponents:[]}}}
+    if find_players == True:
+        all_players_in_games_dict = reader.read_all_players_in_games(all_player_season_logs_dict) # go thru players in all_player_season_logs_dict to get game ids
+
+
 
     # === organize external data into internal structure
     for player_name in player_names:

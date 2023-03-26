@@ -65,14 +65,66 @@ def extract_data(data_type, input_type, extension='csv', header=False):
 	#print("all_data: " + str(all_data))
 	return all_data
 
+# get game espn id from google
+# def read_game_espn_id(date, opp_abbrev, team_abbrev):
 
-# get espn id from google
+# 	print('\n===Read Game ESPN ID======\n')
+
+# 	espn_id = ''
+
+# 	try:
+# 		# den uta oct 19 nba espn box score
+# 		search_info = str(team_abbrev + '+' + opp_abbrev + '+' + date).replace(' ', '+')
+# 		print('search_info: ' + search_info)
+# 		search_string = search_info + '+nba+espn+box+score'
+# 		print('search_string: ' + search_string)
+		
+# 		site = 'https://www.google.com/search?q=' + search_string
+# 		print('site: ' + site)
+
+# 		req = Request(site, headers={
+# 			'User-Agent': 'Mozilla/5.0',
+# 		})
+
+# 		page = urlopen(req) # open webpage given request
+
+# 		soup = BeautifulSoup(page, features="lxml")
+
+# 		links_with_text = [] # id is in first link with text
+
+# 		for a in soup.find_all('a', href=True):
+# 			if a.text and a['href'].startswith('/url?'):
+# 				links_with_text.append(a['href'])
+
+# 		links_with_id_text = [x for x in links_with_text if 'id/' in x]
+
+# 		espn_id_link = links_with_id_text[0] # string starting with player id
+
+# 		espn_id = re.findall(r'\d+', espn_id_link)[0]
+
+# 		print('Success', espn_id, search_info)
+
+# 	except Exception as e:
+# 		print('Error', espn_id, search_info)
+
+# 	print("game_espn_id: " + espn_id)
+# 	return espn_id
+
+
+# get player espn id from google
 def read_player_espn_id(player_name):
+
+	print('\n===Read Player ESPN ID======\n')
+
 	espn_id = ''
 
 	try:
 
 		site = 'https://www.google.com/search?q=' + player_name.replace(' ', '+') + '+nba+espn+gamelog'
+		# https://www.google.com/search?q=john+collins+game+log
+		#site = 'https://www.google.com/search?q=help'
+		print('site: ' + site)
+
 
 		req = Request(site, headers={
 			'User-Agent': 'Mozilla/5.0',
@@ -81,6 +133,7 @@ def read_player_espn_id(player_name):
 		page = urlopen(req) # open webpage given request
 
 		soup = BeautifulSoup(page, features="lxml")
+		print('soup: ' + str(soup))
 
 		links_with_text = [] # id is in first link with text
 
@@ -97,9 +150,9 @@ def read_player_espn_id(player_name):
 		print('Success', espn_id, player_name.title())
 
 	except Exception as e:
-		print('Error', espn_id, player_name.title())
+		print('Error', espn_id, player_name.title(), e)
 
-	#print("espn_id: " + espn_id)
+	print("espn_id: " + espn_id)
 	return espn_id
 
 def read_all_player_espn_ids(player_names, player_of_interest=''):
@@ -472,11 +525,12 @@ def read_all_players_teams(player_espn_ids_dict):
 
 
 # show matchup data against each position so we can see which position has easiest matchup
+# matchup_data = [pg_matchup_df, sg_matchup_df, sf_matchup_df, pf_matchup_df, c_matchup_df]
 def read_matchup_data(source_url):
 
 	print("\n===Read Matchup Data===\n")
 
-	matchup_data = [] 
+	matchup_data = [] # matchup_data = [pg_matchup_df, sg_matchup_df, sf_matchup_df, pf_matchup_df, c_matchup_df]
 
 	# swish source which uses html 5 is default for now bc we need to define df outside if statement
 	
