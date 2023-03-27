@@ -3,6 +3,7 @@
 
 import re # see if string contains stat and player of interest to display
 import numpy # mean, median to display over time
+import csv # save player and game espn ID's so we do not have to request each run
 
 def display_game_data(all_valid_streaks_list):
     print("\n===Game Data===\n")
@@ -441,3 +442,29 @@ def display_player_outcomes(player_outcomes):
         print(game_data)
 
     print("\n===End Player Outcomes===\n")
+
+
+# data = [[name,id],..]
+# for espn id we only want to append new ids bc they do not change
+# write_param = create (error if exists), overwrite, or append
+def write_data_to_file(data, filepath, write_param, extension='csv'):
+
+    print('\n===Write Data to File: ' + filepath + '===\n')
+
+    if extension == 'csv':
+
+        with open(filepath, write_param) as csvfile:
+
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerows(data)
+
+    else:
+        print('Warning: Unknown file extension! ')
+    
+
+
+# data = [[name,id],..]
+# for espn id we only want to append new ids bc they do not change
+# def append_data_to_file(data, filepath):
+
+#     print('\n===Write Data to File===\n')

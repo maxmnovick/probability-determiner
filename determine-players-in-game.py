@@ -8,6 +8,7 @@ import pandas as pd # read html results from webpage
 from urllib.request import Request, urlopen # request website, open webpage given req
 from bs4 import BeautifulSoup # read html from webpage
 
+import re # search opp string in game log to see if home or away
 
 # ===read a team's schedule
 # we need to see how a given player performs with given teammates and opponent players, specifically the individuals for and against a given player, not just the team as a whole bc the team consists of individuals that determine matchups
@@ -46,6 +47,23 @@ def read_all_players_in_games(all_player_season_logs_dict, player_teams):
         team_abbrev = player_teams[player_name]
         print('team_abbrev: ' + team_abbrev)
 
+        
+        # see if game id saved in file
+        # check for each player bc we add new games for each player and they may overlap
+        data_type = 'game ids'
+        game_ids = reader.extract_data(data_type, header=True)
+        existing_game_ids_dict = {}
+        for row in game_ids:
+            print('row: ' + str(row))
+            game_key = row[0]
+            game_id = row[1]
+
+            existing_game_ids_dict[game_key] = game_id
+        print('existing_game_ids_dict: ' + str(existing_game_ids_dict))
+        
+        
+        
+        
         for player_season_log in player_season_logs:
 
             player_reg_season_log = determiner.determine_regular_season_games(player_season_log)
@@ -53,13 +71,31 @@ def read_all_players_in_games(all_player_season_logs_dict, player_teams):
             for game_idx, row in player_reg_season_log.iterrows():
                 
                 print('\n===Game ' + str(game_idx) + '===')
-                date = player_reg_season_log.loc[game_idx, 'Date'] + '/' + str(season_year)
+                # season year-1 for first half of season oct-dec bc we say season year is end of season
+                init_game_date_string = player_reg_season_log.loc[game_idx, 'Date'].lower().split()[1] # 'wed 2/15'[1]='2/15'
+                game_mth = init_game_date_string.split('/')[0]
+                final_season_year = str(season_year)
+                if int(game_mth) in range(10,13):
+                    final_season_year = str(season_year - 1)
+
+                date_str = player_reg_season_log.loc[game_idx, 'Date'] + '/' + str(final_season_year) # dow m/d/y
+                date_data = date_str.split()
+                date = date_data[1] # m/d/y
                 print('date: ' + date)
-                opp_abbrev = player_reg_season_log.loc[game_idx, 'OPP']
+                opp_str = player_reg_season_log.loc[game_idx, 'OPP'].lower()
+                opp_abbrev = re.sub('@|vs','',opp_str)
                 print('opp_abbrev: ' + opp_abbrev)
+
+                # if we always use format 'away home m/d/y' then we can check to see if key exists and get game id from local file
+                away_abbrev = opp_abbrev
+                home_abbrev = team_abbrev
+                if re.search('@',opp_str):
+                    away_abbrev = team_abbrev
+                    home_abbrev = opp_abbrev
+
                 
 
-                game_espn_id = reader.read_game_espn_id(date, opp_abbrev, team_abbrev)
+                game_espn_id = reader.read_game_espn_id(date, away_abbrev, home_abbrev, existing_game_ids_dict)
 
 
 
@@ -69,18 +105,3 @@ def read_all_players_in_games(all_player_season_logs_dict, player_teams):
     return all_players_in_games_dict
 
 all_players_in_games_dict = read_all_players_in_games(all_player_season_logs_dict, player_teams)
-
-
-# player_url = 'https://www.espn.com/nba/player/gamelog/_/id/3908845/john-collins'
-# html_results = pd.read_html(player_url)
-# print("html_results: " + str(html_results))
-
-
-# req = Request(player_url, headers={
-#     'User-Agent': 'Mozilla/5.0',
-# })
-
-# page = urlopen(req) # open webpage given request
-
-# soup = BeautifulSoup(page, features="lxml")
-# print('soup: ' + str(soup))

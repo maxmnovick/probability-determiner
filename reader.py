@@ -20,13 +20,21 @@ import isolator # isolate_player_game_data to read data from file
 
 import math # round up to nearest integer while reading
 
+import writer # write to file so we can check if data exists in local file so we can read from file
+
 # get data from a file and format into a list (same as generator version of this fcn but more general)
 # input such as Game Data - All Games
 # or Game Log - All Players
-def extract_data(data_type, input_type, extension='csv', header=False):
-	input_type = re.sub('/','_',input_type)
-	catalog_filename = "data/" + data_type.title() + " - " + input_type.title() + "." + extension
-	#print("catalog_filename: " + catalog_filename)
+# header = keep first row (confusing need to change)
+def extract_data(data_type, input_type='', extension='csv', header=False):
+	
+	print('\n===Extract Data===\n')
+
+	catalog_filename = "data/" + data_type.title() + "." + extension
+	if input_type != '':
+		input_type = re.sub('/','_',input_type)
+		catalog_filename = "data/" + data_type.title() + " - " + input_type.title() + "." + extension
+	print("catalog_filename: " + catalog_filename)
 	
 
 	lines = []
@@ -66,104 +74,149 @@ def extract_data(data_type, input_type, extension='csv', header=False):
 	return all_data
 
 # get game espn id from google
-# def read_game_espn_id(date, opp_abbrev, team_abbrev):
+def read_game_espn_id(date, away_abbrev, home_abbrev, existing_game_ids_dict={}):
 
-# 	print('\n===Read Game ESPN ID======\n')
-
-# 	espn_id = ''
-
-# 	try:
-# 		# den uta oct 19 nba espn box score
-# 		search_info = str(team_abbrev + '+' + opp_abbrev + '+' + date).replace(' ', '+')
-# 		print('search_info: ' + search_info)
-# 		search_string = search_info + '+nba+espn+box+score'
-# 		print('search_string: ' + search_string)
-		
-# 		site = 'https://www.google.com/search?q=' + search_string
-# 		print('site: ' + site)
-
-# 		req = Request(site, headers={
-# 			'User-Agent': 'Mozilla/5.0',
-# 		})
-
-# 		page = urlopen(req) # open webpage given request
-
-# 		soup = BeautifulSoup(page, features="lxml")
-
-# 		links_with_text = [] # id is in first link with text
-
-# 		for a in soup.find_all('a', href=True):
-# 			if a.text and a['href'].startswith('/url?'):
-# 				links_with_text.append(a['href'])
-
-# 		links_with_id_text = [x for x in links_with_text if 'id/' in x]
-
-# 		espn_id_link = links_with_id_text[0] # string starting with player id
-
-# 		espn_id = re.findall(r'\d+', espn_id_link)[0]
-
-# 		print('Success', espn_id, search_info)
-
-# 	except Exception as e:
-# 		print('Error', espn_id, search_info)
-
-# 	print("game_espn_id: " + espn_id)
-# 	return espn_id
-
-
-# get player espn id from google
-def read_player_espn_id(player_name):
-
-	print('\n===Read Player ESPN ID======\n')
+	print('\n===Read Game ESPN ID======\n')
 
 	espn_id = ''
 
-	try:
+	# den uta oct 19 nba espn box score
+	# if we always use format 'away home m/d/y' then we can check to see if key exists and get game id from local file
+	search_key = away_abbrev + ' ' + home_abbrev + ' ' + date
+	print('search_key: ' + search_key)
 
-		site = 'https://www.google.com/search?q=' + player_name.replace(' ', '+') + '+nba+espn+gamelog'
-		# https://www.google.com/search?q=john+collins+game+log
-		#site = 'https://www.google.com/search?q=help'
-		print('site: ' + site)
+	if search_key in existing_game_ids_dict.keys():
+		espn_id = existing_game_ids_dict[search_key]
+
+	else:
+
+		try:
+			
+			search_string = search_key.replace(' ', '+') + '+nba+espn+box+score'
+			print('search_string: ' + search_string)
+			
+			site = 'https://www.google.com/search?q=' + search_string
+			print('site: ' + site)
+
+			req = Request(site, headers={
+				'User-Agent': 'Mozilla/5.0',
+			})
+
+			page = urlopen(req) # open webpage given request
+
+			soup = BeautifulSoup(page, features="lxml")
+
+			links_with_text = [] # id is in first link with text
+
+			for a in soup.find_all('a', href=True):
+				if a.text and a['href'].startswith('/url?'):
+					links_with_text.append(a['href'])
+
+			links_with_id_text = [x for x in links_with_text if 'gameId/' in x]
+
+			espn_id_link = links_with_id_text[0] # string starting with player id
+
+			espn_id = re.findall(r'\d+', espn_id_link)[0]
+
+			print('Success', espn_id, search_key)
+
+			data = [[search_key, espn_id]]
+			filepath = 'data/Game Ids.csv'
+			write_param = 'a' # append ids to file
+			writer.write_data_to_file(data, filepath, write_param) # write to file so we can check if data already exists to determine how we want to read the data and if we need to request from internet
+
+		except Exception as e:
+			print('Error', espn_id, search_key, e)
+
+	print("game_espn_id: " + espn_id)
+	return espn_id
 
 
-		req = Request(site, headers={
-			'User-Agent': 'Mozilla/5.0',
-		})
+# get player espn id from google
+# or from file if already saved
+# player_id_dict = {player:id,..}
+def read_player_espn_id(player_name, existing_espn_ids_dict={}):
 
-		page = urlopen(req) # open webpage given request
+	print('\n===Read Player ESPN ID: ' + player_name.title() + '======\n')
 
-		soup = BeautifulSoup(page, features="lxml")
-		print('soup: ' + str(soup))
+	espn_id = ''
 
-		links_with_text = [] # id is in first link with text
+	if player_name in existing_espn_ids_dict.keys():
+		espn_id = existing_espn_ids_dict[player_name]
 
-		for a in soup.find_all('a', href=True):
-			if a.text and a['href'].startswith('/url?'):
-				links_with_text.append(a['href'])
+	else:
 
-		links_with_id_text = [x for x in links_with_text if 'id/' in x]
+		try:
 
-		espn_id_link = links_with_id_text[0] # string starting with player id
+			site = 'https://www.google.com/search?q=' + player_name.replace(' ', '+') + '+nba+espn+gamelog'
+			# https://www.google.com/search?q=john+collins+game+log
+			#site = 'https://www.google.com/search?q=help'
+			#print('site: ' + site)
 
-		espn_id = re.findall(r'\d+', espn_id_link)[0]
+			req = Request(site, headers={
+				'User-Agent': 'Mozilla/5.0',
+			})
 
-		print('Success', espn_id, player_name.title())
+			page = urlopen(req) # open webpage given request
 
-	except Exception as e:
-		print('Error', espn_id, player_name.title(), e)
+			soup = BeautifulSoup(page, features="lxml")
+			#print('soup: ' + str(soup))
+
+			links_with_text = [] # id is in first link with text
+
+			for a in soup.find_all('a', href=True):
+				if a.text and a['href'].startswith('/url?'):
+					links_with_text.append(a['href'])
+
+			links_with_id_text = [x for x in links_with_text if 'id/' in x]
+
+			espn_id_link = links_with_id_text[0] # string starting with player id
+
+			espn_id = re.findall(r'\d+', espn_id_link)[0]
+
+			print('Success', espn_id, player_name.title())
+
+
+
+			data = [[player_name, espn_id]]
+			filepath = 'data/Player Ids.csv'
+			write_param = 'a' # append ids to file
+			writer.write_data_to_file(data, filepath, write_param) # write to file so we can check if data already exists to determine how we want to read the data and if we need to request from internet
+
+		except Exception as e:
+			print('Error', espn_id, player_name.title(), e)
+
+		
 
 	print("espn_id: " + espn_id)
 	return espn_id
 
 def read_all_player_espn_ids(player_names, player_of_interest=''):
+	print('\n===Read All Player ESPN IDs===\n')
+	
 	espn_ids_dict = {}
 
 	if player_of_interest != '':
 		player_names = [player_of_interest]
 
+
+	# see if id saved in file
+	data_type = 'player ids'
+	player_ids = extract_data(data_type, header=True)
+	existing_espn_ids_dict = {}
+	for row in player_ids:
+		print('row: ' + str(row))
+		player_name = row[0]
+		player_id = row[1]
+
+		existing_espn_ids_dict[player_name] = player_id
+	print('existing_espn_ids_dict: ' + str(existing_espn_ids_dict))
+
 	for name in player_names:
-		espn_id = read_player_espn_id(name)
+		espn_id = read_player_espn_id(name, existing_espn_ids_dict)
 		espn_ids_dict[name] = espn_id
+
+
 
 	return espn_ids_dict
 
