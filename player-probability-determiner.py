@@ -1634,6 +1634,11 @@ def generate_all_player_predictions():
     writer.display_game_data(sorted_streaks)
 
 
+    data_type = 'lessons'
+    lessons = reader.extract_data(data_type, extension='tsv', header=True)
+    writer.display_lessons(lessons) # we have saved lessons from experience and logic that must be accounted for when deciding so display prominently and constantly reference
+
+
     # all_player_predictions = {} # {name:{prediction:{stat:val}}}
 
     # for player_name, player_season_logs in all_player_season_logs_dict.items():

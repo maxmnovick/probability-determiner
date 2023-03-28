@@ -221,6 +221,98 @@ def read_all_player_espn_ids(player_names, player_of_interest=''):
 	return espn_ids_dict
 
 
+
+# get game box score from espn.com
+def read_game_box_score(game_espn_id, game_key):
+	print("\n===Read Game Box Score: " + game_key + "===\n")
+
+	# get espn player id from google so we can get url
+	if player_url == '':
+		if player_id == '':
+			player_id = read_player_espn_id(player_name)
+		season_year = 2023
+		player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
+		print("player_url: " + player_url)
+
+	player_game_log = []
+
+	#dfs = pd.read_html(player_url)
+	#print(f'Total tables: {len(dfs)}')
+
+	#try:
+
+	html_results = pd.read_html(player_url)
+	#print("html_results: " + str(html_results))
+
+	parts_of_season = [] # pre season, regular season, post season
+
+	len_html_results = len(html_results) # each element is a dataframe/table so we loop thru each table
+
+	for order in range(len_html_results):
+		#print("order: " + str(order))
+
+		if len(html_results[order].columns.tolist()) == 17:
+
+			part_of_season = html_results[order]
+
+			# look at the formatting to figure out how to separate table and elements in table
+			if len_html_results - 2 == order:
+				part_of_season['Type'] = 'Preseason'
+
+			else:
+				if len(part_of_season[(part_of_season['OPP'].str.contains('GAME'))]) > 0:
+					part_of_season['Type'] = 'Postseason'
+				else:
+					part_of_season['Type'] = 'Regular'
+
+			parts_of_season.append(part_of_season)
+
+		else:
+			print("Warning: table does not have 17 columns so it is not valid game log.")
+			pass
+
+	player_game_log_df = pd.DataFrame()
+
+	if len(parts_of_season) > 0:
+
+		player_game_log_df = pd.concat(parts_of_season, sort=False, ignore_index=True)
+
+		player_game_log_df = player_game_log_df[(player_game_log_df['OPP'].str.startswith('@')) | (player_game_log_df['OPP'].str.startswith('vs'))].reset_index(drop=True)
+
+		player_game_log_df['Season'] = str(season_year-1) + '-' + str(season_year-2000)
+
+		player_game_log_df['Player'] = player_name
+
+		player_game_log_df = player_game_log_df.set_index(['Player', 'Season', 'Type']).reset_index()
+
+		# Successful 3P Attempts
+		player_game_log_df['3PT_SA'] = player_game_log_df['3PT'].str.split('-').str[0]
+
+		# All 3P Attempts
+		player_game_log_df['3PT_A'] = player_game_log_df['3PT'].str.split('-').str[1]
+		player_game_log_df[
+			['MIN', 'FG%', '3P%', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS', '3PT_SA', '3PT_A']
+
+			] = player_game_log_df[
+
+				['MIN', 'FG%', '3P%', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS', '3PT_SA', '3PT_A']
+
+				].astype(float)
+
+	# display player game log in readable format
+	#pd.set_option('display.max_columns', 100)
+	pd.set_option('display.max_columns', None)
+	print("player_game_log_df:\n" + str(player_game_log_df))
+
+	# except Exception as e:
+	# 	print("Error reading game log " + str(e))
+	# 	pass
+
+	
+	#print("player_game_log: " + str(player_game_log))
+	return player_game_log_df # can return this df directly or first arrange into list but seems simpler and more intuitive to keep df so we can access elements by keyword
+
+
 # get game log from espn.com
 def read_player_season_log(player_name, season_year=2023, player_url='', player_id=''):
 	print("\n===Read Player Game Log: " + player_name.title() + "===\n")
@@ -464,64 +556,87 @@ def read_team_season_schedule(team_name, season_year=2023, team_url='', team_id=
 
 
 # get player position from espn game log page bc we already have urls for each player
-def read_player_position(player_name, player_id, season_year=2023):
+def read_player_position(player_name, player_id, season_year=2023, existing_player_positions_dict={}):
 	print("\n===Read Player Position: " + player_name.title() + "===\n")
 	position = ''
 
-	try:
-		
-		site = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_id + '/type/nba/year/' + str(season_year)
+	if player_name in existing_player_positions_dict.keys():
+		position = existing_player_positions_dict[player_name]
 
-		req = Request(site, headers={
-			'User-Agent': 'Mozilla/5.0',
-		})
+	else:
 
-		page = urlopen(req) # open webpage given request
+		try:
+			
+			site = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_id + '/type/nba/year/' + str(season_year)
 
-		soup = BeautifulSoup(page, features="lxml")
+			req = Request(site, headers={
+				'User-Agent': 'Mozilla/5.0',
+			})
 
-		# find last element of ul with class PlayerHeader__Team_Info
-		position = str(list(soup.find("ul", {"class": "PlayerHeader__Team_Info"}).descendants)[-1])
-		#print("position_elementn:\n" + str(position_element))
+			page = urlopen(req) # open webpage given request
 
-		if len(position) > 2: # use abbrev
-			pos_abbrev = ''
-			words = position.split()
-			for word in words:
-				pos_abbrev += word[0].lower()
+			soup = BeautifulSoup(page, features="lxml")
 
-			if pos_abbrev == 'f': # some just say forward so make it small forward but actually better to use height to determine bc if over 6'6 then pf maybe?
-				pos_abbrev = 'sf'
-			elif pos_abbrev == 'g':
-				pos_abbrev = 'sg'
-			position = pos_abbrev
+			# find last element of ul with class PlayerHeader__Team_Info
+			position = str(list(soup.find("ul", {"class": "PlayerHeader__Team_Info"}).descendants)[-1])
+			#print("position_elementn:\n" + str(position_element))
 
-		# links_with_text = [] # id is in first link with text
+			if len(position) > 2: # use abbrev
+				pos_abbrev = ''
+				words = position.split()
+				for word in words:
+					pos_abbrev += word[0].lower()
 
-		# for a in soup.find_all('a', href=True):
-		# 	if a.text and a['href'].startswith('/url?'):
-		# 		links_with_text.append(a['href'])
+				if pos_abbrev == 'f': # some just say forward so make it small forward but actually better to use height to determine bc if over 6'6 then pf maybe?
+					pos_abbrev = 'sf'
+				elif pos_abbrev == 'g':
+					pos_abbrev = 'sg'
+				position = pos_abbrev
 
-		# links_with_id_text = [x for x in links_with_text if 'id/' in x]
+			# links_with_text = [] # id is in first link with text
 
-		# espn_id_link = links_with_id_text[0] # string starting with player id
+			# for a in soup.find_all('a', href=True):
+			# 	if a.text and a['href'].startswith('/url?'):
+			# 		links_with_text.append(a['href'])
 
-		# position = re.findall(r'\d+', espn_id_link)[0]
+			# links_with_id_text = [x for x in links_with_text if 'id/' in x]
 
-		print('Success', position.upper(), player_name.title())
+			# espn_id_link = links_with_id_text[0] # string starting with player id
 
-	except Exception as e:
-		print('Error', position.upper(), player_name.title())
+			# position = re.findall(r'\d+', espn_id_link)[0]
+
+			print('Success', position.upper(), player_name.title())
+
+
+			data = [[player_name, position]]
+			filepath = 'data/Player Positions.csv'
+			write_param = 'a' # append ids to file
+			writer.write_data_to_file(data, filepath, write_param) # write to file so we can check if data already exists to determine how we want to read the data and if we need to request from internet
+
+		except Exception as e:
+			print('Error', position.upper(), player_name.title())
 
 	print("position: " + position)
 	return position
 
-def read_all_players_positions(player_espn_ids_dict):
+def read_all_players_positions(player_espn_ids_dict, season_year=2023):
 	#print("\n===Read All Players Positions===\n")
 	players_positions = {}
 
+	# see if position saved in file
+	data_type = 'player positions'
+	player_positions = extract_data(data_type, header=True)
+	existing_player_positions_dict = {}
+	for row in player_positions:
+		print('row: ' + str(row))
+		player_name = row[0]
+		player_position = row[1]
+
+		existing_player_positions_dict[player_name] = player_position
+	print('existing_player_positions_dict: ' + str(existing_player_positions_dict))
+
 	for name, id in player_espn_ids_dict.items():
-		pos = read_player_position(name, id)
+		pos = read_player_position(name, id, season_year, existing_player_positions_dict)
 		players_positions[name] = pos
 
 	#print("players_positions: " + str(players_positions))
@@ -531,6 +646,7 @@ def read_all_players_positions(player_espn_ids_dict):
 def read_player_team(player_name, player_id, season_year=2023):
 	print("\n===Read Player Team: " + player_name.title() + "===\n")
 	team = ''
+
 
 	try:
 		
@@ -868,7 +984,8 @@ def extract_json_from_file(data_type, input_type, extension='csv'):
 
 	return data_dict
 
-
+# use when reading table cell with multiple values representing different fields inconveniently placed in same cell, 
+# eg score,rank in same cell
 def format_stat_val(col_val):
 	stat_val = 0.0
 	if re.search('\\s',str(col_val)): # eg '20.3 15' for 'avg rank'

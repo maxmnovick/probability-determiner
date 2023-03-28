@@ -444,6 +444,27 @@ def display_player_outcomes(player_outcomes):
     print("\n===End Player Outcomes===\n")
 
 
+# we have saved lessons from experience and logic that must be accounted for when deciding so display prominently and constantly reference
+# lessons = [outcome, lesson]
+def display_lessons(lessons):
+
+    print("\n===Display Lessons===\n")
+
+    header_string = 'Outcome;Lesson'
+
+    lesson_strings = []
+    for lesson in lessons:
+        lesson_string = lesson[0] + ';' + lesson[1]
+        lesson_strings.append(lesson_string)
+
+    print("Export")
+    print(header_string)
+    for lesson in lesson_strings:
+        print(lesson)
+
+    print("\n===End Lessons===\n")
+
+
 # data = [[name,id],..]
 # for espn id we only want to append new ids bc they do not change
 # write_param = create (error if exists), overwrite, or append
@@ -468,3 +489,9 @@ def write_data_to_file(data, filepath, write_param, extension='csv'):
 # def append_data_to_file(data, filepath):
 
 #     print('\n===Write Data to File===\n')
+
+
+
+
+
+

@@ -1296,6 +1296,8 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
 
     print('\n===Generate Players Outcomes===\n')
 
+    season_year = 2023 # change to current year
+
     player_outcomes = {}
 
     # === gather external data
@@ -1334,7 +1336,18 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
     player_position = ''
     all_matchup_data = []
     if find_matchups == True:
-        player_position = reader.read_player_position(player_name, player_espn_ids_dict[player_name])
+        # see if position saved in file
+        data_type = 'player positions'
+        player_positions = reader.extract_data(data_type, header=True)
+        existing_player_positions_dict = {}
+        for row in player_positions:
+            print('row: ' + str(row))
+            player_name = row[0]
+            player_position = row[1]
+
+            existing_player_positions_dict[player_name] = player_position
+        print('existing_player_positions_dict: ' + str(existing_player_positions_dict))
+        
 
         # get matchup data before looping thru consistent streaks bc we will present matchup data alongside consistent streaks for comparison
         fantasy_pros_url = 'https://www.fantasypros.com/daily-fantasy/nba/fanduel-defense-vs-position.php' #'https://www.fantasypros.com/nba/defense-vs-position.php' #alt 2: betting_pros_url = 'https://www.bettingpros.com/nba/defense-vs-position/'
@@ -1351,7 +1364,7 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
 
     # find teammates and opponents for each game played by each player
     find_players = False
-    all_players_in_games_dict = {} # {player:{game:{teammates:[],opponents:[]}}}
+    all_players_in_games_dict = {} # {year:{game key:{away team abbrev:[away players],home team abbrev:[home players]}}}
     if find_players == True:
         all_players_in_games_dict = reader.read_all_players_in_games(all_player_season_logs_dict) # go thru players in all_player_season_logs_dict to get game ids
 
@@ -1360,6 +1373,8 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
     # === organize external data into internal structure
     for player_name in player_names:
         player_season_logs = all_player_season_logs_dict[player_name]
+
+        player_position = reader.read_player_position(player_name, player_espn_ids_dict[player_name], season_year, existing_player_positions_dict)
 
         player_all_outcomes_dict = generate_player_all_outcomes_dict(player_name, player_season_logs, projected_lines_dict, todays_games_date_obj, player_position, all_matchup_data) # each player has an outcome for each stat
         player_outcomes[player_name] = player_all_outcomes_dict

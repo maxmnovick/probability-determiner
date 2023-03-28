@@ -98,6 +98,12 @@ def read_all_players_in_games(all_player_season_logs_dict, player_teams):
                 game_espn_id = reader.read_game_espn_id(date, away_abbrev, home_abbrev, existing_game_ids_dict)
 
 
+                # get the game box score page using the game id
+                game_box_score_df = reader.read_game_box_score(game_espn_id)
+
+
+                # get the box score from the page in a df
+
 
 
             season_year -= 1
