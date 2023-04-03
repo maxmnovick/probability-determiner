@@ -28,13 +28,8 @@ import generator # generate stats dicts, all records dicts, all means dicts, all
 read_all_seasons = False
 find_matchups = True
 # optional settings
-todays_games_date_str = '' # format: m/d/y, like 3/14/23. set if we want to look at games in advance
-todays_games_date_obj = datetime.today() # by default assume todays game is actually today and we are not analyzing in advance
-if todays_games_date_str != '':
-    todays_games_date_obj = datetime.strptime(todays_games_date_str, '%m/%d/%y')
-input_type = str(todays_games_date_obj.month) + '/' + str(todays_games_date_obj.day)
-#print('input type from date object: ' + input_type)
-#input_type = '3/14' # date as mth/day will become mth_day in file
+read_new_teams = True # trades only happen a few times a year so set true when players move to new teams
+
 
 # graph settings
 player_of_interest = 'vanvleet'
@@ -42,14 +37,9 @@ stat_of_interest = 'ast'
 allow_all = False # allow all stats to get to plot fcn so we can focus on single player
 display_plots = False # true if we want to use matplotlib to show plot automatically instead of outputting to spreadsheet
 
-data_type = "Player Lines"
 
-todays_games_date = input_type + '/23'
-todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
-current_dow = todays_games_date_obj.strftime('%a').lower()
-# print('current_dow: ' + str(current_dow))
-# current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lower()
-# print('current_dow: ' + str(current_dow))
+
+
 
 # input: game log
 # player name
@@ -108,14 +98,33 @@ def generate_all_player_predictions():
 
     print('\n===Generate All Player Predictions===\n')
 
+
+    todays_games_date_str = '' # format: m/d/y, like 3/14/23. set if we want to look at games in advance
+    todays_games_date_obj = datetime.today() # by default assume todays game is actually today and we are not analyzing in advance
+    if todays_games_date_str != '':
+        todays_games_date_obj = datetime.strptime(todays_games_date_str, '%m/%d/%y')
+    input_type = str(todays_games_date_obj.month) + '/' + str(todays_games_date_obj.day)
+    #print('input type from date object: ' + input_type)
+    #input_type = '3/14' # date as mth/day will become mth_day in file
+
+    todays_games_date = input_type + '/23'
+    todays_games_date_obj = datetime.strptime(todays_games_date, '%m/%d/%y')
+    current_dow = todays_games_date_obj.strftime('%a').lower()
+    # print('current_dow: ' + str(current_dow))
+    # current_dow = datetime.strptime(todays_games_date, '%m/%d/%y').strftime('%a').lower()
+    # print('current_dow: ' + str(current_dow))
+
+
+
     # v2: copy paste raw projected lines direct from website
     # raw projected lines in format: [['Player Name', 'O 10 +100', 'U 10 +100', 'Player Name', 'O 10 +100', 'U 10 +100', Name', 'O 10 +100', 'U 10 +100']]
+    data_type = "Player Lines"
     raw_projected_lines = reader.extract_data(data_type, input_type, extension='tsv', header=True) # tsv no header
     print("raw_projected_lines: " + str(raw_projected_lines))
 
     player_names = determiner.determine_all_player_names(raw_projected_lines)
     player_espn_ids_dict = reader.read_all_player_espn_ids(player_names)
-    all_player_teams = reader.read_all_players_teams(player_espn_ids_dict)
+    all_player_teams = reader.read_all_players_teams(player_espn_ids_dict, read_new_teams=False)
 
     # convert raw projected lines to projected lines
     projected_lines = reader.read_projected_lines(raw_projected_lines, all_player_teams)
@@ -1634,8 +1643,9 @@ def generate_all_player_predictions():
     writer.display_game_data(sorted_streaks)
 
 
-    data_type = 'lessons'
-    lessons = reader.extract_data(data_type, extension='tsv', header=True)
+    data_type = 'game data'
+    input_type = 'lessons'
+    lessons = reader.extract_data(data_type, input_type, extension='tsv', header=True)
     writer.display_lessons(lessons) # we have saved lessons from experience and logic that must be accounted for when deciding so display prominently and constantly reference
 
 

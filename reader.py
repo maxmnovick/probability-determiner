@@ -22,19 +22,21 @@ import math # round up to nearest integer while reading
 
 import writer # write to file so we can check if data exists in local file so we can read from file
 
+from datetime import datetime # get current year so we can get current teams
+
 # get data from a file and format into a list (same as generator version of this fcn but more general)
 # input such as Game Data - All Games
 # or Game Log - All Players
 # header = keep first row (confusing need to change)
 def extract_data(data_type, input_type='', extension='csv', header=False):
 	
-	print('\n===Extract Data===\n')
+	#print('\n===Extract Data===\n')
 
 	catalog_filename = "data/" + data_type.title() + "." + extension
 	if input_type != '':
 		input_type = re.sub('/','_',input_type)
 		catalog_filename = "data/" + data_type.title() + " - " + input_type.title() + "." + extension
-	print("catalog_filename: " + catalog_filename)
+	#print("catalog_filename: " + catalog_filename)
 	
 
 	lines = []
@@ -74,7 +76,7 @@ def extract_data(data_type, input_type='', extension='csv', header=False):
 	return all_data
 
 # get game espn id from google
-def read_game_espn_id(date, away_abbrev, home_abbrev, existing_game_ids_dict={}):
+def read_game_espn_id(game_key, existing_game_ids_dict={}):
 
 	print('\n===Read Game ESPN ID======\n')
 
@@ -82,17 +84,17 @@ def read_game_espn_id(date, away_abbrev, home_abbrev, existing_game_ids_dict={})
 
 	# den uta oct 19 nba espn box score
 	# if we always use format 'away home m/d/y' then we can check to see if key exists and get game id from local file
-	search_key = away_abbrev + ' ' + home_abbrev + ' ' + date
-	print('search_key: ' + search_key)
+	# search_key = away_abbrev + ' ' + home_abbrev + ' ' + date
+	# print('search_key: ' + search_key)
 
-	if search_key in existing_game_ids_dict.keys():
-		espn_id = existing_game_ids_dict[search_key]
+	if game_key in existing_game_ids_dict.keys():
+		espn_id = existing_game_ids_dict[game_key]
 
 	else:
 
 		try:
 			
-			search_string = search_key.replace(' ', '+') + '+nba+espn+box+score'
+			search_string = game_key.replace(' ', '+') + '+nba+espn+box+score'
 			print('search_string: ' + search_string)
 			
 			site = 'https://www.google.com/search?q=' + search_string
@@ -118,15 +120,15 @@ def read_game_espn_id(date, away_abbrev, home_abbrev, existing_game_ids_dict={})
 
 			espn_id = re.findall(r'\d+', espn_id_link)[0]
 
-			print('Success', espn_id, search_key)
+			print('Success', espn_id, game_key)
 
-			data = [[search_key, espn_id]]
+			data = [[game_key, espn_id]]
 			filepath = 'data/Game Ids.csv'
 			write_param = 'a' # append ids to file
 			writer.write_data_to_file(data, filepath, write_param) # write to file so we can check if data already exists to determine how we want to read the data and if we need to request from internet
 
 		except Exception as e:
-			print('Error', espn_id, search_key, e)
+			print('Error', espn_id, game_key, e)
 
 	print("game_espn_id: " + espn_id)
 	return espn_id
@@ -205,12 +207,12 @@ def read_all_player_espn_ids(player_names, player_of_interest=''):
 	player_ids = extract_data(data_type, header=True)
 	existing_espn_ids_dict = {}
 	for row in player_ids:
-		print('row: ' + str(row))
+		#print('row: ' + str(row))
 		player_name = row[0]
 		player_id = row[1]
 
 		existing_espn_ids_dict[player_name] = player_id
-	print('existing_espn_ids_dict: ' + str(existing_espn_ids_dict))
+	#print('existing_espn_ids_dict: ' + str(existing_espn_ids_dict))
 
 	for name in player_names:
 		espn_id = read_player_espn_id(name, existing_espn_ids_dict)
@@ -221,96 +223,270 @@ def read_all_player_espn_ids(player_names, player_of_interest=''):
 	return espn_ids_dict
 
 
+# all_players_in_games_dict = {player:{game:{away:[],home:[]}}}
+# we will convert away home to teammates opponents given current player of interest
+def read_players_in_box_score(game_box_scores_dict):
+	print("\n===Read Players in Box Score===\n")
 
-# get game box score from espn.com
-def read_game_box_score(game_espn_id, game_key):
-	print("\n===Read Game Box Score: " + game_key + "===\n")
+	players_in_box_score_dict = {'away':[],'home':[]}
+
+	#team_idx = 0
+	for loc, players in players_in_box_score_dict.items():
+		team_box_score = game_box_scores_dict[loc]
+		#home_team_box_score = game_box_scores[1]
+
+		players = team_box_score[0].drop(0).to_list()
+		print('players:\n' + str(players))
+
+		players_in_box_score_dict[loc] = players
+
+
+
+		#team_idx += 1
+
+
+	print('players_in_box_score_dict: ' + str(players_in_box_score_dict))
+	return players_in_box_score_dict
+
+
+# get game box scores from espn.com
+# 1 box score per team
+def read_game_box_scores(game_key, game_id='', game_url='', season_year=2023):
+	print("\n===Read Game Box Score: " + game_key.upper() + "===\n")
+
+	# display player game box scores in readable format
+	pd.set_option('display.max_columns', None)
+
+
+	game_box_scores = [] # players, stats for away team and home team
+
+	game_box_scores_dict = {} # {away:df, home:df}
 
 	# get espn player id from google so we can get url
-	if player_url == '':
-		if player_id == '':
-			player_id = read_player_espn_id(player_name)
+	if game_url == '':
+		if game_id == '':
+			game_id = read_game_espn_id(game_key)
 		season_year = 2023
-		player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
-		print("player_url: " + player_url)
-
-	player_game_log = []
-
-	#dfs = pd.read_html(player_url)
-	#print(f'Total tables: {len(dfs)}')
+		game_url = 'https://www.espn.com/nba/boxscore/_/gameId/' + game_id #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
+		print("game_url: " + game_url)
 
 	#try:
 
-	html_results = pd.read_html(player_url)
-	#print("html_results: " + str(html_results))
+	html_results = pd.read_html(game_url)
+	print("html_results: " + str(html_results))
 
-	parts_of_season = [] # pre season, regular season, post season
 
 	len_html_results = len(html_results) # each element is a dataframe/table so we loop thru each table
 
+	game_data = game_key.split()
+	away_team = game_data[0]
+	home_team = game_data[1]
+
+	team_loc = 'away'
+
 	for order in range(len_html_results):
-		#print("order: " + str(order))
+		print("order: " + str(order))
 
-		if len(html_results[order].columns.tolist()) == 17:
+		html_result_df = html_results[order]
+		print('html_result: ' + str(html_result_df))
+		print("no. columns: " + str(len(html_result_df.columns.tolist())))
 
-			part_of_season = html_results[order]
+		# very first html result is the game summary quarter by quarter score and total score
 
-			# look at the formatting to figure out how to separate table and elements in table
-			if len_html_results - 2 == order:
-				part_of_season['Type'] = 'Preseason'
 
-			else:
-				if len(part_of_season[(part_of_season['OPP'].str.contains('GAME'))]) > 0:
-					part_of_season['Type'] = 'Postseason'
-				else:
-					part_of_season['Type'] = 'Regular'
+		# first get players, which is html result with row 0 = 'starters'
+		# for idx, row in html_result.rows:
+		# 	print('row: ' + str(row))
+		print('row 0 loc: ' + str(html_result_df.loc[[0]]))
+		# order is always away-home
+		
+		if re.search('starters', str(html_result_df.loc[[0]])): # locate first row
+			# init format
+			# 0           starters
+			# 1       B. Ingram SF
+			# 2        H. Jones SF
+			# 3   J. Valanciunas C
+			# 4     C. McCollum SG
+			# 5   T. Murphy III SG
+			# 6              bench
+			# 7    L. Nance Jr. PF
+			# 8     N. Marshall SF
+			# 9   J. Richardson SG
+			# 10      D. Daniels G
+			# 11      G. Temple SF
+			# 12  W. Hernangomez C
+			# 13        J. Hayes C
+			# 14   K. Lewis Jr. PG
+			# 15      D. Seabron G
+			# 16              team,  
+			print('init player_name_df:\n' + str(html_result_df))
 
-			parts_of_season.append(part_of_season)
+			# remove, starters, bench, and team rows
+			# locate first column
+			# wait to remove rows until name and stats dfs concated
+			player_name_df = html_result_df #[(html_result_df.loc[:,0] != 'starters') & (html_result_df.loc[:,0] != 'bench') & (html_result_df.loc[:,0] != 'team')]
+			print('player_name_df:\n' + str(player_name_df))
 
-		else:
-			print("Warning: table does not have 17 columns so it is not valid game log.")
-			pass
+			# remove players who did not play
+			# info about dnp is in next html result so use order+1
 
-	player_game_log_df = pd.DataFrame()
+			player_stats_df = html_results[order+1]
+			print('player_stats_df:\n' + str(player_stats_df))
 
-	if len(parts_of_season) > 0:
+			#player_box_score_df.columns.values[0] = 'MIN'
+			# for col in player_box_score_df.columns:
+			# 	print(col)
 
-		player_game_log_df = pd.concat(parts_of_season, sort=False, ignore_index=True)
+			player_box_score_df = pd.concat([player_name_df,player_stats_df], axis=1, sort=False, ignore_index=True)
+			print('player_box_score_df:\n' + str(player_box_score_df))
 
-		player_game_log_df = player_game_log_df[(player_game_log_df['OPP'].str.startswith('@')) | (player_game_log_df['OPP'].str.startswith('vs'))].reset_index(drop=True)
 
-		player_game_log_df['Season'] = str(season_year-1) + '-' + str(season_year-2000)
+			indexDNP = player_box_score_df.loc[player_box_score_df[1] == 'DNP-COACH\'S DECISION'].index[0]
+			print('indexDNP:\n' + str(indexDNP))
 
-		player_game_log_df['Player'] = player_name
+			player_box_score_df = player_box_score_df.drop(player_box_score_df.index[indexDNP:]).dropna(axis=1)
+			print('player_box_score_df:\n' + str(player_box_score_df))
 
-		player_game_log_df = player_game_log_df.set_index(['Player', 'Season', 'Type']).reset_index()
+			player_box_score_df = player_box_score_df.drop(player_box_score_df.index[6]).reset_index()
+			print('player_box_score_df:\n' + str(player_box_score_df))
+
+			player_box_score_df['Game'] = game_key
+			print('player_box_score_df:\n' + str(player_box_score_df))
+
+			# get the index of the first row with dnp
+			# player_minutes_df = player_box_score_df[0]
+			# print('player_minutes_df:\n' + str(player_minutes_df))
+			# player_minutes_df = player_box_score_df.loc[:,0]
+			# print('player_minutes_df:\n' + str(player_minutes_df))
+			# player_minutes_df = player_box_score_df[player_box_score_df[0] != 'DNP-COACH\'S DECISION']
+			# print('player_minutes_df:\n' + str(player_minutes_df))
+
+
+			# player_minutes_df = player_minutes_df[player_minutes_df[0].startswith('DNP')]
+			# print('player_minutes_df:\n' + str(player_minutes_df))
+			# player_minutes_df = player_minutes_df['MIN']
+			# print('player_minutes_df:\n' + str(player_minutes_df))
+
+
+			# player_minutes_df.columns = ['MIN']
+			# player_minutes_df = player_minutes_df[~player_minutes_df['MIN'].str.startswith('DNP')]
+			
+			# print('player_box_score_df col 1:\n' + str(player_minutes_df))
+			# player_minutes_df.columns = ['MIN']
+			# player_minutes_df = player_minutes_df['MIN']
+			# print('player_minutes_df:\n' + str(player_minutes_df))
+			
+
+			# indexDNP = player_box_score_df[(~player_box_score_df.loc[:,0].str.startswith('DNP')) & (player_box_score_df.loc[:,0] != 'NaN')].index
+			# print('indexDNP: ' + str(indexDNP))
+
+
+			# there is no key row so we must look at values in rows to determine keys
+			# init_player_column = html_result_df.loc['starters']
+			# print('init_player_column: ' + str(init_player_column))
+
+			# final format
+			# 1       B. Ingram SF
+			# 2        H. Jones SF
+			# 3   J. Valanciunas C
+			# 4     C. McCollum SG
+			# 5   T. Murphy III SG
+			# 7    L. Nance Jr. PF
+			# 8     N. Marshall SF
+			# 9   J. Richardson SG
+			# 10      D. Daniels G
+			# 11      G. Temple SF
+			# 12  W. Hernangomez C
+			# 13        J. Hayes C
+			# 14   K. Lewis Jr. PG
+			# 15      D. Seabron G
+
+
+
+			game_box_scores.append(player_box_score_df)
+
+
+			game_box_scores_dict[team_loc] = player_box_score_df
+			#print("game_box_scores_dict: " + str(game_box_scores_dict))
+
+
+			team_loc = 'home' # order is always away-home for this espn page ref
+
+
+
+			
+
+
+	# 	if len(html_result_df.columns.tolist()) == 15:
+
+	# 		part_of_box_score = html_result_df
+
+	# 		# look at the formatting to figure out how to separate table and elements in table
+	# 		# if len_html_results - 2 == order:
+	# 		# 	part_of_season['Type'] = 'Preseason'
+
+	# 		# else:
+	# 		# 	if len(part_of_season[(part_of_season['OPP'].str.contains('GAME'))]) > 0:
+	# 		# 		part_of_season['Type'] = 'Postseason'
+	# 		# 	else:
+	# 		# 		part_of_season['Type'] = 'Regular'
+
+	# 		parts_of_box_score.append(part_of_box_score)
+
+	# 	else:
+	# 		print("Warning: table does not have 15 columns so it is not valid box score.")
+	# 		pass
+
+	# print('parts_of_box_score: ' + str(parts_of_box_score))
+
+	# box_score_df = pd.DataFrame()
+
+	# if len(parts_of_box_score) > 0:
+
+	# 	box_score_df = pd.concat(parts_of_box_score, sort=False, ignore_index=True)
+
+	# 	#player_game_log_df = player_game_log_df[(player_game_log_df['OPP'].str.startswith('@')) | (player_game_log_df['OPP'].str.startswith('vs'))].reset_index(drop=True)
+
+	# 	box_score_df['Season'] = str(season_year-1) + '-' + str(season_year-2000)
+
+	# 	box_score_df['Game'] = game_key
+
+		#box_score_df = box_score_df.set_index(['Game', 'Season', 'Team']).reset_index()
+
+		# Successful FG Attempts
+		# box_score_df['FG_SA'] = box_score_df['FG'].str.split('-').str[0]
+		# # All FG Attempts
+		# box_score_df['FG_A'] = box_score_df['FG'].str.split('-').str[1]
 
 		# Successful 3P Attempts
-		player_game_log_df['3PT_SA'] = player_game_log_df['3PT'].str.split('-').str[0]
+		# box_score_df['3PT_SA'] = box_score_df['3PT'].str.split('-').str[0]
+		# # All 3P Attempts
+		# box_score_df['3PT_A'] = box_score_df['3PT'].str.split('-').str[1]
 
-		# All 3P Attempts
-		player_game_log_df['3PT_A'] = player_game_log_df['3PT'].str.split('-').str[1]
-		player_game_log_df[
-			['MIN', 'FG%', '3P%', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS', '3PT_SA', '3PT_A']
+		# Successful FT Attempts
+		# box_score_df['FT_SA'] = box_score_df['FT'].str.split('-').str[0]
+		# # All FT Attempts
+		# box_score_df['FT_A'] = box_score_df['FT'].str.split('-').str[1]
+		
+		
+		# box_score_df[
+		# 	['MIN', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PF', 'PTS', 'FG_SA', 'FG_A', '3PT_SA', '3PT_A']
 
-			] = player_game_log_df[
+		# 	] = box_score_df[
 
-				['MIN', 'FG%', '3P%', 'FT%', 'REB', 'AST', 'BLK', 'STL', 'PF', 'TO', 'PTS', '3PT_SA', '3PT_A']
+		# 		['MIN', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PF', 'PTS', 'FG_SA', 'FG_A', '3PT_SA', '3PT_A']
 
-				].astype(float)
+		# 		].astype(float)
 
-	# display player game log in readable format
-	#pd.set_option('display.max_columns', 100)
-	pd.set_option('display.max_columns', None)
-	print("player_game_log_df:\n" + str(player_game_log_df))
+	
 
 	# except Exception as e:
 	# 	print("Error reading game log " + str(e))
 	# 	pass
 
 	
-	#print("player_game_log: " + str(player_game_log))
-	return player_game_log_df # can return this df directly or first arrange into list but seems simpler and more intuitive to keep df so we can access elements by keyword
+	print("game_box_scores_dict: " + str(game_box_scores_dict))
+	return game_box_scores_dict # can return this df directly or first arrange into list but seems simpler and more intuitive to keep df so we can access elements by keyword
 
 
 # get game log from espn.com
@@ -323,10 +499,9 @@ def read_player_season_log(player_name, season_year=2023, player_url='', player_
 			player_id = read_player_espn_id(player_name)
 		season_year = 2023
 		player_url = 'https://www.espn.com/nba/player/gamelog/_/id/' + player_id + '/type/nba/year/' + str(season_year) #.format(df_Players_Drafted_2000.loc[INDEX, 'ESPN_GAMELOG_ID'])
-		print("player_url: " + player_url)
+		#print("player_url: " + player_url)
 
-	player_game_log = []
-
+	#player_game_log = []
 	#dfs = pd.read_html(player_url)
 	#print(f'Total tables: {len(dfs)}')
 
@@ -621,7 +796,7 @@ def read_player_position(player_name, player_id, season_year=2023, existing_play
 
 def read_all_players_positions(player_espn_ids_dict, season_year=2023):
 	#print("\n===Read All Players Positions===\n")
-	players_positions = {}
+	players_positions_dict = {}
 
 	# see if position saved in file
 	data_type = 'player positions'
@@ -637,16 +812,19 @@ def read_all_players_positions(player_espn_ids_dict, season_year=2023):
 
 	for name, id in player_espn_ids_dict.items():
 		pos = read_player_position(name, id, season_year, existing_player_positions_dict)
-		players_positions[name] = pos
+		players_positions_dict[name] = pos
 
-	#print("players_positions: " + str(players_positions))
-	return players_positions
+	#print("players_positions_dict: " + str(players_positions_dict))
+	return players_positions_dict
 
-# get player position from espn game log page bc we already have urls for each player
-def read_player_team(player_name, player_id, season_year=2023):
-	print("\n===Read Player Team: " + player_name.title() + "===\n")
+
+# return team abbrev lowercase bc used as key
+def read_team_from_internet(player_name, player_id, read_new_teams=False):
+
 	team = ''
 
+	# get team from internet
+	season_year = datetime.today().year
 
 	try:
 		
@@ -666,31 +844,102 @@ def read_player_team(player_name, player_id, season_year=2023):
 		
 		#<li class="truncate min-w-0"><a class="AnchorLink clr-black" data-clubhouse-uid="s:40~l:46~t:21" href="https://www.espn.com/nba/team/_/name/phx/phoenix-suns" tabindex="0">Phoenix Suns</a></li>
 
-		team_name = re.split('</',str(team))[0]
-		team_name = re.split('>',team_name)[-1]
-		#print("team_name: " + team_name)
-		team_abbrev = determiner.determine_team_abbrev(team_name)
+		team = re.split('</',str(team))[0]
+		team = re.split('>',team)[-1]
+		#print("team: " + team)
+		team = determiner.determine_team_abbrev(team)
 
-		print('Success', team_abbrev.upper(), player_name.title())
+		print('Success', team.upper(), player_name.title())
+
+		# overwrite for the first player if read new teams true and then append all after
+		# if read_new_teams: # make blank initially and then append all names after that
+		# 	# overwrite file
+		# 	write_param = 'w'
+
+		# we are reading from the internet so we are definitely going to write the data to a file no matter what so we can access it later
+		# the question is if we are going to append or overwrite
+		# if we are going to overwrite then we must wait till we have all teams so we only overwrite first entry and append all after
+		# if not all new teams then simply append this player's team to the file
+		if not read_new_teams:
+			write_param = 'a' # append ids to file unless read new teams
+			data = [[player_name, team]]
+			filepath = 'data/Player Teams.csv'
+			writer.write_data_to_file(data, filepath, write_param) # write to file so we can check if data already exists to determine how we want to read the data and if we need to request from internet
 
 	except Exception as e:
-		print('Error', team_abbrev.upper(), player_name.title())
+		print('Error', team.upper(), player_name.title(), e)
+
+	return team
+
+# get player position from espn game log page bc we already have urls for each player
+# we are using it get the team the player currently plays on
+# but we can also use it to get the team a player previously played on but that uses a very different method from a different source so assume season year is current season
+def read_player_team(player_name, player_id, read_new_teams=True, existing_player_teams_dict={}):
+	print("\n===Read Player Team: " + player_name.title() + "===\n")
+	team = '' # team abbrev lowercase bc used as key
+
+	# read_new_teams can be determined by date bc date of trade deadline, start of season and check if any other trade deadlines
+
+	# if read new teams, then read from internet for all
+	# if not read new teams, still read teams from internet for players not saved
+	if read_new_teams:
+		team = read_team_from_internet(player_name, player_id, read_new_teams)
+	else:
+		if player_name in existing_player_teams_dict.keys():
+			team = existing_player_teams_dict[player_name]
+		else:
+			team = read_team_from_internet(player_name, player_id)
 
 	
+	#print("final team: " + team)
+	return team
 
-	#print("final team: " + team_abbrev)
-	return team_abbrev
-
-def read_all_players_teams(player_espn_ids_dict):
+def read_all_players_teams(player_espn_ids_dict, read_new_teams=True):
 	#print("\n===Read All Players Positions===\n")
-	players_positions = {}
+	players_teams_dict = {}
+
+	
+	# if not read new teams,
+	# see if team saved in file
+	# bc if read new teams then we will create new file with today's date in name
+	existing_player_teams_dict = {}
+	if not read_new_teams:
+		data_type = 'player teams'
+		# if we are creating new file get todays date to format filename 
+		# player teams - m/d/y.csv
+		input_type = datetime.today().strftime('%m/%d/%y') 
+		player_teams = extract_data(data_type, header=True)
+		
+		for row in player_teams:
+			#print('row: ' + str(row))
+			player_name = row[0]
+			player_team = row[1]
+
+			existing_player_teams_dict[player_name] = player_team
+		#print('existing_player_teams_dict: ' + str(existing_player_teams_dict))
 
 	for name, id in player_espn_ids_dict.items():
-		team = read_player_team(name, id)
-		players_positions[name] = team
+		team = read_player_team(name, id, read_new_teams, existing_player_teams_dict)
+		players_teams_dict[name] = team
 
-	#print("players_positions: " + str(players_positions))
-	return players_positions
+	# if read new teams for all players then we can overwrite the file completely removing all old teams bc we cannot assume any player is on the same team as they were before
+	if read_new_teams:
+		# overwrite for the first one and then append all following
+		p_idx = 0
+		for player_name, player_team in players_teams_dict.items():
+
+			write_param = 'a'
+			if p_idx == 0:
+				write_param = 'w'
+
+			data = [[player_name, team]]
+			filepath = 'data/Player Teams.csv'
+			writer.write_data_to_file(data, filepath, write_param) # write to file so we can check if data already exists to determine how we want to read the data and if we need to request from internet
+
+			p_idx += 1
+
+	#print("players_teams_dict: " + str(players_teams_dict))
+	return players_teams_dict
 
 
 # show matchup data against each position so we can see which position has easiest matchup
@@ -1164,7 +1413,7 @@ def read_projected_lines(raw_projected_lines, all_player_teams, player_of_intere
 				# loop thru rows until we see header. then make header key in dict and add next rows to list of values until next header
 				# if first item = 'PLAYER' skip bc not needed header
 				# then if first 3 letters are uppercase we know it is team matchup header w/ needed info
-				player_initials = ['og','cj','pj','rj','tj']
+				player_initials = ['og','cj','pj','rj','tj','jt']
 				print('row: ' + str(row))
 				if len(row) > 0:
 					first_element_wo_punctuation = re.sub('\'|\.','',row[0])

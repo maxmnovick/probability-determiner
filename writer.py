@@ -441,7 +441,7 @@ def display_player_outcomes(player_outcomes):
     for game_data in game_data_strings:
         print(game_data)
 
-    print("\n===End Player Outcomes===\n")
+    #print("\n===End Player Outcomes===\n")
 
 
 # we have saved lessons from experience and logic that must be accounted for when deciding so display prominently and constantly reference
@@ -457,7 +457,7 @@ def display_lessons(lessons):
         lesson_string = lesson[0] + ';' + lesson[1]
         lesson_strings.append(lesson_string)
 
-    print("Export")
+    #print("Export")
     print(header_string)
     for lesson in lesson_strings:
         print(lesson)

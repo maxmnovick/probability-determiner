@@ -292,7 +292,32 @@ def generate_player_stat_dict(player_name, player_season_logs, projected_lines_d
                     #print("stat_dict: " + str(stat_dict))
 
 
-                # Career/All Seasons Stats
+
+                #====Players in Game stats
+                # get game players from all game players dict
+                game_players = []
+                #print('game_players: ' + str(game_players))
+                # get current players from roster minus inactive players
+                current_players = []
+                #print('current_players: ' + str(current_players))
+                # if determiner.determine_current_players_in_game(current_players, game_players):
+                #     #print("found same game players: " + game_players)
+                #     for stat_idx in range(len(all_stats_dicts.values())):
+                #         stat_dict = list(all_stats_dicts.values())[stat_idx]
+                #         stat = game_stats[stat_idx]
+                #         if not game_players in stat_dict.keys():
+                #             stat_dict[game_players] = {}
+                #         stat_dict[game_players][game_idx] = stat
+                #     #print("stat_dict: " + str(stat_dict))
+
+
+
+
+
+
+
+
+                # ====Career/All Seasons Stats
                 # if we find a game played on the same day/mth previous seasons, add a key for this/today's day/mth
                 #today_date_data = todays_games_date.split('/')
                 today_mth_day = str(todays_games_date_obj.month) + '/' + str(todays_games_date_obj.day) #today_date_data[0] + '/' + today_date_data[1]
@@ -876,7 +901,7 @@ def generate_projected_lines_dict(raw_projected_lines, player_espn_ids_dict={}, 
     #     player_names = determiner.determine_all_player_names(raw_projected_lines)
 
     
-    player_teams = reader.read_all_players_teams(player_espn_ids_dict)
+    player_teams = reader.read_all_players_teams(player_espn_ids_dict, read_new_teams=False) # only read team from internet if not saved
 
     # convert raw projected lines to projected lines
     projected_lines = reader.read_projected_lines(raw_projected_lines, player_teams)

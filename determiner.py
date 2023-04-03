@@ -520,7 +520,7 @@ def determine_all_player_names(raw_projected_lines):
     print('\n===Determine All Player Names===\n')
     # get all player names so we can get their espn IDs and from that get team, position, game log, and schedule
     player_names = []
-    player_initials = ['og','cj','pj','rj','tj']
+    player_initials = ['og','cj','pj','rj','tj','jt']
     for row in raw_projected_lines:
         first_element_wo_punctuation = re.sub('\'|\.','',row[0])
         if first_element_wo_punctuation != 'PLAYER' and first_element_wo_punctuation.lower() != 'na': # uppercase indicates team abbrev like CHI
