@@ -193,7 +193,7 @@ def determine_team_abbrev(team_name, team_abbrevs_dict={}):
         #print('first 3 letters uppercase')
         team_abbrev = team_name[:3].lower()
 
-        irregular_abbrevs = {'bro':'bkn', 'okl':'okc', 'nor':'nop', 'pho':'phx', 'was':'wsh', 'uth': 'uta' } # for these match the first 3 letters of team name instead
+        irregular_abbrevs = {'bro':'bkn', 'okl':'okc', 'nor':'nop', 'pho':'phx', 'was':'wsh', 'uth': 'uta', 'utah': 'uta' } # for these match the first 3 letters of team name instead
         if team_abbrev in irregular_abbrevs.keys():
             #print("irregular abbrev: " + team_abbrev)
             team_abbrev = irregular_abbrevs[team_abbrev]
@@ -520,7 +520,7 @@ def determine_all_player_names(raw_projected_lines):
     print('\n===Determine All Player Names===\n')
     # get all player names so we can get their espn IDs and from that get team, position, game log, and schedule
     player_names = []
-    player_initials = ['og','cj','pj','rj','tj','jt']
+    player_initials = ['og','cj','pj','rj','tj','jt','jd']
     for row in raw_projected_lines:
         first_element_wo_punctuation = re.sub('\'|\.','',row[0])
         if first_element_wo_punctuation != 'PLAYER' and first_element_wo_punctuation.lower() != 'na': # uppercase indicates team abbrev like CHI
@@ -844,3 +844,19 @@ def determine_probability_from_record(record, games_traded=0):
 
     print('prob: ' + str(prob))
     return prob
+
+
+
+# determine if the given list of current teammates is in a given game of interest
+# if we do not know current teammates yet then assume yet so we show all options
+# teammates = ['j brown sg',..]
+def determine_current_teammates_in_game(game_teammates, current_teammates):
+    
+    current_teammates_in_game = game_teammates
+
+    #if len(current_teammates) > 0:
+        # how do we tell if players on the roster are out of rotation? from their game log minutes
+
+
+
+    return current_teammates_in_game
