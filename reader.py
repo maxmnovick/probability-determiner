@@ -1755,3 +1755,35 @@ def read_all_players_in_games(all_player_season_logs_dict, player_teams):
 		
 	print('all_players_in_games_dict: ' + str(all_players_in_games_dict))
 	return all_players_in_games_dict
+
+# all_players_in_games_dict = { game key: {away:[],home:[]}}
+# use player team to get teammates from box score
+def read_all_teammates(player_name, all_players_in_games_dict, player_team=''):
+
+	print('\n===Read All Teammates for ' + player_name + '===\n')
+
+	all_teammates = []
+
+	if player_team == '':
+		player_team = read_player_team(player_name)
+
+	for game_key, game_players in all_players_in_games_dict.items():
+
+		game_data = game_key.split() # away,home,date
+
+		away_team = game_data[0]
+		home_team = game_data[1]
+
+		game_teammates = [] # we are looking for games player played in bc they did not play in all games in this dict bc it is dict of all games by team but independent of players
+		if player_team == away_team:
+			game_teammates = game_players['away']
+		elif player_team == home_team:
+			game_teammates = game_players['home']
+
+		# loop thru games to see if we encounter new teammates
+		for teammate in game_teammates:
+			if teammate not in all_teammates:
+				all_teammates.append(teammate)
+
+	print('all_teammates: ' + str(all_teammates))
+	return all_teammates

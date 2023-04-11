@@ -11,6 +11,7 @@ import numpy # mean, median
 from scipy import stats # calculate mode
 
 import reader # read game log from file if needed
+import writer # format record and other game data for readability
 
 from tabulate import tabulate # display output
 
@@ -51,6 +52,19 @@ def generate_player_stat_dict(player_name, player_season_logs, projected_lines_d
     print('===' + player_team.upper() + '===\n')
 
     player_stat_dict = {}
+
+
+    # for each teammate out of game (dnp inactive injured), make a new record or add to existing record
+    # we need to know all possible teammates
+    # which we can get from roster
+    # https://www.espn.com/nba/team/roster/_/name/bos/boston-celtics
+    # or we could get from box scores we already saved locally
+    all_teammates = reader.read_all_teammates(player_name, all_players_in_games_dict, player_team)
+
+
+
+
+
 
     season_year = 2023
 
@@ -396,6 +410,34 @@ def generate_player_stat_dict(player_name, player_season_logs, projected_lines_d
                             stat_dict[game_teammates_str] = {}
                         stat_dict[game_teammates_str][game_idx] = stat
                     #print("stat_dict: " + str(stat_dict))
+
+
+                    # for each player/teammate in game, make a new record or add to existing record
+                    for teammate in game_teammates:
+                        print('teammate: ' + teammate)
+
+                        for stat_idx in range(len(all_stats_dicts.values())):
+                            stat_dict = list(all_stats_dicts.values())[stat_idx]
+                            stat = game_stats[stat_idx]
+                            if not teammate in stat_dict.keys():
+                                stat_dict[teammate] = {}
+                            stat_dict[teammate][game_idx] = stat
+                        #print("stat_dict: " + str(stat_dict))
+
+
+                    # for each teammate out of game (dnp inactive injured), make a new record or add to existing record
+                    # we need to know all possible teammates, which we get above, once per player
+                    for teammate in all_teammates:
+                        if teammate not in game_teammates: # teammate out
+                            teammate_out_key = teammate + ' out'
+                            for stat_idx in range(len(all_stats_dicts.values())):
+                                stat_dict = list(all_stats_dicts.values())[stat_idx]
+                                stat = game_stats[stat_idx]
+                                if not teammate_out_key in stat_dict.keys():
+                                    stat_dict[teammate_out_key] = {}
+                                stat_dict[teammate_out_key][game_idx] = stat
+                            #print("stat_dict: " + str(stat_dict))
+
                 else:
                     print('Warning: Game key not in players in games dict so box score not available!')
 
@@ -1043,7 +1085,12 @@ def generate_player_outcome_data(condition, year, stat_name, player_outcome_dict
 
     if condition in player_records_dict.keys():
         #print("current_teammates_str " + current_teammates_str + " in all records dicts")
+        # init record condition_record format ['1/1',..]
+        # desired format 1/1,..
+        # remove brackets and quotes
         condition_record = player_records_dict[condition][year][stat_name]
+        condition_record = determiner.determine_record_outline(condition_record)
+        condition_record = writer.convert_list_to_string(condition_record)
         player_outcome_dict[record_key] = str(condition_record) #condition + ': ' + str(teammates_record)
     
         # print game idxs beside record bc simplest

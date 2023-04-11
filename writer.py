@@ -491,7 +491,15 @@ def write_data_to_file(data, filepath, write_param, extension='csv'):
 #     print('\n===Write Data to File===\n')
 
 
+# init record condition_record format ['1/1',..]
+# desired format 1/1,..
+# remove brackets and quotes
+def convert_list_to_string(init_list):
+    print('init_list: ' + str(init_list))
 
+    final_string = re.sub('[\\[\\]\']','',str(init_list))
 
+    print('final_string: ' + final_string)
+    return final_string
 
 
