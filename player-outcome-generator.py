@@ -10,4 +10,4 @@ players_names = ['malcolm brogdan']
 
 players_outcomes = generator.generate_players_outcomes(players_names)
 
-writer.display_player_outcomes(players_outcomes)
+writer.display_players_outcomes(players_outcomes)

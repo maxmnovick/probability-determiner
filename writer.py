@@ -398,7 +398,7 @@ def display_all_players_records_dicts(all_players_records_dicts, all_player_seas
             season_year -= 1
 
 # player_outcomes = {player: stat name: outcome dict}
-def display_player_outcomes(player_outcomes):
+def display_players_outcomes(player_outcomes):
 
     print("\n===Player Outcomes===\n")
 
