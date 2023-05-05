@@ -377,6 +377,7 @@ def generate_player_stat_dict(player_name, player_season_logs, projected_lines_d
                 game_key = away_abbrev + ' ' + home_abbrev + ' ' + game_date_string
                 print('game_key: ' + str(game_key))
                 # if we do not have the game box score bc it does not exist yet then pass to the next game
+                # the order we fill the stats dict depends on the order of games played bc we are going game by game
                 if game_key in all_players_in_games_dict.keys():
                     game_players = all_players_in_games_dict[game_key] # {away:[],home:[]}
                     print('game_players: ' + str(game_players))
@@ -525,6 +526,157 @@ def generate_all_players_stats_dicts(all_player_season_logs_dict, projected_line
 
     print('all_players_stats_dicts: ' + str(all_players_stats_dicts))
     return all_players_stats_dicts
+
+# we are looking for the stat val reached at least 90% of games
+# so from 0 to max stat val, get record reached games over total games
+# player_stat_records = []
+# no need to make dict because stat val = idx bc going from 0 to N
+def generate_player_stat_records(player_name, player_stat_dict):
+    print('\n===Generate Player Stat Record===\n')
+    print('===' + player_name.title() + '===\n')
+
+    player_stat_records = {}
+
+    # player_season_stat_dict = { stat name: .. }
+    for season_year, player_season_stat_dict in player_stat_dict.items():
+        print("\n===Year " + str(season_year) + "===\n")
+
+        # all_pts_dicts = {'all':{idx:val,..},..}
+        # all_pts_dicts = {'all':{1:20}}
+        # key=condition, val={idx:stat}
+        all_pts_dicts = player_season_stat_dict['pts']
+        all_rebs_dicts = player_season_stat_dict['reb']
+        all_asts_dicts = player_season_stat_dict['ast']
+        all_threes_made_dicts = player_season_stat_dict['3pm']
+        all_bs_dicts = player_season_stat_dict['blk']
+        all_ss_dicts = player_season_stat_dict['stl']
+        all_tos_dicts = player_season_stat_dict['to']
+        if len(all_pts_dicts['all'].keys()) > 0:
+
+            all_stats_counts_dict = { 'all': [], 'home': [], 'away': [] }
+
+            # key represents set of conditions of interest eg home/away
+            for condition in all_pts_dicts.keys(): # all stats dicts have same keys so we use first 1 as reference
+
+                print("\n===Condition " + str(condition) + "===\n")
+
+                # reset for each condition
+                stat_names = ['pts','reb','ast','3pm']
+
+                # for each stat type/name (eg pts, reb, etc)
+                # loop from 0 to max stat val to get record over stat val for period of all games
+                for stat_name in stat_names:
+
+                    # reset for each stat name/type
+                    all_games_reached = [] # all_stat_counts = []
+                    all_probs_stat_reached = []
+
+                    print('stat_name: ' + str(stat_name))
+                    stat_vals = list(player_season_stat_dict[stat_name][condition].values())
+                    print('stat_vals: ' + str(stat_vals))
+                    num_games_played = len(stat_vals)
+                    print('num games played ' + condition + ': ' + str(num_games_played))
+                    for stat_val in range(0,max(stat_vals)):
+                        num_games_reached = 0 # stat count, reset for each check stat val bc new count
+                        # loop through games to get count stat val >= game stat val
+                        for game_idx in range(num_games_played):
+                            game_stat_val = stat_vals[game_idx]
+                            if game_stat_val >= int(stat_val):
+                                num_games_reached += 1
+
+                            all_games_reached.append(num_games_reached) # one count for each game
+
+                        print('num_games_reached ' + str(stat_val) + ' ' + stat_name + ' for ' + condition + ' games: ' + str(num_games_reached)) 
+                        
+
+                        prob_stat_reached = str(num_games_reached) + '/' + str(num_games_played)
+                        print('prob_stat_reached ' + str(stat_val) + ' ' + stat_name + ' for ' + condition + ' games: ' + str(prob_stat_reached)) 
+
+                        all_probs_stat_reached.append(prob_stat_reached)
+
+
+                    if condition in player_stat_records.keys():
+                        #print("conditions " + conditions + " in streak tables")
+                        player_condition_records_dicts = player_stat_records[condition]
+                        if season_year in player_condition_records_dicts.keys():
+                            player_condition_records_dicts[season_year][stat_name] = all_probs_stat_reached
+                        else:
+                            player_condition_records_dicts[season_year] = { stat_name: all_probs_stat_reached }
+
+                        #player_streak_tables[conditions].append(prob_table) # append all stats for given key
+                    else:
+                        #print("conditions " + conditions + " not in streak tables")
+                        player_stat_records[condition] = {}
+                        player_condition_records_dicts = player_stat_records[condition]
+                        player_condition_records_dicts[season_year] = { stat_name: all_probs_stat_reached }
+
+
+    print('player_stat_records: ' + str(player_stat_records))
+    return player_stat_records
+
+# consistency=0.9 is desired probability of player reaching stat val
+def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9):
+    
+
+    player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
+
+
+
+    print('\n===Generate Consistent Stat Vals===\n')
+    consistent_stat_vals = {}
+
+    for condition, condition_stat_records in player_stat_records.items():
+        print("\n===Condition " + str(condition) + "===\n")
+
+        for season_year, season_stat_dicts in condition_stat_records.items():
+            print("\n===Year " + str(season_year) + "===\n")
+
+            for stat_name, stat_records in season_stat_dicts.items():
+                print("\n===Stat Name " + str(stat_name) + "===\n")
+
+                # get prob from 0 to 1 to compare to desired consistency
+                consistent_stat_val = 0
+                prob_stat_reached = 0.0
+                consistent_stat_prob = 0.0
+                
+                for stat_val in range(len(stat_records)):
+                    print("\n===Stat Val " + str(stat_val) + "===")
+                    record = stat_records[stat_val]
+                    record_data = record.split('/')
+                    num_games_reached = record_data[0]
+                    num_games_played = record_data[1]
+                    prob_stat_reached = round(float(num_games_reached) / float(num_games_played), 2)
+                    print('prob_stat_reached: ' + str(prob_stat_reached))
+
+                    if prob_stat_reached < consistency:
+                        break
+
+                    consistent_stat_val = stat_val
+                    consistent_stat_prob = prob_stat_reached
+
+                print('consistent_stat_val: ' + str(consistent_stat_val))
+                
+
+                if condition in consistent_stat_vals.keys():
+                    #print("conditions " + conditions + " in streak tables")
+                    player_condition_consistent_stat_vals = consistent_stat_vals[condition]
+                    if season_year in player_condition_consistent_stat_vals.keys():
+                        player_condition_consistent_stat_vals[season_year][stat_name] = { 'prob val': consistent_stat_val, 'prob': consistent_stat_prob }
+                    else:
+                        player_condition_consistent_stat_vals[season_year] = { stat_name: { 'prob val': consistent_stat_val, 'prob': consistent_stat_prob } }
+
+                    #player_streak_tables[conditions].append(prob_table) # append all stats for given key
+                else:
+                    #print("conditions " + conditions + " not in streak tables")
+                    consistent_stat_vals[condition] = {}
+                    player_condition_consistent_stat_vals = consistent_stat_vals[condition]
+                    player_condition_consistent_stat_vals[season_year] = { stat_name: { 'prob val': consistent_stat_val, 'prob': consistent_stat_prob } }
+
+
+    print('consistent_stat_vals: ' + str(consistent_stat_vals))
+    return consistent_stat_vals
+
+
 
 # at this point we should have projected_lines_dict either by external source or player averages
 # the record we are generating is a measure of determining consistency but there may be better ways
@@ -1137,7 +1289,7 @@ def generate_player_outcome_data(condition, year, stat_name, player_outcome_dict
 
 # prediction is really a list of features that we must assess to determine the probability of both/all outcomes
 #def generate_player_prediction(player_name, player_season_logs):
-def generate_player_all_outcomes_dict(player_name, player_season_logs, projected_lines_dict, todays_games_date_obj, player_position='', all_matchup_data=[], all_players_in_games_dict={}, player_team=''):
+def generate_player_all_outcomes_dict(player_name, player_season_logs, projected_lines_dict, todays_games_date_obj, player_position='', all_matchup_data=[], all_players_in_games_dict={}, player_team='', player_stat_dict={}):
 
     print('\n===Generate Player Outcome===\n')
 
@@ -1147,7 +1299,8 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
     player_all_outcomes_dict = {} # {stat name:{outcome,record,avg,range,matchup}}
 
     # organize external data into internal structure
-    player_stat_dict = generate_player_stat_dict(player_name, player_season_logs, projected_lines_dict, todays_games_date_obj, all_players_in_games_dict, player_team)
+    if len(player_stat_dict.keys()) == 0: # use given stat dict if available, else get from logs
+        player_stat_dict = generate_player_stat_dict(player_name, player_season_logs, projected_lines_dict, todays_games_date_obj, all_players_in_games_dict, player_team)
 
     
 
@@ -1163,8 +1316,17 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
     player_mins_dicts = player_all_avg_range_dicts['min']
     player_maxes_dicts = player_all_avg_range_dicts['max']
 
+    # determine the record over projected line or avg stat val
     print('projected_lines_dict before records: ' + str(projected_lines_dict))
     player_records_dict = generate_player_records_dict(player_name, player_stat_dict, projected_lines_dict, player_medians_dicts)
+
+
+    # determine the stat val with record above 90%
+    # player_consistent_stat_vals = {} same format as player stat records but with single max. consistent val for each stat for each condition
+    #player_consistent_stat_vals = generate_consistent_stat_vals(player_name, player_stat_dict)
+    #player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
+    #writer.display_consistent_stats(all_player_consistent_stats)
+
 
 
     current_season_log = player_season_logs[0]
@@ -1573,7 +1735,7 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
                 print("Warning: opponent " + opponent + " not found in all matchups dict! ")
 
 
-        #find players in games true
+        #if find players in games true we will have populated all_players_in_games_dict
         print('all_players_in_games_dict: ' + str(all_players_in_games_dict))
         if len(all_players_in_games_dict.keys()) > 0:
 
@@ -1681,7 +1843,7 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
 
 
     # find teammates and opponents for each game played by each player
-    find_players = True
+    find_players = False
     # v1: all_players_in_games_dict = {year:{game key:{away team abbrev:[away players],home team abbrev:[home players]}}}
     # or
     # v2: all_players_in_games_dict = {player:{game:{teammates:[],opponents:[]}}}
@@ -1693,6 +1855,7 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
 
 
     # === organize external data into internal structure
+    all_player_consistent_stats = {} # we want to display all player consistent stats together for viewing convenience and analysis comparison
     for player_name in player_names:
         player_season_logs = all_player_season_logs_dict[player_name]
 
@@ -1708,9 +1871,21 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
         # get player team so we can determine away/home team so we can determine teammatea/opponents from players in games
         player_team = reader.read_player_team(player_name, player_id, player_teams, read_new_teams=False) #player_teams[player_name]
 
-        player_all_outcomes_dict = generate_player_all_outcomes_dict(player_name, player_season_logs, projected_lines_dict, todays_games_date_obj, player_position, all_matchup_data, all_players_in_games_dict, player_team) # each player has an outcome for each stat
+        player_stat_dict = generate_player_stat_dict(player_name, player_season_logs, projected_lines_dict, todays_games_date_obj, all_players_in_games_dict, player_team)
+
+        player_all_outcomes_dict = generate_player_all_outcomes_dict(player_name, player_season_logs, projected_lines_dict, todays_games_date_obj, player_position, all_matchup_data, all_players_in_games_dict, player_team, player_stat_dict) # each player has an outcome for each stat
         player_outcomes[player_name] = player_all_outcomes_dict
-    
+
+        # generate stat val reached at desired consistency
+        # this would be one of the key possible outcomes given a probability
+        # the initial outcome we have done so far is prob of reaching either the projected line or avg stat val
+        # determine the stat val with record above 90%
+        # player_consistent_stat_vals = {} same format as player stat records but with single max. consistent val for each stat for each condition
+        player_consistent_stats = generate_consistent_stat_vals(player_name, player_stat_dict)
+        #player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
+        all_player_consistent_stats[player_name] = player_consistent_stats
+
+    writer.display_consistent_stats(all_player_consistent_stats)
 
 
 

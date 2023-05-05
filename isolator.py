@@ -127,3 +127,9 @@ def isolate_consistent_streaks(all_stats_counts_dict):
 
 
     return consistent_streaks
+
+
+# isolate all keys with 'out' or list of names
+# see sort keys bc we may want to see all keys sorted rather than exclude potentially relevant keys
+def isolate_keys_in_dict(regex, dict):
+    print('isolate keys')

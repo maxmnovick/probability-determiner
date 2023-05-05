@@ -11,3 +11,10 @@ def sort_predictions_by_deg_of_bel(predictions):
 def sort_dicts_by_key(dicts, key):
 
     return sorted(dicts, key=lambda d: d[key], reverse=True) # reverse so we see highest first
+
+# sort so we see all condition types grouped together for separate analysis and viewing
+# players_outcomes = {player: stat name: outcome dict}
+def sort_players_outcomes(players_outcomes):
+    print('sort players outcomes')
+
+    print('players_outcomes: ' + str(players_outcomes))

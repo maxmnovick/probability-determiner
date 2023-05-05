@@ -4,6 +4,9 @@
 import re # see if string contains stat and player of interest to display
 import numpy # mean, median to display over time
 import csv # save player and game espn ID's so we do not have to request each run
+import sorter # sort players outcomes so we see conditions grouped by type and other useful visuals
+
+from tabulate import tabulate # display output, eg consistent stat vals
 
 def display_game_data(all_valid_streaks_list):
     print("\n===Game Data===\n")
@@ -397,19 +400,24 @@ def display_all_players_records_dicts(all_players_records_dicts, all_player_seas
 
             season_year -= 1
 
-# player_outcomes = {player: stat name: outcome dict}
-def display_players_outcomes(player_outcomes):
+# players_outcomes = {player: stat name: outcome dict}
+def display_players_outcomes(players_outcomes):
 
     print("\n===Player Outcomes===\n")
+
+    # sort so we see all instances of teammates out grouped together instead of game order bc we are interested to see by type of condition not by game at this point
+    # we do want to see ordered by games as well so we have game idx and need way to switch bt views
+    sorted_players_outcomes = sorter.sort_players_outcomes(players_outcomes) 
 
 
     # convert player outcomes dict into list
     player_outcomes_list = []
-    for stat_outcome_dict in player_outcomes.values():
+    # stat_outcome_dict = stat:outcome_dict
+    for stat_outcome_dict in players_outcomes.values():
 
         for outcome_dict in stat_outcome_dict.values():
 
-            player_outcomes_list.append(outcome_dict)
+            player_outcomes_list.append(outcome_dict) # outcome_dict = prediction:stats
 
     # get headers
     header_row = []
@@ -502,4 +510,43 @@ def convert_list_to_string(init_list):
     print('final_string: ' + final_string)
     return final_string
 
+# all_player_consistent_stats = {} same format as stat records, 
+# condition, year, stat name
+def display_consistent_stats(all_player_consistent_stats):
+    print("\n===Display Consistent Stats===\n")
+
+    final_consistent_stats = [] # player name, stat name, consistent stat, consistent stat prob
+
+    for player_name, player_consistent_stats in all_player_consistent_stats.items():
+        print(player_name)
+
+        # for now, show only conditon=all
+        # give option to set condition and sort by condition
+        conditions_of_interest = ['all']
+        for condition, condition_consistent_stats in player_consistent_stats.items():
+            print(condition)
+
+            if condition in conditions_of_interest:
+
+                years_of_interest = [2023]
+                for year, year_consistent_stats in condition_consistent_stats.items():
+                    print(year)
+
+                    if year in years_of_interest:
+
+                        for stat_name, prob_stat_dict in year_consistent_stats.items():
+                            print(stat_name)
+                            print('prob_stat_dict: ' + str(prob_stat_dict))
+
+                            consistent_stat = prob_stat_dict['prob val']
+                            consistent_stat_prob = prob_stat_dict['prob']
+
+                            # player name, stat name, consistent stat, consistent stat prob
+                            player_consistent_stat_data = [player_name, stat_name, consistent_stat, consistent_stat_prob]
+
+                            final_consistent_stats.append(player_consistent_stat_data)
+
+
+    print('final_consistent_stats')
+    print(tabulate(final_consistent_stats))
 
