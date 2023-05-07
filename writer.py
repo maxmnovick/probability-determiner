@@ -541,8 +541,13 @@ def display_consistent_stats(all_player_consistent_stats):
                             consistent_stat = prob_stat_dict['prob val']
                             consistent_stat_prob = prob_stat_dict['prob']
 
+                            second_consistent_stat = prob_stat_dict['second prob val']
+                            second_consistent_stat_prob = prob_stat_dict['second prob']
+
+                            # add postseason stat probs separately
+
                             # player name, stat name, consistent stat, consistent stat prob
-                            player_consistent_stat_data = [player_name, stat_name, consistent_stat, consistent_stat_prob]
+                            player_consistent_stat_data = [player_name, stat_name, consistent_stat, consistent_stat_prob, second_consistent_stat, second_consistent_stat_prob]
 
                             final_consistent_stats.append(player_consistent_stat_data)
 
