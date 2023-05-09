@@ -531,21 +531,29 @@ def read_player_season_log(player_name, season_year=2023, player_url='', player_
 	parts_of_season = [] # pre season, regular season, post season
 
 	len_html_results = len(html_results) # each element is a dataframe/table so we loop thru each table
-
+	print('len_html_results: ' + str(len_html_results))
 	for order in range(len_html_results):
-		#print("order: " + str(order))
+		print("order: " + str(order))
 
 		if len(html_results[order].columns.tolist()) == 17:
 
 			part_of_season = html_results[order]
+			print('part_of_season:\n' + str(part_of_season))
 
 			# look at the formatting to figure out how to separate table and elements in table
 			if len_html_results - 2 == order:
 				part_of_season['Type'] = 'Preseason'
 
 			else:
-				if len(part_of_season[(part_of_season['OPP'].str.contains('GAME'))]) > 0:
+				# last row of postseason section has 'finals' in it, eg quarter finals, semi finals, finals
+				last_cell = part_of_season.iloc[-1,0]
+				print('last_cell: ' + str(last_cell))
+				if re.search('final',last_cell.lower()) or re.search('play-in',last_cell.lower()):
 					part_of_season['Type'] = 'Postseason'
+				# if len(part_of_season[(part_of_season['OPP'].str.contains('GAME'))]) > 0:
+				# 	part_of_season['Type'] = 'Postseason'
+				# elif re.search('play-in',last_cell.lower()):
+				# 	part_of_season['Type'] = 'Playin'
 				else:
 					part_of_season['Type'] = 'Regular'
 
