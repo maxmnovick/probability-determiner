@@ -514,8 +514,14 @@ def convert_list_to_string(init_list):
 # condition, year, stat name
 def display_consistent_stats(all_player_consistent_stats):
     print("\n===Display Consistent Stats===\n")
+    print('all_player_consistent_stats: ' + str(all_player_consistent_stats))
 
-    final_consistent_stats = [] # player name, stat name, consistent stat, consistent stat prob
+    player_consistent_stat_data_headers = ['Player', 'Stat', 'Stat', 'Prob', '2nd Stat', '2nd Prob', 'PS', 'PP', '2nd PS', '2nd PP']
+    final_consistent_stats = [player_consistent_stat_data_headers] # player name, stat name, consistent stat, consistent stat prob
+
+    # so we can sort from high to low prob
+    all_consistent_stat_dicts = [] 
+    consistent_stat_dict = {}
 
     for player_name, player_consistent_stats in all_player_consistent_stats.items():
         print(player_name)
@@ -534,24 +540,82 @@ def display_consistent_stats(all_player_consistent_stats):
 
                     if year in years_of_interest:
 
-                        for stat_name, prob_stat_dict in year_consistent_stats.items():
+                        # for season_part, season_part_consistent_stats in year_consistent_stats.items():
+                        #     print(season_part)
+
+                        #     player_season_consistent_stat_data = []
+
+                        # first look at full season, then postseason
+                        season_part_consistent_stats = year_consistent_stats['full'] 
+
+                        for stat_name in season_part_consistent_stats.keys():
                             print(stat_name)
+
+                            # use consistent_stat_dict to sort
+                            consistent_stat_dict = {'player name':player_name, 'stat name':stat_name}
+                            
+
+                            #player_consistent_stat_data = [player_name, stat_name]
+
+                            prob_stat_dict = year_consistent_stats['full'][stat_name]
                             print('prob_stat_dict: ' + str(prob_stat_dict))
 
-                            consistent_stat = prob_stat_dict['prob val']
-                            consistent_stat_prob = prob_stat_dict['prob']
+                            full_consistent_stat = prob_stat_dict['prob val']
+                            full_consistent_stat_prob = prob_stat_dict['prob']
 
-                            second_consistent_stat = prob_stat_dict['second prob val']
-                            second_consistent_stat_prob = prob_stat_dict['second prob']
+                            full_second_consistent_stat = prob_stat_dict['second prob val']
+                            full_second_consistent_stat_prob = prob_stat_dict['second prob']
+
+                            consistent_stat_dict['prob val'] = full_consistent_stat
+                            consistent_stat_dict['prob'] = full_consistent_stat_prob
+                            consistent_stat_dict['second prob val'] = full_second_consistent_stat
+                            consistent_stat_dict['second prob'] = full_second_consistent_stat_prob
 
                             # add postseason stat probs separately
+                            post_consistent_stat = 0
+                            post_consistent_stat_prob = 0
+
+                            post_second_consistent_stat = 0
+                            post_second_consistent_stat_prob = 0
+
+                            if 'postseason' in year_consistent_stats.keys():
+                                prob_stat_dict = year_consistent_stats['postseason'][stat_name]
+                                print('prob_stat_dict: ' + str(prob_stat_dict))
+
+                                post_consistent_stat = prob_stat_dict['prob val']
+                                post_consistent_stat_prob = prob_stat_dict['prob']
+
+                                post_second_consistent_stat = prob_stat_dict['second prob val']
+                                post_second_consistent_stat_prob = prob_stat_dict['second prob']
+
+                                consistent_stat_dict['post prob val'] = post_consistent_stat
+                                consistent_stat_dict['post prob'] = post_consistent_stat_prob
+                                consistent_stat_dict['post second prob val'] = post_second_consistent_stat
+                                consistent_stat_dict['post second prob'] = post_second_consistent_stat_prob
+
+
 
                             # player name, stat name, consistent stat, consistent stat prob
-                            player_consistent_stat_data = [player_name, stat_name, consistent_stat, consistent_stat_prob, second_consistent_stat, second_consistent_stat_prob]
+                            player_consistent_stat_data = [player_name, stat_name, full_consistent_stat, full_consistent_stat_prob, full_second_consistent_stat, full_second_consistent_stat_prob, post_consistent_stat, post_consistent_stat_prob, post_second_consistent_stat, post_second_consistent_stat_prob]
+                            #consistent_stat_dict = {'player name':player_name, 'stat name':stat_name, 'prob val': full_consistent_stat, 'prob': full_consistent_stat_prob, 'second prob val':full_second_consistent_stat, 'second prob':full_second_consistent_stat_prob}
+
+                            #player_season_consistent_stat_data = player_season_consistent_stat_data + player_consistent_stat_data
 
                             final_consistent_stats.append(player_consistent_stat_data)
 
+                            all_consistent_stat_dicts.append(consistent_stat_dict)
+                            
+
+
+    print('all_consistent_stat_dicts: ' + str(all_consistent_stat_dicts))
 
     print('final_consistent_stats')
     print(tabulate(final_consistent_stats))
 
+    # export
+    for row in final_consistent_stats:
+        export_row = ''
+        for cell in row:
+            export_row += str(cell) + ';'
+
+        print(export_row)

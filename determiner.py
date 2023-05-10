@@ -421,6 +421,24 @@ def determine_regular_season_games(player_game_log):
     print("final reg_season_games_df:\n" + str(reg_season_games_df) + '\n')
     return reg_season_games_df
 
+def determine_season_part_games(player_game_log, season_part):
+
+    print('\n===Determine Season Games for Player: ' + season_part + '===\n')
+    print('player_game_log:\n' + str(player_game_log))
+
+    season_part_games_df = player_game_log
+
+    # select reg season games by type
+    if season_part == 'regular' or season_part == 'postseason':
+        season_part_games_df = player_game_log[player_game_log['Type'].str.startswith(season_part.title())]
+        #print("partial reg_season_games_df:\n" + str(reg_season_games_df) + '\n')
+        # remove all star and exception games with *
+        season_part_games_df = season_part_games_df[~season_part_games_df['OPP'].str.endswith('*')]
+    
+
+    print("final season_part_games_df:\n" + str(season_part_games_df) + '\n')
+    return season_part_games_df
+
 # is it an over or under? above 7/10 or 4/5 or 3/3, or below 3/10 and not 2/2 bc maybe teammate injury so more playing time?
 def determine_streak_direction(streak):
     direction = '+'
@@ -861,3 +879,55 @@ def determine_current_teammates_in_game(game_teammates, current_teammates):
 
 
     return current_teammates_in_game
+
+# make list to loop through so we can add all stats to dicts with 1 fcn
+# list order or keys must correspond with all_stats_dicts bc we assign by idx/key
+def determine_game_stats(player_game_log, game_idx):
+
+    # === Collect Stats for Current Game ===
+
+    pts = int(player_game_log.loc[game_idx, 'PTS'])
+    rebs = int(player_game_log.loc[game_idx, 'REB'])
+    asts = int(player_game_log.loc[game_idx, 'AST'])
+
+    results = player_game_log.loc[game_idx, 'Result']
+    #print("results: " + results)
+    results = re.sub('[a-zA-Z]', '', results)
+    # remove #OT from result string
+    results = re.split("\\s+", results)[0]
+    #print("results_data: " + str(results_data))
+    score_data = results.split('-')
+    #print("score_data: " + str(score_data))
+    winning_score = int(score_data[0])
+    losing_score = int(score_data[1])
+
+    minutes = int(player_game_log.loc[game_idx, 'MIN'])
+
+    fgs = player_game_log.loc[game_idx, 'FG']
+    fg_data = fgs.split('-')
+    fgm = int(fg_data[0])
+    fga = int(fg_data[1])
+    fg_rate = round(float(player_game_log.loc[game_idx, 'FG%']), 1)
+
+    #threes = game[three_idx]
+    #threes_data = threes.split('-')
+    #print("threes_data: " + str(threes_data))
+    threes_made = int(player_game_log.loc[game_idx, '3PT_SA'])
+    threes_attempts = int(player_game_log.loc[game_idx, '3PT_A'])
+    three_rate = round(float(player_game_log.loc[game_idx, '3P%']), 1)
+
+    fts = player_game_log.loc[game_idx, 'FT']
+    ft_data = fts.split('-')
+    ftm = int(ft_data[0])
+    fta = int(ft_data[1])
+    ft_rate = round(float(player_game_log.loc[game_idx, 'FT%']), 1)
+
+    bs = int(player_game_log.loc[game_idx, 'BLK'])
+    ss = int(player_game_log.loc[game_idx, 'STL'])
+    fs = int(player_game_log.loc[game_idx, 'PF'])
+    tos = int(player_game_log.loc[game_idx, 'TO'])
+
+    # make list to loop through so we can add all stats to dicts with 1 fcn
+    game_stats = [pts,rebs,asts,winning_score,losing_score,minutes,fgm,fga,fg_rate,threes_made,threes_attempts,three_rate,ftm,fta,ft_rate,bs,ss,fs,tos] 
+
+    return game_stats

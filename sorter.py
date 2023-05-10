@@ -8,6 +8,8 @@ def sort_predictions_by_deg_of_bel(predictions):
 
     return sorted_predictions
 
+# given a list of dicts with corresponding keys, 
+# we want to see which dict has the highest value at a given key they all share
 def sort_dicts_by_key(dicts, key):
 
     return sorted(dicts, key=lambda d: d[key], reverse=True) # reverse so we see highest first
