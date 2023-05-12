@@ -935,6 +935,7 @@ def generate_all_players_stats_dicts(all_player_season_logs_dict, projected_line
 # so from 0 to max stat val, get record reached games over total games
 # player_stat_records = []
 # no need to make dict because stat val = idx bc going from 0 to N
+#player_stat_records: {'all': {2023: {'regular': {'pts': 
 def generate_player_stat_records(player_name, player_stat_dict):
     print('\n===Generate Player Stat Record===\n')
     print('===' + player_name.title() + '===\n')
@@ -953,15 +954,15 @@ def generate_player_stat_records(player_name, player_stat_dict):
             # all_pts_dicts = {'all':{1:20}}
             # key=condition, val={idx:stat}
             all_pts_dicts = player_season_stat_dict['pts']
-            all_rebs_dicts = player_season_stat_dict['reb']
-            all_asts_dicts = player_season_stat_dict['ast']
-            all_threes_made_dicts = player_season_stat_dict['3pm']
-            all_bs_dicts = player_season_stat_dict['blk']
-            all_ss_dicts = player_season_stat_dict['stl']
-            all_tos_dicts = player_season_stat_dict['to']
+            # all_rebs_dicts = player_season_stat_dict['reb']
+            # all_asts_dicts = player_season_stat_dict['ast']
+            # all_threes_made_dicts = player_season_stat_dict['3pm']
+            # all_bs_dicts = player_season_stat_dict['blk']
+            # all_ss_dicts = player_season_stat_dict['stl']
+            # all_tos_dicts = player_season_stat_dict['to']
             if len(all_pts_dicts['all'].keys()) > 0:
 
-                all_stats_counts_dict = { 'all': [], 'home': [], 'away': [] }
+                #all_stats_counts_dict = { 'all': [], 'home': [], 'away': [] }
 
                 # key represents set of conditions of interest eg home/away
                 for condition in all_pts_dicts.keys(): # all stats dicts have same keys so we use first 1 as reference
@@ -1035,7 +1036,7 @@ def generate_player_stat_records(player_name, player_stat_dict):
                             player_season_condition_records_dicts = player_condition_records_dicts[season_year]
                             player_season_condition_records_dicts[season_part] = { stat_name: all_probs_stat_reached }
 
-
+    #player_stat_records: {'all': {2023: {'regular': {'pts': 
     print('player_stat_records: ' + str(player_stat_records))
     return player_stat_records
 
@@ -1060,14 +1061,17 @@ def generate_prob_stat_reached(record):
 
 
 # consistency=0.9 is desired probability of player reaching stat val
-def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9):
+#consistent_stat_vals: {'all': {2023: {'regular': {'pts': {'prob val':
+def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9, player_stat_records={}):
     
-
-    player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
-
-
-
     print('\n===Generate Consistent Stat Vals===\n')
+
+    if len(player_stat_records) == 0:
+        player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
+
+
+
+    
     consistent_stat_vals = {}
 
     for condition, condition_stat_records in player_stat_records.items():
@@ -1081,7 +1085,7 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
 
                 for stat_name, stat_records in season_stat_dicts.items():
                     print("\n===Stat Name " + str(stat_name) + "===\n")
-                    print('stat_records: ' + str(stat_records))
+                    #print('stat_records: ' + str(stat_records))
 
                     # get prob from 0 to 1 to compare to desired consistency
                     consistent_stat_val = 0
@@ -1089,10 +1093,10 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                     consistent_stat_prob = 1.0
                     
                     for stat_val in range(len(stat_records)):
-                        print("\n===Stat Val " + str(stat_val) + "===")
+                        #print("\n===Stat Val " + str(stat_val) + "===")
                         # gen prob reached from string record
                         record = stat_records[stat_val] # eg x/y=1/1
-                        print('record: ' + str(record))
+                        #print('record: ' + str(record))
                         prob_stat_reached = generate_prob_stat_reached(record)
 
                         if prob_stat_reached < consistency:
@@ -1101,8 +1105,8 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                         consistent_stat_val = stat_val
                         consistent_stat_prob = prob_stat_reached
 
-                    print('consistent_stat_val: ' + str(consistent_stat_val))
-                    print('consistent_stat_prob: ' + str(consistent_stat_prob))
+                    #print('consistent_stat_val: ' + str(consistent_stat_val))
+                    #print('consistent_stat_prob: ' + str(consistent_stat_prob))
 
                     # determine second consistent val
                     # we may want to loop for x consistent vals to see trend and error margin
@@ -1143,6 +1147,9 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                     # also determine prob of postseason consistent val in regseason
 
 
+                    
+
+
                     # save data for analysis, sorting and filtering
                     consistent_stat_dict = { 'prob val': consistent_stat_val, 'prob': consistent_stat_prob, 'second prob val': second_consistent_stat_val, 'second prob': second_consistent_stat_prob }
                     
@@ -1177,7 +1184,24 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                         player_season_condition_consistent_stat_vals = player_condition_consistent_stat_vals[season_year]
                         player_season_condition_consistent_stat_vals[season_part] = { stat_name: consistent_stat_dict }
 
+    # check if regseason stat is available
+    # ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
+    # year_of_interest = 2023
+    # regseason_stats = consistent_stat_vals['all'][year_of_interest]['regular']
+    # for stat_dict in regseason_stats.items():
+    #     reg_season_stat_val = stat_dict['prob val']
+    #     if reg_season_stat_val in ok_stat_vals:
+    #         reg_season_ok_stat = reg_season_stat_val # ok=available
 
+    # # determine final available stat val out of possible consistent stat vals
+    # # eg if horford reb in playoffs higher than regseason, use regseason stat val's prob in postseason
+    # # bc that will show highest prob
+    # available_stat_val
+
+    #ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
+    # add prob of reaching reg season val in postseason, if different consistent vals
+
+    #consistent_stat_vals: {'all': {2023: {'regular': {'pts': {'prob val':
     print('consistent_stat_vals: ' + str(consistent_stat_vals))
     return consistent_stat_vals
 
@@ -2400,6 +2424,7 @@ def generate_players_outcomes(player_names=[], settings={}, todays_games_date_ob
 
     # === organize external data into internal structure
     all_player_consistent_stats = {} # we want to display all player consistent stats together for viewing convenience and analysis comparison
+    all_player_stat_records = {}
     for player_name in player_names:
         player_season_logs = all_player_season_logs_dict[player_name]
 
@@ -2425,11 +2450,13 @@ def generate_players_outcomes(player_names=[], settings={}, todays_games_date_ob
         # the initial outcome we have done so far is prob of reaching either the projected line or avg stat val
         # determine the stat val with record above 90%
         # player_consistent_stat_vals = {} same format as player stat records but with single max. consistent val for each stat for each condition
+        player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
         player_consistent_stats = generate_consistent_stat_vals(player_name, player_stat_dict)
         #player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
         all_player_consistent_stats[player_name] = player_consistent_stats
+        all_player_stat_records[player_name] = player_stat_records
 
-    writer.display_consistent_stats(all_player_consistent_stats)
+    writer.display_consistent_stats(all_player_consistent_stats, all_player_stat_records)
 
 
 

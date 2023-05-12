@@ -15,6 +15,8 @@ import pandas as pd # read html results from webpage to determine if player play
 
 import numpy # mean, median
 
+import generator # gen prob stat reached to determine prob from records
+
 # if streak resembles pattern we have seen consistently such as 3/3,3/4,4/5,5/6,6/7,6/9,7/10
 def determine_consistent_streak(stat_counts, stat_name=''):
     print("\n===Determine Consistent Streak===\n")
@@ -937,3 +939,57 @@ def determine_game_stats(player_game_log, game_idx):
     game_stats = [pts,rebs,asts,winning_score,losing_score,minutes,fgm,fga,fg_rate,threes_made,threes_attempts,three_rate,ftm,fta,ft_rate,bs,ss,fs,tos] 
 
     return game_stats
+
+
+def determine_matching_key(dict, match_val):
+
+    print('\n===Determine Match Key for Val: ' + str(match_val) + '===\n')
+    print('dict: ' + str(dict))
+
+    match_key = ''
+
+    for key, val in dict.items():
+        if key != 'ok val':
+            if val == match_val and re.search('post.*val',key):
+                match_key = key
+
+    print('match_key: ' + match_key)
+    return match_key
+
+
+def determine_prob_of_stat_from_records(ok_val, player_stat_records, season_part, stat_name, condition='all', year=2023):
+    
+    print('\n===Determine Prob of Stat: ' + str(ok_val) + ' ' + stat_name + '===\n')
+    #print('player_stat_records: ' + str(player_stat_records))
+    records = player_stat_records[condition][year][season_part][stat_name]
+    #print('records: ' + str(records))
+    record = records[ok_val]
+    #print('record: ' + str(record))
+
+    prob_of_stat = generator.generate_prob_stat_reached(record)
+
+    print('prob_of_stat: ' + str(prob_of_stat))
+    return prob_of_stat
+
+def determine_ok_val_prob(dict, ok_val, player_stat_records, season_part, stat_name):
+
+    print('\n===Determine Postseason Prob for OK Value: ' + str(ok_val) + ' ' + stat_name + '===\n')
+
+    ok_val_post_val_key = determine_matching_key(dict, ok_val) #'post prob val'
+
+    ok_val_post_prob_key = '' #re.sub('val','',ok_val_post_val_key).strip()
+
+    ok_val_post_prob = 0
+
+    #player_stat_records: {'all': {2023: {'regular': {'pts': 
+    if ok_val_post_val_key == '':
+        # we can find post prob from stat records
+        ok_val_post_prob = determine_prob_of_stat_from_records(ok_val, player_stat_records, season_part, stat_name)
+    else:
+        ok_val_post_prob_key = re.sub('val','',ok_val_post_val_key).strip()
+
+        if ok_val_post_prob_key in dict.keys():
+            ok_val_post_prob = dict[ok_val_post_prob_key]
+
+    print('ok_val_post_prob: ' + str(ok_val_post_prob))
+    return ok_val_post_prob
