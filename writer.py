@@ -404,10 +404,12 @@ def display_all_players_records_dicts(all_players_records_dicts, all_player_seas
 def display_players_outcomes(players_outcomes):
 
     print("\n===Player Outcomes===\n")
+    #print('players_outcomes: ' + str(players_outcomes))
 
     # sort so we see all instances of teammates out grouped together instead of game order bc we are interested to see by type of condition not by game at this point
     # we do want to see ordered by games as well so we have game idx and need way to switch bt views
-    sorted_players_outcomes = sorter.sort_players_outcomes(players_outcomes) 
+    
+    #todo: sorted_players_outcomes = sorter.sort_players_outcomes(players_outcomes) 
 
 
     # convert player outcomes dict into list
@@ -415,9 +417,11 @@ def display_players_outcomes(players_outcomes):
     # stat_outcome_dict = stat:outcome_dict
     for stat_outcome_dict in players_outcomes.values():
 
-        for outcome_dict in stat_outcome_dict.values():
+        for season_part_outcome_dict in stat_outcome_dict.values():
 
-            player_outcomes_list.append(outcome_dict) # outcome_dict = prediction:stats
+            for outcome_dict in season_part_outcome_dict.values():
+
+                player_outcomes_list.append(outcome_dict) # outcome_dict = prediction:stats
 
     # get headers
     header_row = []
@@ -516,7 +520,7 @@ def display_consistent_stats(all_player_consistent_stats):
     print("\n===Display Consistent Stats===\n")
     print('all_player_consistent_stats: ' + str(all_player_consistent_stats))
 
-    player_consistent_stat_data_headers = ['Player', 'Stat', 'Stat', 'Prob', '2nd Stat', '2nd Prob', 'PS', 'PP', '2nd PS', '2nd PP']
+    player_consistent_stat_data_headers = ['Player', 'S Name', 'Stat', 'Prob', '2nd Stat', '2nd Prob', 'PS', 'PP', '2nd PS', '2nd PP']
     final_consistent_stats = [player_consistent_stat_data_headers] # player name, stat name, consistent stat, consistent stat prob
 
     # so we can sort from high to low prob
@@ -593,7 +597,7 @@ def display_consistent_stats(all_player_consistent_stats):
                                 consistent_stat_dict['post second prob val'] = post_second_consistent_stat
                                 consistent_stat_dict['post second prob'] = post_second_consistent_stat_prob
 
-
+                            # add another column to classify if postseason stat < regseason stat so we can group those together
 
                             # player name, stat name, consistent stat, consistent stat prob
                             player_consistent_stat_data = [player_name, stat_name, full_consistent_stat, full_consistent_stat_prob, full_second_consistent_stat, full_second_consistent_stat_prob, post_consistent_stat, post_consistent_stat_prob, post_second_consistent_stat, post_second_consistent_stat_prob]

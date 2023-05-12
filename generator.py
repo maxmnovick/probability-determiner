@@ -1043,12 +1043,18 @@ def generate_player_stat_records(player_name, player_stat_dict):
 # output is prob 0-1
 def generate_prob_stat_reached(record):
 
-    record_data = record.split('/')
-    num_games_reached = record_data[0]
-    num_games_played = record_data[1]
-    #prob_stat_reached = round((float(num_games_reached) / float(num_games_played)) * 100)
-    prob_stat_reached = round(float(num_games_reached) / float(num_games_played), 2)
-    print('prob_stat_reached: ' + str(prob_stat_reached))
+    # if we have no record for a given stat val we will pass record=''
+    # bc prob=0
+    prob_stat_reached = 0
+
+    if record != '':
+
+        record_data = record.split('/')
+        num_games_reached = record_data[0]
+        num_games_played = record_data[1]
+        #prob_stat_reached = round((float(num_games_reached) / float(num_games_played)) * 100)
+        prob_stat_reached = round(float(num_games_reached) / float(num_games_played), 2)
+        print('prob_stat_reached: ' + str(prob_stat_reached))
 
     return prob_stat_reached
 
@@ -1075,16 +1081,18 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
 
                 for stat_name, stat_records in season_stat_dicts.items():
                     print("\n===Stat Name " + str(stat_name) + "===\n")
+                    print('stat_records: ' + str(stat_records))
 
                     # get prob from 0 to 1 to compare to desired consistency
                     consistent_stat_val = 0
-                    prob_stat_reached = 0.0
-                    consistent_stat_prob = 0.0
+                    prob_stat_reached = 1.0
+                    consistent_stat_prob = 1.0
                     
                     for stat_val in range(len(stat_records)):
                         print("\n===Stat Val " + str(stat_val) + "===")
                         # gen prob reached from string record
-                        record = stat_records[stat_val]
+                        record = stat_records[stat_val] # eg x/y=1/1
+                        print('record: ' + str(record))
                         prob_stat_reached = generate_prob_stat_reached(record)
 
                         if prob_stat_reached < consistency:
@@ -1094,6 +1102,7 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                         consistent_stat_prob = prob_stat_reached
 
                     print('consistent_stat_val: ' + str(consistent_stat_val))
+                    print('consistent_stat_prob: ' + str(consistent_stat_prob))
 
                     # determine second consistent val
                     # we may want to loop for x consistent vals to see trend and error margin
@@ -1105,8 +1114,7 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                         else:
                             second_consistent_stat_val = 2
                     elif consistent_stat_val == 1:
-                        if stat_name != '3pm':
-                            second_consistent_stat_val = 2 # bc we want to see available projected probability
+                        second_consistent_stat_val = 2 # bc we want to see available projected probability
                     elif stat_name == 'pts': # above for 0,1 all stats are treated similar but pts has different structure for 2+
                         if consistent_stat_val > 2 and consistent_stat_val < 5: # 3,4 na
                             second_consistent_stat_val = 2
@@ -1115,12 +1123,25 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                         elif consistent_stat_val == 9: # 9 na
                             second_consistent_stat_val = 8
 
+                    # if consistent_stat_val=0 or 1 we see greater val
                     if second_consistent_stat_val > consistent_stat_val: # if consistent_stat_val=0 or 1 we see greater val
+                        # if player did not reach higher stat val record=''
                         if len(stat_records) > second_consistent_stat_val:
                             record = stat_records[second_consistent_stat_val]
+                        else:
+                            record = ''
                     else:
                         record = stat_records[second_consistent_stat_val]
                     second_consistent_stat_prob = generate_prob_stat_reached(record)
+
+
+
+                    # determine higher and lower stat val probs for ref
+
+                    # determine prob of regseason consistent val in postseason
+
+                    # also determine prob of postseason consistent val in regseason
+
 
                     # save data for analysis, sorting and filtering
                     consistent_stat_dict = { 'prob val': consistent_stat_val, 'prob': consistent_stat_prob, 'second prob val': second_consistent_stat_val, 'second prob': second_consistent_stat_prob }
@@ -1513,7 +1534,7 @@ def generate_player_avg_range_dict(player_name, player_stat_dict, key):
                 # key represents set of conditions of interest eg home/away
                 for conditions in all_pts_dicts.keys(): # all stats dicts have same keys so we use first 1 as reference
 
-                    print('conditions: ' + conditions)
+                    #print('conditions: ' + conditions)
                     # reset for each set of conditions
                     header_row = ['Output']
                     stat_avg_ranges = [key.title()] #{pts:'',reb...}
@@ -1523,11 +1544,11 @@ def generate_player_avg_range_dict(player_name, player_stat_dict, key):
                     # stat_maxes = ['Max']
 
                     for stat_key, stat_dict in player_season_stat_dict.items(): # stat key eg pts
-                        print('stat_key: ' + stat_key)
+                        #print('stat_key: ' + stat_key)
                         header_row.append(stat_key.upper())
 
                         stat_vals = list(stat_dict[conditions].values())
-                        print("stat_vals: " + str(stat_vals))
+                        #print("stat_vals: " + str(stat_vals))
 
                         stat_avg_range = 0
                         if len(stat_vals) > 0:
@@ -1734,13 +1755,19 @@ def generate_player_outcome_data(condition, year, stat_name, player_outcome_dict
         # init record condition_record format ['1/1',..]
         # desired format 1/1,..
         # remove brackets and quotes
-        condition_record = player_records_dict[condition][year][stat_name]
-        condition_record = determiner.determine_record_outline(condition_record)
-        condition_record = writer.convert_list_to_string(condition_record)
-        player_outcome_dict[record_key] = str(condition_record) #condition + ': ' + str(teammates_record)
-    
+        season_part = 'regular'
+        condition_year_record = player_records_dict[condition][year][season_part]
+        condition_record = ''
+        if stat_name in condition_year_record.keys():
+            condition_record = player_records_dict[condition][year][season_part][stat_name]
+            condition_record = determiner.determine_record_outline(condition_record)
+            condition_record = writer.convert_list_to_string(condition_record)
+            player_outcome_dict[record_key] = str(condition_record) #condition + ': ' + str(teammates_record)
+        else:
+            print('Warning: stat_name ' + stat_name + ' not in condition record ' + str(condition_year_record) + '!')
+
         # print game idxs beside record bc simplest
-        game_idxs = list(player_stat_dicts[year][stat_name][condition].keys())
+        game_idxs = list(player_stat_dicts[year][season_part][stat_name][condition].keys())
         record_idx_key = condition + ' record idx'
         player_outcome_dict[record_idx_key] = str(game_idxs)
     else:
@@ -1835,11 +1862,12 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
     opponent = '' # if we want to see all opponents we need all opp keys to follow unique format or list of all possible opponents to find keys
     if player_name in projected_lines_dict.keys():
         print('projected_lines_dict: ' + str(projected_lines_dict))
-        player_lines = projected_lines_dict[player_name]
-        if 'loc' in player_lines.keys():
-            loc_of_interest = player_lines['loc'].lower()
-        if 'opp' in player_lines.keys():
-            opponent = player_lines['opp'].lower()
+        player_lines['regular'] = projected_lines_dict[player_name]
+        reg_player_lines = player_lines['regular']
+        if 'loc' in reg_player_lines.keys():
+            loc_of_interest = reg_player_lines['loc'].lower()
+        if 'opp' in reg_player_lines.keys():
+            opponent = reg_player_lines['opp'].lower()
     print('player_lines: ' + str(player_lines))
 
     time_after = str(days_after_prev_game) + ' after'
@@ -1856,10 +1884,14 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
     stats_of_interest = ['pts','reb','ast','3pm'] # this is if we have all the lines available but we only want subset. but if some of the lines are unavailable then print out their outcomes using their median as the line but only if they are a stat of interest
     year = 2023
     for season_part, season_part_lines in player_lines.items():
+
+        print('\n===Season Part: ' + season_part + '===\n')
+        print('season_part_lines: ' + str(season_part_lines))
+
         for stat_name in stats_of_interest:
             player_outcome_dict = {} # fields: 'outcome', 'streak', 'record', 'avg', 'range', 'matchup'
 
-            stat_line = season_part_lines[stat_name]
+            stat_line = season_part_lines[season_part][stat_name]
             player_outcome = player_name.title() + ' ' + str(stat_line) + '+ ' + stat_name # initially express over/under as over+ with assumption that under=100-over bc we are displaying possibility before assessing probability
             print('player_outcome: ' + player_outcome)
             player_outcome_dict['outcome'] = player_outcome
@@ -2271,7 +2303,7 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
     return player_all_outcomes_dict
 
 # one outcome per stat of interest so each player has multiple outcomes
-def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.today(), settings={}):
+def generate_players_outcomes(player_names=[], settings={}, todays_games_date_obj=datetime.today()):
 
     print('\n===Generate Players Outcomes===\n')
 
@@ -2317,6 +2349,8 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
 
     # find defensive rating/ranking by player position
     find_matchups = False
+    if 'find matchups' in settings.keys():
+        find_matchups = settings['find matchups']
     player_position = ''
     all_matchup_data = []
     player_positions = {}
@@ -2352,6 +2386,8 @@ def generate_players_outcomes(player_names=[], todays_games_date_obj=datetime.to
 
     # find teammates and opponents for each game played by each player
     find_players = False
+    if 'find players' in settings.keys():
+        find_players = settings['find players']
     # v1: all_players_in_games_dict = {year:{game key:{away team abbrev:[away players],home team abbrev:[home players]}}}
     # or
     # v2: all_players_in_games_dict = {player:{game:{teammates:[],opponents:[]}}}

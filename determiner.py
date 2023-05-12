@@ -426,15 +426,21 @@ def determine_season_part_games(player_game_log, season_part):
     print('\n===Determine Season Games for Player: ' + season_part + '===\n')
     print('player_game_log:\n' + str(player_game_log))
 
-    season_part_games_df = player_game_log
+    season_part_games_df = season_part_games_df = player_game_log[~player_game_log['Type'].str.startswith('Preseason')]#pd.DataFrame()#player_game_log
 
+    # cannot make default all game log bc we want to exclude preseason
     # select reg season games by type
     if season_part == 'regular' or season_part == 'postseason':
         season_part_games_df = player_game_log[player_game_log['Type'].str.startswith(season_part.title())]
         #print("partial reg_season_games_df:\n" + str(reg_season_games_df) + '\n')
-        # remove all star and exception games with *
-        season_part_games_df = season_part_games_df[~season_part_games_df['OPP'].str.endswith('*')]
-    
+    #elif season_part == 'full':
+        #season_part_games_df = player_game_log[~player_game_log['Type'].str.startswith('Preseason')]
+        
+    # remove all star and exception games with *
+    # always separate special games
+    season_part_games_df = season_part_games_df[~season_part_games_df['OPP'].str.endswith('*')]
+
+
 
     print("final season_part_games_df:\n" + str(season_part_games_df) + '\n')
     return season_part_games_df
