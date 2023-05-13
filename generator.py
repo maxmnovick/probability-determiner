@@ -15,7 +15,7 @@ import writer # format record and other game data for readability
 
 from tabulate import tabulate # display output
 
-
+import sorter 
 
 # sort alphabetical and lower for comparison to other games
 def generate_players_string(players_list):
@@ -1111,6 +1111,8 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                     # determine second consistent val
                     # we may want to loop for x consistent vals to see trend and error margin
                     second_consistent_stat_val = consistent_stat_val - 1
+                    
+                    
                     if consistent_stat_val == 0: # usually we want lower stat at higher freq but if 0 then we want to see higher stat for reference
                         # if 3pm
                         if stat_name == '3pm':
@@ -1119,13 +1121,18 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                             second_consistent_stat_val = 2
                     elif consistent_stat_val == 1:
                         second_consistent_stat_val = 2 # bc we want to see available projected probability
-                    elif stat_name == 'pts': # above for 0,1 all stats are treated similar but pts has different structure for 2+
+                    elif stat_name != '3pm': # above for 0,1 all stats are treated similar but 3pm takes all 2+
                         if consistent_stat_val > 2 and consistent_stat_val < 5: # 3,4 na
                             second_consistent_stat_val = 2
                         elif consistent_stat_val > 5 and consistent_stat_val < 8: # 6,7 na
                             second_consistent_stat_val = 5
                         elif consistent_stat_val == 9: # 9 na
                             second_consistent_stat_val = 8
+
+                        # ensure val is available
+                        ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
+                        if second_consistent_stat_val not in ok_stat_vals:
+                            second_consistent_stat_val -= 1
 
                     # if consistent_stat_val=0 or 1 we see greater val
                     if second_consistent_stat_val > consistent_stat_val: # if consistent_stat_val=0 or 1 we see greater val
@@ -2326,6 +2333,183 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
     print('player_all_outcomes_dict: ' + str(player_all_outcomes_dict))
     return player_all_outcomes_dict
 
+
+# all_player_consistent_stats = {} same format as stat records, 
+# condition, year, stat name
+# for display
+def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_stat_records):
+    print("\n===Generate All Consistent Stats Dicts===\n")
+    print('all_player_consistent_stats: ' + str(all_player_consistent_stats))
+    print('all_player_stat_records: ' + str(all_player_stat_records))
+
+    player_consistent_stat_data_headers = ['Player', 'S Name', 'Stat', 'Prob', '2nd Stat', '2nd Prob', 'PS', 'PP', '2nd PS', '2nd PP', 'OK Val', 'OK P', 'OK PP']
+    final_consistent_stats = [player_consistent_stat_data_headers] # player name, stat name, consistent stat, consistent stat prob
+
+    # so we can sort from high to low prob
+    all_consistent_stat_dicts = [] 
+    consistent_stat_dict = {}
+
+    for player_name, player_consistent_stats in all_player_consistent_stats.items():
+        #print(player_name)
+        
+
+        # for now, show only conditon=all
+        # give option to set condition and sort by condition
+        conditions_of_interest = ['all']
+        for condition, condition_consistent_stats in player_consistent_stats.items():
+            #print(condition)
+
+            if condition in conditions_of_interest:
+
+                years_of_interest = [2023]
+                for year, year_consistent_stats in condition_consistent_stats.items():
+                    #print(year)
+
+                    if year in years_of_interest:
+
+                        # for season_part, season_part_consistent_stats in year_consistent_stats.items():
+                        #     print(season_part)
+
+                        #     player_season_consistent_stat_data = []
+
+                        # first look at full season, then postseason
+                        season_part_consistent_stats = year_consistent_stats['full'] 
+
+                        for stat_name in season_part_consistent_stats.keys():
+                            #print(stat_name)
+
+                            # use consistent_stat_dict to sort
+                            consistent_stat_dict = {'player name':player_name, 'stat name':stat_name}
+                            
+
+                            #player_consistent_stat_data = [player_name, stat_name]
+
+                            prob_stat_dict = year_consistent_stats['full'][stat_name]
+                            print('prob_stat_dict: ' + str(prob_stat_dict))
+
+                            full_consistent_stat = prob_stat_dict['prob val']
+                            full_consistent_stat_prob = prob_stat_dict['prob']
+
+                            full_second_consistent_stat = prob_stat_dict['second prob val']
+                            full_second_consistent_stat_prob = prob_stat_dict['second prob']
+
+                            consistent_stat_dict['prob val'] = full_consistent_stat
+                            consistent_stat_dict['prob'] = full_consistent_stat_prob
+                            consistent_stat_dict['second prob val'] = full_second_consistent_stat
+                            consistent_stat_dict['second prob'] = full_second_consistent_stat_prob
+
+                            # add postseason stat probs separately
+                            post_consistent_stat = 0
+                            post_consistent_stat_prob = 0
+
+                            post_second_consistent_stat = 0
+                            post_second_consistent_stat_prob = 0
+
+                            if 'postseason' in year_consistent_stats.keys():
+                                prob_stat_dict = year_consistent_stats['postseason'][stat_name]
+                                print('prob_stat_dict: ' + str(prob_stat_dict))
+
+                                post_consistent_stat = prob_stat_dict['prob val']
+                                post_consistent_stat_prob = prob_stat_dict['prob']
+
+                                post_second_consistent_stat = prob_stat_dict['second prob val']
+                                post_second_consistent_stat_prob = prob_stat_dict['second prob']
+
+                                consistent_stat_dict['post prob val'] = post_consistent_stat
+                                consistent_stat_dict['post prob'] = post_consistent_stat_prob
+                                consistent_stat_dict['post second prob val'] = post_second_consistent_stat
+                                consistent_stat_dict['post second prob'] = post_second_consistent_stat_prob
+
+                            # add another column to classify if postseason stat < regseason stat so we can group those together
+
+                            # player name, stat name, consistent stat, consistent stat prob
+                            player_consistent_stat_data = [player_name, stat_name, full_consistent_stat, full_consistent_stat_prob, full_second_consistent_stat, full_second_consistent_stat_prob, post_consistent_stat, post_consistent_stat_prob, post_second_consistent_stat, post_second_consistent_stat_prob]
+                            #consistent_stat_dict = {'player name':player_name, 'stat name':stat_name, 'prob val': full_consistent_stat, 'prob': full_consistent_stat_prob, 'second prob val':full_second_consistent_stat, 'second prob':full_second_consistent_stat_prob}
+
+                            #player_season_consistent_stat_data = player_season_consistent_stat_data + player_consistent_stat_data
+
+                            final_consistent_stats.append(player_consistent_stat_data)
+
+                            all_consistent_stat_dicts.append(consistent_stat_dict)
+                            
+
+
+    print('all_consistent_stat_dicts: ' + str(all_consistent_stat_dicts))
+
+    # determine which keys in dict to sort dicts by
+    sort_key1 = 'ok val post prob' # default
+    sort_key2 = 'ok val prob' # default
+
+    # check if regseason stat is available
+    ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
+    #year_of_interest = 2023
+    #regseason_stats = consistent_stat_vals['all'][year_of_interest]['regular']
+    for stat_dict in all_consistent_stat_dicts:
+
+        player_stat_records = all_player_stat_records[stat_dict['player name']]
+
+        stat_name = stat_dict['stat name']
+        season_part = 'postseason' # we want to see postseason prob of regseason stat
+
+        reg_season_stat_val = stat_dict['prob val']
+        reg_season_second_stat_val = stat_dict['second prob val']
+        reg_season_stat_prob = stat_dict['prob']
+        reg_season_second_stat_prob = stat_dict['second prob']
+
+        post_season_stat_val = stat_dict['post prob val']
+        post_season_stat_prob = stat_dict['post prob']
+
+        if reg_season_stat_val in ok_stat_vals: #is available (ie in ok stat vals list)
+            stat_dict['ok val'] = reg_season_stat_val # default, ok=available
+            stat_dict['ok val prob'] = reg_season_stat_prob 
+            # determine which key has the same stat val in post as reg, bc we earlier made sure there would be one
+            # can be generalized to fcn called determine matching key
+            stat_dict['ok val post prob'] = determiner.determine_ok_val_prob(stat_dict, stat_dict['ok val'], player_stat_records, season_part, stat_name) #post_season_stat_prob 
+            # post_season_stat_val_key = determiner.determine_matching_key(stat_dict, stat_dict['ok val']) #'post prob val'
+            # # for key, val in stat_dict.items():
+            # #     if key != 'ok val':
+            # #         if val == stat_dict['ok val'] and not re.search('prob',key):
+            # #             post_season_stat_val_key = key
+
+            # post_season_stat_prob_key = re.sub('val','',post_season_stat_val_key)
+            # post_season_stat_prob = stat_dict[post_season_stat_prob_key]
+            # stat_dict['ok val post prob'] = post_season_stat_prob 
+
+            # if reg_season_stat_val != post_season_stat_val:
+            #     stat_dict['ok val post prob'] = post_season_stat_val_prob 
+
+        # if default reg season stat na,
+        # first check next lowest val, called second val
+        else:
+            stat_dict['ok val'] = reg_season_second_stat_val # ok=available
+            stat_dict['ok val prob'] = reg_season_second_stat_prob 
+            stat_dict['ok val post prob'] = determiner.determine_ok_val_prob(stat_dict, stat_dict['ok val'], player_stat_records, season_part, stat_name) #post_season_stat_prob 
+
+
+    # determine final available stat val out of possible consistent stat vals
+    # eg if horford reb in playoffs higher than regseason, use regseason stat val's prob in postseason
+    # bc that will show highest prob
+    #available_stat_val
+
+
+    sort_keys = [sort_key1, sort_key2]
+    sorted_consistent_stat_dicts = sorter.sort_dicts_by_keys(all_consistent_stat_dicts, sort_keys)
+    # desired_order = ['player name','stat name','ok val','ok pp','ok p']
+    # sorted_consistent_stats = converter.convert_dicts_to_lists(sorted_consistent_stat_dicts)
+
+    # print('sorted_consistent_stats')
+    # print(tabulate(player_consistent_stat_data_headers + sorted_consistent_stats))
+
+    # # export
+    # for row in sorted_consistent_stats:
+    #     export_row = ''
+    #     for cell in row:
+    #         export_row += str(cell) + ';'
+
+    #     print(export_row)
+
+    return sorted_consistent_stat_dicts
+
 # one outcome per stat of interest so each player has multiple outcomes
 def generate_players_outcomes(player_names=[], settings={}, todays_games_date_obj=datetime.today()):
 
@@ -2456,8 +2640,11 @@ def generate_players_outcomes(player_names=[], settings={}, todays_games_date_ob
         all_player_consistent_stats[player_name] = player_consistent_stats
         all_player_stat_records[player_name] = player_stat_records
 
-    writer.display_consistent_stats(all_player_consistent_stats, all_player_stat_records)
-
+    
+    
+    all_consistent_stat_dicts = generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_stat_records)
+    #writer.display_consistent_stats(all_player_consistent_stats, all_player_stat_records)
+    writer.list_dicts(all_consistent_stat_dicts)
 
 
     # todo: make fcn to classify recently broken streaks bc that recent game may be anomaly and they may revert back to streak

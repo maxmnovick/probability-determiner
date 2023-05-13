@@ -690,3 +690,21 @@ def display_consistent_stats(all_player_consistent_stats, all_player_stat_record
             export_row += str(cell) + ';'
 
         print(export_row)
+
+def list_dicts(dicts):
+    # desired_order = ['player name','stat name','ok val','ok pp','ok p']
+    dict_list = converter.convert_dicts_to_lists(dicts)
+
+    print('dict_list')
+    print(tabulate(dict_list))
+
+    headers = [list(dicts[0].keys())]
+    dict_list = headers + dict_list
+
+    # export
+    for row in dict_list:
+        export_row = ''
+        for cell in row:
+            export_row += str(cell) + ';'
+
+        print(export_row)
