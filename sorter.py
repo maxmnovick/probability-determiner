@@ -20,7 +20,13 @@ def sort_dicts_by_keys(dicts, keys):
     key1 = keys[0]
     key2 = keys[1]
 
-    return sorted(dicts, key=lambda d: (d[key1],d[key2]), reverse=True) # reverse so we see highest first
+    #for k in keys: d[k]
+
+    #dicts = sorted(dicts, key=lambda d: (d[key1],d[key2]), reverse=True) # reverse so we see highest first
+    dicts = sorted(dicts, key=lambda d: ([d[k] for k in keys]), reverse=True)
+    #dicts = sorted(dicts, key=lambda d: lambda k: d[k] for k in keys, reverse=True)
+
+    return dicts
 
 # given a list of dicts with corresponding keys, 
 # we want to see which dict has the highest value at a given key they all share

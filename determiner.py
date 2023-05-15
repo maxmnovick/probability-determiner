@@ -961,12 +961,16 @@ def determine_prob_of_stat_from_records(ok_val, player_stat_records, season_part
     
     print('\n===Determine Prob of Stat: ' + str(ok_val) + ' ' + stat_name + '===\n')
     #print('player_stat_records: ' + str(player_stat_records))
-    records = player_stat_records[condition][year][season_part][stat_name]
-    #print('records: ' + str(records))
-    record = records[ok_val]
-    #print('record: ' + str(record))
+    prob_of_stat = 0
 
-    prob_of_stat = generator.generate_prob_stat_reached(record)
+    year_stat_records = player_stat_records[condition][year]
+    if season_part in year_stat_records.keys():
+        records = year_stat_records[season_part][stat_name]
+        #print('records: ' + str(records))
+        record = records[ok_val]
+        #print('record: ' + str(record))
+
+        prob_of_stat = generator.generate_prob_stat_reached(record)         
 
     print('prob_of_stat: ' + str(prob_of_stat))
     return prob_of_stat
@@ -993,3 +997,29 @@ def determine_ok_val_prob(dict, ok_val, player_stat_records, season_part, stat_n
 
     print('ok_val_post_prob: ' + str(ok_val_post_prob))
     return ok_val_post_prob
+
+
+def determine_ok_val_margin(dict, ok_val, player_stat_dict, stat_name, margin_type='min'):
+
+    print('\n===Determine Postseason Margin for OK Value: ' + str(ok_val) + ' ' + stat_name + '===\n')
+
+    ok_val_post_val_key = determine_matching_key(dict, ok_val) #'post prob val'
+
+    ok_val_post_margin_key = '' #re.sub('val','',ok_val_post_val_key).strip()
+
+    ok_val_post_margin = 0
+
+    #player_stat_records: {'all': {2023: {'regular': {'pts': 
+    if ok_val_post_val_key == '':
+        # we can find post prob from stat records
+        ok_val_post_margin = generator.generate_margin(ok_val, player_stat_dict, margin_type)
+    else:
+        margin_key = margin_type + ' margin'
+        ok_val_post_margin_key = re.sub('prob val',margin_key,ok_val_post_val_key).strip()
+        print('ok_val_post_margin_key: ' + str(ok_val_post_margin_key))
+
+        if ok_val_post_margin_key in dict.keys():
+            ok_val_post_margin = dict[ok_val_post_margin_key]
+
+    print('ok_val_post_margin: ' + str(ok_val_post_margin))
+    return ok_val_post_margin

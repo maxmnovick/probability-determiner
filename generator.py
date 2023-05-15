@@ -1060,157 +1060,7 @@ def generate_prob_stat_reached(record):
     return prob_stat_reached
 
 
-# consistency=0.9 is desired probability of player reaching stat val
-#consistent_stat_vals: {'all': {2023: {'regular': {'pts': {'prob val':
-def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9, player_stat_records={}):
-    
-    print('\n===Generate Consistent Stat Vals===\n')
 
-    if len(player_stat_records) == 0:
-        player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
-
-
-
-    
-    consistent_stat_vals = {}
-
-    for condition, condition_stat_records in player_stat_records.items():
-        print("\n===Condition " + str(condition) + "===\n")
-
-        for season_year, full_season_stat_dicts in condition_stat_records.items():
-            print("\n===Year " + str(season_year) + "===\n")
-
-            for season_part, season_stat_dicts in full_season_stat_dicts.items():
-                print("\n===Season Part " + str(season_part) + "===\n")
-
-                for stat_name, stat_records in season_stat_dicts.items():
-                    print("\n===Stat Name " + str(stat_name) + "===\n")
-                    #print('stat_records: ' + str(stat_records))
-
-                    # get prob from 0 to 1 to compare to desired consistency
-                    consistent_stat_val = 0
-                    prob_stat_reached = 1.0
-                    consistent_stat_prob = 1.0
-                    
-                    for stat_val in range(len(stat_records)):
-                        #print("\n===Stat Val " + str(stat_val) + "===")
-                        # gen prob reached from string record
-                        record = stat_records[stat_val] # eg x/y=1/1
-                        #print('record: ' + str(record))
-                        prob_stat_reached = generate_prob_stat_reached(record)
-
-                        if prob_stat_reached < consistency:
-                            break
-
-                        consistent_stat_val = stat_val
-                        consistent_stat_prob = prob_stat_reached
-
-                    #print('consistent_stat_val: ' + str(consistent_stat_val))
-                    #print('consistent_stat_prob: ' + str(consistent_stat_prob))
-
-                    # determine second consistent val
-                    # we may want to loop for x consistent vals to see trend and error margin
-                    second_consistent_stat_val = consistent_stat_val - 1
-                    
-                    
-                    if consistent_stat_val == 0: # usually we want lower stat at higher freq but if 0 then we want to see higher stat for reference
-                        # if 3pm
-                        if stat_name == '3pm':
-                            second_consistent_stat_val = 1
-                        else:
-                            second_consistent_stat_val = 2
-                    elif consistent_stat_val == 1:
-                        second_consistent_stat_val = 2 # bc we want to see available projected probability
-                    elif stat_name != '3pm': # above for 0,1 all stats are treated similar but 3pm takes all 2+
-                        if consistent_stat_val > 2 and consistent_stat_val < 5: # 3,4 na
-                            second_consistent_stat_val = 2
-                        elif consistent_stat_val > 5 and consistent_stat_val < 8: # 6,7 na
-                            second_consistent_stat_val = 5
-                        elif consistent_stat_val == 9: # 9 na
-                            second_consistent_stat_val = 8
-
-                        # ensure val is available
-                        ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
-                        if second_consistent_stat_val not in ok_stat_vals:
-                            second_consistent_stat_val -= 1
-
-                    # if consistent_stat_val=0 or 1 we see greater val
-                    if second_consistent_stat_val > consistent_stat_val: # if consistent_stat_val=0 or 1 we see greater val
-                        # if player did not reach higher stat val record=''
-                        if len(stat_records) > second_consistent_stat_val:
-                            record = stat_records[second_consistent_stat_val]
-                        else:
-                            record = ''
-                    else:
-                        record = stat_records[second_consistent_stat_val]
-                    second_consistent_stat_prob = generate_prob_stat_reached(record)
-
-
-
-                    # determine higher and lower stat val probs for ref
-
-                    # determine prob of regseason consistent val in postseason
-
-                    # also determine prob of postseason consistent val in regseason
-
-
-                    
-
-
-                    # save data for analysis, sorting and filtering
-                    consistent_stat_dict = { 'prob val': consistent_stat_val, 'prob': consistent_stat_prob, 'second prob val': second_consistent_stat_val, 'second prob': second_consistent_stat_prob }
-                    
-                    if condition in consistent_stat_vals.keys():
-                        #print("conditions " + conditions + " in streak tables")
-                        player_condition_consistent_stat_vals = consistent_stat_vals[condition]
-                        if season_year in player_condition_consistent_stat_vals.keys():
-                            #player_condition_consistent_stat_vals[season_year][stat_name] = consistent_stat_dict
-
-                            player_season_condition_consistent_stat_vals = player_condition_consistent_stat_vals[season_year]
-                            if season_part in player_season_condition_consistent_stat_vals.keys():
-                                player_season_condition_consistent_stat_vals[season_part][stat_name] = consistent_stat_dict
-                            else:
-                                player_season_condition_consistent_stat_vals[season_part] = { stat_name: consistent_stat_dict }
-                        
-                        else:
-                            #player_condition_consistent_stat_vals[season_year] = { stat_name: consistent_stat_dict }
-
-                            player_condition_consistent_stat_vals[season_year] = {}
-                            player_season_condition_consistent_stat_vals = player_condition_consistent_stat_vals[season_year]
-                            player_season_condition_consistent_stat_vals[season_part] = { stat_name: consistent_stat_dict }
-
-                        #player_streak_tables[conditions].append(prob_table) # append all stats for given key
-                    else:
-                        #print("conditions " + conditions + " not in streak tables")
-                        consistent_stat_vals[condition] = {}
-                        player_condition_consistent_stat_vals = consistent_stat_vals[condition]
-                        
-                        #player_condition_consistent_stat_vals[season_year] = { stat_name: consistent_stat_dict }
-
-                        player_condition_consistent_stat_vals[season_year] = {}
-                        player_season_condition_consistent_stat_vals = player_condition_consistent_stat_vals[season_year]
-                        player_season_condition_consistent_stat_vals[season_part] = { stat_name: consistent_stat_dict }
-
-    # check if regseason stat is available
-    # ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
-    # year_of_interest = 2023
-    # regseason_stats = consistent_stat_vals['all'][year_of_interest]['regular']
-    # for stat_dict in regseason_stats.items():
-    #     reg_season_stat_val = stat_dict['prob val']
-    #     if reg_season_stat_val in ok_stat_vals:
-    #         reg_season_ok_stat = reg_season_stat_val # ok=available
-
-    # # determine final available stat val out of possible consistent stat vals
-    # # eg if horford reb in playoffs higher than regseason, use regseason stat val's prob in postseason
-    # # bc that will show highest prob
-    # available_stat_val
-
-    #ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
-    # add prob of reaching reg season val in postseason, if different consistent vals
-
-    #consistent_stat_vals: {'all': {2023: {'regular': {'pts': {'prob val':
-    print('consistent_stat_vals: ' + str(consistent_stat_vals))
-    return consistent_stat_vals
 
 
 
@@ -2333,11 +2183,251 @@ def generate_player_all_outcomes_dict(player_name, player_season_logs, projected
     print('player_all_outcomes_dict: ' + str(player_all_outcomes_dict))
     return player_all_outcomes_dict
 
+# determine min margin bt ok val and min stat val
+# need for all possible stat vals or just ok val
+# but ok val is found later
+# we will eventually need min margin for each option
+# so simply add in extensible now
+# we can choose to hide columns to reduce clutter
+def generate_min_margin(init_val, stat_dict):
+    print('\n===Generate Min Margin for val: ' + str(init_val) + '===\n')
+    #print('stat_dict: ' + str(stat_dict))
+
+    #min_margin = 0
+
+    stat_vals = list(stat_dict.values())
+    print('stat_vals: ' + str(stat_vals))
+
+    min_val = 0 # init
+    if len(stat_vals) > 0:
+        min_val = min(stat_vals)
+    else:
+        print('Warning: No stat vals while generating min margin!')
+
+    min_margin = min_val - init_val
+
+    print('min_margin: ' + str(min_margin))
+    return min_margin
+
+
+def generate_mean_margin(init_val, stat_dict):
+    print('\n===Generate Mean Margin for val: ' + str(init_val) + '===\n')
+    #print('stat_dict: ' + str(stat_dict))
+
+    #min_margin = 0
+
+    stat_vals = list(stat_dict.values())
+    print('stat_vals: ' + str(stat_vals))
+
+    mean_val = 0 # init
+    if len(stat_vals) > 0:
+        mean_val = round(numpy.mean(stat_vals), 1)
+    else:
+        print('Warning: No stat vals while generating min margin!')
+
+    mean_margin = mean_val - init_val
+
+    print('mean_margin: ' + str(mean_margin))
+    return mean_margin
+
+
+def generate_margin(init_val, stat_dict, margin_type='min'):
+    print('\n===Generate ' + margin_type.title() + ' Margin for val: ' + str(init_val) + '===\n')
+    #print('stat_dict: ' + str(stat_dict))
+
+    #min_margin = 0
+
+    stat_vals = list(stat_dict.values())
+    print('stat_vals: ' + str(stat_vals))
+
+    val = 0 # init
+    margin = 0
+    if len(stat_vals) > 0:
+        if margin_type == 'mean':
+            val = numpy.mean(stat_vals)
+            print('val: ' + str(val))
+            margin = round(val - init_val,1)
+        else:
+            val = min(stat_vals)
+            margin = val - init_val
+        
+    else:
+        print('Warning: No stat vals while generating min margin!')
+
+    
+
+    print('margin: ' + str(margin))
+    return margin
+
+
+# consistency=0.9 is desired probability of player reaching stat val
+#consistent_stat_vals: {'all': {2023: {'regular': {'pts': {'prob val':
+def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9, player_stat_records={}):
+    
+    print('\n===Generate Consistent Stat Vals===\n')
+
+    if len(player_stat_records) == 0:
+        player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
+
+    
+    consistent_stat_vals = {}
+
+    for condition, condition_stat_records in player_stat_records.items():
+        print("\n===Condition " + str(condition) + "===\n")
+
+        for season_year, full_season_stat_dicts in condition_stat_records.items():
+            print("\n===Year " + str(season_year) + "===\n")
+
+            for season_part, season_stat_dicts in full_season_stat_dicts.items():
+                print("\n===Season Part " + str(season_part) + "===\n")
+
+                for stat_name, stat_records in season_stat_dicts.items():
+                    print("\n===Stat Name " + str(stat_name) + "===\n")
+                    #print('stat_records: ' + str(stat_records))
+
+                    # get prob from 0 to 1 to compare to desired consistency
+                    consistent_stat_val = 0
+                    prob_stat_reached = 1.0
+                    consistent_stat_prob = 1.0
+                    
+                    for stat_val in range(len(stat_records)):
+                        #print("\n===Stat Val " + str(stat_val) + "===")
+                        # gen prob reached from string record
+                        record = stat_records[stat_val] # eg x/y=1/1
+                        #print('record: ' + str(record))
+                        prob_stat_reached = generate_prob_stat_reached(record)
+
+                        if prob_stat_reached < consistency:
+                            break
+
+                        consistent_stat_val = stat_val
+                        consistent_stat_prob = prob_stat_reached
+
+                    #print('consistent_stat_val: ' + str(consistent_stat_val))
+                    #print('consistent_stat_prob: ' + str(consistent_stat_prob))
+
+                    # determine second consistent val
+                    # we may want to loop for x consistent vals to see trend and error margin
+                    second_consistent_stat_val = consistent_stat_val - 1
+                    
+                    
+                    if consistent_stat_val == 0: # usually we want lower stat at higher freq but if 0 then we want to see higher stat for reference
+                        # if 3pm
+                        if stat_name == '3pm':
+                            second_consistent_stat_val = 1
+                        else:
+                            second_consistent_stat_val = 2
+                    elif consistent_stat_val == 1:
+                        second_consistent_stat_val = 2 # bc we want to see available projected probability
+                    elif stat_name != '3pm': # above for 0,1 all stats are treated similar but 3pm takes all 2+
+                        if consistent_stat_val > 2 and consistent_stat_val < 5: # 3,4 na
+                            second_consistent_stat_val = 2
+                        elif consistent_stat_val > 5 and consistent_stat_val < 8: # 6,7 na
+                            second_consistent_stat_val = 5
+                        elif consistent_stat_val == 9: # 9 na
+                            second_consistent_stat_val = 8
+
+                        # ensure val is available
+                        ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
+                        if second_consistent_stat_val not in ok_stat_vals:
+                            second_consistent_stat_val -= 1
+
+                    # if consistent_stat_val=0 or 1 we see greater val
+                    if second_consistent_stat_val > consistent_stat_val: # if consistent_stat_val=0 or 1 we see greater val
+                        # if player did not reach higher stat val record=''
+                        if len(stat_records) > second_consistent_stat_val:
+                            record = stat_records[second_consistent_stat_val]
+                        else:
+                            record = ''
+                    else:
+                        record = stat_records[second_consistent_stat_val]
+                    second_consistent_stat_prob = generate_prob_stat_reached(record)
+
+
+
+                    # determine higher and lower stat val probs for ref
+
+                    # determine prob of regseason consistent val in postseason
+
+                    # also determine prob of postseason consistent val in regseason
+
+
+                    # determine min margin bt ok val and min stat val
+                    # need for all possible stat vals or just ok val
+                    # but ok val is found later
+                    # we will eventually need min margin for each option
+                    # so simply add in extensible now
+                    # we can choose to hide columns to reduce clutter
+                    stat_dict = player_stat_dict[season_year][season_part][stat_name][condition]
+                    min_margin = generate_margin(consistent_stat_val, stat_dict)
+                    second_min_margin = generate_margin(second_consistent_stat_val, stat_dict)
+
+                    mean_margin = generate_margin(consistent_stat_val, stat_dict, 'mean')
+                    second_mean_margin = generate_margin(second_consistent_stat_val, stat_dict, 'mean')
+
+
+                    # save data for analysis, sorting and filtering
+                    consistent_stat_dict = { 'prob val': consistent_stat_val, 'prob': consistent_stat_prob, 'second prob val': second_consistent_stat_val, 'second prob': second_consistent_stat_prob, 'min margin': min_margin, 'second min margin': second_min_margin, 'mean margin': mean_margin, 'second mean margin': second_mean_margin  }
+                    
+                    if condition in consistent_stat_vals.keys():
+                        #print("conditions " + conditions + " in streak tables")
+                        player_condition_consistent_stat_vals = consistent_stat_vals[condition]
+                        if season_year in player_condition_consistent_stat_vals.keys():
+                            #player_condition_consistent_stat_vals[season_year][stat_name] = consistent_stat_dict
+
+                            player_season_condition_consistent_stat_vals = player_condition_consistent_stat_vals[season_year]
+                            if season_part in player_season_condition_consistent_stat_vals.keys():
+                                player_season_condition_consistent_stat_vals[season_part][stat_name] = consistent_stat_dict
+                            else:
+                                player_season_condition_consistent_stat_vals[season_part] = { stat_name: consistent_stat_dict }
+                        
+                        else:
+                            #player_condition_consistent_stat_vals[season_year] = { stat_name: consistent_stat_dict }
+
+                            player_condition_consistent_stat_vals[season_year] = {}
+                            player_season_condition_consistent_stat_vals = player_condition_consistent_stat_vals[season_year]
+                            player_season_condition_consistent_stat_vals[season_part] = { stat_name: consistent_stat_dict }
+
+                        #player_streak_tables[conditions].append(prob_table) # append all stats for given key
+                    else:
+                        #print("conditions " + conditions + " not in streak tables")
+                        consistent_stat_vals[condition] = {}
+                        player_condition_consistent_stat_vals = consistent_stat_vals[condition]
+                        
+                        #player_condition_consistent_stat_vals[season_year] = { stat_name: consistent_stat_dict }
+
+                        player_condition_consistent_stat_vals[season_year] = {}
+                        player_season_condition_consistent_stat_vals = player_condition_consistent_stat_vals[season_year]
+                        player_season_condition_consistent_stat_vals[season_part] = { stat_name: consistent_stat_dict }
+
+    # check if regseason stat is available
+    # ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
+    # year_of_interest = 2023
+    # regseason_stats = consistent_stat_vals['all'][year_of_interest]['regular']
+    # for stat_dict in regseason_stats.items():
+    #     reg_season_stat_val = stat_dict['prob val']
+    #     if reg_season_stat_val in ok_stat_vals:
+    #         reg_season_ok_stat = reg_season_stat_val # ok=available
+
+    # # determine final available stat val out of possible consistent stat vals
+    # # eg if horford reb in playoffs higher than regseason, use regseason stat val's prob in postseason
+    # # bc that will show highest prob
+    # available_stat_val
+
+    #ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
+    # add prob of reaching reg season val in postseason, if different consistent vals
+
+    #consistent_stat_vals: {'all': {2023: {'regular': {'pts': {'prob val':
+    print('consistent_stat_vals: ' + str(consistent_stat_vals))
+    return consistent_stat_vals
+
 
 # all_player_consistent_stats = {} same format as stat records, 
 # condition, year, stat name
 # for display
-def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_stat_records):
+# simply flatten bottom level of dict
+# by adding its key to header of level above
+def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_stat_records, all_player_stat_dicts):
     print("\n===Generate All Consistent Stats Dicts===\n")
     print('all_player_consistent_stats: ' + str(all_player_consistent_stats))
     print('all_player_stat_records: ' + str(all_player_stat_records))
@@ -2384,6 +2474,8 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
 
                             #player_consistent_stat_data = [player_name, stat_name]
 
+                            # simply flatten bottom level of dict
+                            # by adding its key to header of level above
                             prob_stat_dict = year_consistent_stats['full'][stat_name]
                             print('prob_stat_dict: ' + str(prob_stat_dict))
 
@@ -2393,10 +2485,22 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
                             full_second_consistent_stat = prob_stat_dict['second prob val']
                             full_second_consistent_stat_prob = prob_stat_dict['second prob']
 
+                            min_margin = prob_stat_dict['min margin']
+                            second_min_margin = prob_stat_dict['second min margin']
+                            mean_margin = prob_stat_dict['mean margin']
+                            second_mean_margin = prob_stat_dict['second mean margin']
+
                             consistent_stat_dict['prob val'] = full_consistent_stat
                             consistent_stat_dict['prob'] = full_consistent_stat_prob
                             consistent_stat_dict['second prob val'] = full_second_consistent_stat
                             consistent_stat_dict['second prob'] = full_second_consistent_stat_prob
+
+                            consistent_stat_dict['min margin'] = min_margin
+                            consistent_stat_dict['second min margin'] = second_min_margin
+                            consistent_stat_dict['mean margin'] = mean_margin
+                            consistent_stat_dict['second mean margin'] = second_mean_margin
+
+
 
                             # add postseason stat probs separately
                             post_consistent_stat = 0
@@ -2415,10 +2519,21 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
                                 post_second_consistent_stat = prob_stat_dict['second prob val']
                                 post_second_consistent_stat_prob = prob_stat_dict['second prob']
 
+                                post_min_margin = prob_stat_dict['min margin']
+                                post_second_min_margin = prob_stat_dict['second min margin']
+                                post_mean_margin = prob_stat_dict['mean margin']
+                                post_second_mean_margin = prob_stat_dict['second mean margin']
+
+
                                 consistent_stat_dict['post prob val'] = post_consistent_stat
                                 consistent_stat_dict['post prob'] = post_consistent_stat_prob
                                 consistent_stat_dict['post second prob val'] = post_second_consistent_stat
                                 consistent_stat_dict['post second prob'] = post_second_consistent_stat_prob
+
+                                consistent_stat_dict['post min margin'] = post_min_margin
+                                consistent_stat_dict['post second min margin'] = post_second_min_margin
+                                consistent_stat_dict['post mean margin'] = post_mean_margin
+                                consistent_stat_dict['post second mean margin'] = post_second_mean_margin
 
                             # add another column to classify if postseason stat < regseason stat so we can group those together
 
@@ -2437,8 +2552,13 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
     print('all_consistent_stat_dicts: ' + str(all_consistent_stat_dicts))
 
     # determine which keys in dict to sort dicts by
+    # we duplicate the corresponding vals in known keys for ref called 'ok val'
     sort_key1 = 'ok val post prob' # default
     sort_key2 = 'ok val prob' # default
+    sort_key3 = 'ok val post min margin' # default
+    sort_key4 = 'ok val min margin' # default
+    sort_key5 = 'ok val post mean margin' # default
+    sort_key6 = 'ok val mean margin' # default
 
     # check if regseason stat is available
     ok_stat_vals = [2,5,8,10,12,15,18,20] #standard for dk
@@ -2449,18 +2569,27 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
         player_stat_records = all_player_stat_records[stat_dict['player name']]
 
         stat_name = stat_dict['stat name']
+        year = 2023
         season_part = 'postseason' # we want to see postseason prob of regseason stat
+        condition = 'all'
+        player_stat_dict = all_player_stat_dicts[stat_dict['player name']][year][season_part][stat_name][condition]
 
         reg_season_stat_val = stat_dict['prob val']
         reg_season_second_stat_val = stat_dict['second prob val']
         reg_season_stat_prob = stat_dict['prob']
         reg_season_second_stat_prob = stat_dict['second prob']
 
-        post_season_stat_val = stat_dict['post prob val']
-        post_season_stat_prob = stat_dict['post prob']
+        reg_season_min_margin = stat_dict['min margin']
+        reg_season_second_min_margin = stat_dict['second min margin']
+        reg_season_mean_margin = stat_dict['mean margin']
+        reg_season_second_mean_margin = stat_dict['second mean margin']
+
+        #post_season_stat_val = stat_dict['post prob val']
+        #post_season_stat_prob = stat_dict['post prob']
 
         if reg_season_stat_val in ok_stat_vals: #is available (ie in ok stat vals list)
             stat_dict['ok val'] = reg_season_stat_val # default, ok=available
+
             stat_dict['ok val prob'] = reg_season_stat_prob 
             # determine which key has the same stat val in post as reg, bc we earlier made sure there would be one
             # can be generalized to fcn called determine matching key
@@ -2478,13 +2607,26 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
             # if reg_season_stat_val != post_season_stat_val:
             #     stat_dict['ok val post prob'] = post_season_stat_val_prob 
 
+            stat_dict['ok val min margin'] = reg_season_min_margin
+            stat_dict['ok val post min margin'] = determiner.determine_ok_val_margin(stat_dict, stat_dict['ok val'], player_stat_dict, stat_name, 'min')
+
+            stat_dict['ok val mean margin'] = reg_season_mean_margin
+            stat_dict['ok val post mean margin'] = determiner.determine_ok_val_margin(stat_dict, stat_dict['ok val'], player_stat_dict, stat_name, 'mean')
+            
+
         # if default reg season stat na,
         # first check next lowest val, called second val
         else:
             stat_dict['ok val'] = reg_season_second_stat_val # ok=available
+
             stat_dict['ok val prob'] = reg_season_second_stat_prob 
             stat_dict['ok val post prob'] = determiner.determine_ok_val_prob(stat_dict, stat_dict['ok val'], player_stat_records, season_part, stat_name) #post_season_stat_prob 
+            
+            stat_dict['ok val min margin'] = reg_season_second_min_margin
+            stat_dict['ok val post min margin'] = determiner.determine_ok_val_margin(stat_dict, stat_dict['ok val'], player_stat_dict, stat_name, 'min')
 
+            stat_dict['ok val mean margin'] = reg_season_second_mean_margin
+            stat_dict['ok val post mean margin'] = determiner.determine_ok_val_margin(stat_dict, stat_dict['ok val'], player_stat_dict, stat_name, 'mean')
 
     # determine final available stat val out of possible consistent stat vals
     # eg if horford reb in playoffs higher than regseason, use regseason stat val's prob in postseason
@@ -2492,7 +2634,7 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
     #available_stat_val
 
 
-    sort_keys = [sort_key1, sort_key2]
+    sort_keys = [sort_key1, sort_key2, sort_key3, sort_key4, sort_key5, sort_key6]
     sorted_consistent_stat_dicts = sorter.sort_dicts_by_keys(all_consistent_stat_dicts, sort_keys)
     # desired_order = ['player name','stat name','ok val','ok pp','ok p']
     # sorted_consistent_stats = converter.convert_dicts_to_lists(sorted_consistent_stat_dicts)
@@ -2609,6 +2751,7 @@ def generate_players_outcomes(player_names=[], settings={}, todays_games_date_ob
     # === organize external data into internal structure
     all_player_consistent_stats = {} # we want to display all player consistent stats together for viewing convenience and analysis comparison
     all_player_stat_records = {}
+    all_player_stat_dicts = {}
     for player_name in player_names:
         player_season_logs = all_player_season_logs_dict[player_name]
 
@@ -2639,12 +2782,14 @@ def generate_players_outcomes(player_names=[], settings={}, todays_games_date_ob
         #player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
         all_player_consistent_stats[player_name] = player_consistent_stats
         all_player_stat_records[player_name] = player_stat_records
+        all_player_stat_dicts[player_name] = player_stat_dict
 
     
     
-    all_consistent_stat_dicts = generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_stat_records)
+    all_consistent_stat_dicts = generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_stat_records, all_player_stat_dicts)
     #writer.display_consistent_stats(all_player_consistent_stats, all_player_stat_records)
-    writer.list_dicts(all_consistent_stat_dicts)
+    desired_order = ['player name','stat name','ok val','ok pp','ok p']
+    writer.list_dicts(all_consistent_stat_dicts, desired_order)
 
 
     # todo: make fcn to classify recently broken streaks bc that recent game may be anomaly and they may revert back to streak

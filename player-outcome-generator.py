@@ -10,7 +10,7 @@ import generator, writer
 #players_names = ['christian braun', 'bruce brown', 'thomas bryant', 'kentavious caldwell pope', 'vlatko cancar', 'aaron gordon', 'jeff green', 'reggie jackson', 'nikola jokic', 'jamal murray', 'michael porter jr']
 
 # bos phi, den 
-#players_names = ['christian braun', 'bruce brown', 'thomas bryant', 'kentavious caldwell pope', 'vlatko cancar', 'aaron gordon', 'jeff green', 'reggie jackson', 'nikola jokic', 'jamal murray', 'michael porter jr', 'malcolm brogdan', 'jaylen brown', 'al horford', 'marcus smart', 'jayson tatum', 'derrick white', 'grant williams', 'robert williams iii', 'joel embiid', 'james harden', 'tobias harris', 'tyrese maxey', 'jalen mcdaniels', 'deanthony melton', 'georges niang', 'paul reed', 'pj tucker']
+#players_names = ['malcolm brogdan', 'jaylen brown', 'al horford', 'marcus smart', 'jayson tatum', 'derrick white', 'grant williams', 'robert williams iii', 'joel embiid', 'james harden', 'tobias harris', 'tyrese maxey', 'jalen mcdaniels', 'deanthony melton', 'georges niang', 'paul reed', 'pj tucker']
 
 # gsw, lal
 #players_names = ['malik beasley', 'troy brown jr', 'anthony davis', 'wenyan gabriel', 'rui hachimura', 'lebron james', 'austin reaves', 'dangelo russell', 'dennis schroder', 'jarred vanderbilt', 'stephen curry', 'donte divincenzo', 'draymond green', 'jamychal green', 'jonathan kuminga', 'anthony lamb', 'kevon looney', 'moses moody', 'gary payton ii', 'jordan poole', 'klay thompson', 'andrew wiggins']
@@ -18,8 +18,14 @@ import generator, writer
 # gsw, lal, nyk mia
 #players_names = ['malik beasley', 'troy brown jr', 'anthony davis', 'wenyan gabriel', 'rui hachimura', 'lebron james', 'austin reaves', 'dangelo russell', 'dennis schroder', 'jarred vanderbilt', 'stephen curry', 'donte divincenzo', 'draymond green', 'jamychal green', 'jonathan kuminga', 'anthony lamb', 'kevon looney', 'moses moody', 'gary payton ii', 'jordan poole', 'klay thompson', 'andrew wiggins', 'rj barrett', 'jalen brunson', 'quentin grimes', 'josh hart', 'isaiah hartenstein', 'immanuel quickley', 'julius randle', 'mitchell robinson', 'obi toppin', 'bam adebayo', 'jimmy butler', 'kevin love', 'kyle lowry', 'caleb martin', 'duncan robinson', 'max strus', 'gabe vincent', 'cody zeller']
 
+# mia bos
+players_names = ['bam adebayo', 'jimmy butler', 'kevin love', 'kyle lowry', 'caleb martin', 'duncan robinson', 'max strus', 'gabe vincent', 'cody zeller', 'malcolm brogdan', 'jaylen brown', 'al horford', 'marcus smart', 'jayson tatum', 'derrick white', 'grant williams', 'robert williams iii']
+
+# lal den
+#players_names = ['malik beasley', 'troy brown jr', 'anthony davis', 'wenyan gabriel', 'rui hachimura', 'lebron james', 'austin reaves', 'dangelo russell', 'dennis schroder', 'jarred vanderbilt', 'christian braun', 'bruce brown', 'thomas bryant', 'kentavious caldwell pope', 'vlatko cancar', 'aaron gordon', 'jeff green', 'reggie jackson', 'nikola jokic', 'jamal murray', 'michael porter jr']
+
 # test
-players_names = ['josh hart']
+#players_names = ['thomas bryant']
 
 # settings
 find_matchups = False

@@ -1,6 +1,6 @@
 # converter.py
 
-def convert_dict_to_list(dict):
+def convert_dict_to_list(dict, desired_order=[]):
 
     dict_list = []
 
@@ -11,13 +11,13 @@ def convert_dict_to_list(dict):
     return dict_list
 
 
-def convert_dicts_to_lists(all_consistent_stat_dicts):
+def convert_dicts_to_lists(all_consistent_stat_dicts, desired_order=[]):
 
     dict_lists = []
 
     for dict in all_consistent_stat_dicts:
 
-        dict_list = convert_dict_to_list(dict)
+        dict_list = convert_dict_to_list(dict, desired_order)
 
         dict_lists.append(dict_list)
         
