@@ -950,6 +950,8 @@ def generate_player_stat_records(player_name, player_stat_dict):
 
         for season_part, player_season_stat_dict in player_full_season_stat_dict.items():
 
+            print("\n===Season Part " + str(season_part) + "===\n")
+
             # all_pts_dicts = {'all':{idx:val,..},..}
             # all_pts_dicts = {'all':{1:20}}
             # key=condition, val={idx:stat}
@@ -976,17 +978,19 @@ def generate_player_stat_records(player_name, player_stat_dict):
                     # loop from 0 to max stat val to get record over stat val for period of all games
                     for stat_name in stat_names:
 
+                        print("\n===Stat name " + str(stat_name) + "===\n")
+
                         # reset for each stat name/type
                         all_games_reached = [] # all_stat_counts = []
                         all_probs_stat_reached = []
 
-                        print('stat_name: ' + str(stat_name))
                         stat_vals = list(player_season_stat_dict[stat_name][condition].values())
                         print('stat_vals: ' + str(stat_vals))
                         num_games_played = len(stat_vals)
                         print('num games played ' + condition + ': ' + str(num_games_played))
                         if num_games_played > 0:
-                            for stat_val in range(0,max(stat_vals)):
+                            # max(stat_vals)+1 bc we want to include 0 and max stat val
+                            for stat_val in range(0,max(stat_vals)+1):
                                 num_games_reached = 0 # stat count, reset for each check stat val bc new count
                                 # loop through games to get count stat val >= game stat val
                                 for game_idx in range(num_games_played):
@@ -1040,24 +1044,7 @@ def generate_player_stat_records(player_name, player_stat_dict):
     print('player_stat_records: ' + str(player_stat_records))
     return player_stat_records
 
-# record input is prob stat reached as fraction
-# output is prob 0-1
-def generate_prob_stat_reached(record):
 
-    # if we have no record for a given stat val we will pass record=''
-    # bc prob=0
-    prob_stat_reached = 0
-
-    if record != '':
-
-        record_data = record.split('/')
-        num_games_reached = record_data[0]
-        num_games_played = record_data[1]
-        #prob_stat_reached = round((float(num_games_reached) / float(num_games_played)) * 100)
-        prob_stat_reached = round(float(num_games_reached) / float(num_games_played), 2)
-        print('prob_stat_reached: ' + str(prob_stat_reached))
-
-    return prob_stat_reached
 
 
 
@@ -2246,7 +2233,8 @@ def generate_margin(init_val, stat_dict, margin_type='min'):
         if margin_type == 'mean':
             val = numpy.mean(stat_vals)
             print('val: ' + str(val))
-            margin = round(val - init_val,1)
+            # we want to round to whole number for easy comparison and we cannot be certain with any more accuracy due to other conditions
+            margin = round(val - init_val) 
         else:
             val = min(stat_vals)
             margin = val - init_val
@@ -2260,9 +2248,33 @@ def generate_margin(init_val, stat_dict, margin_type='min'):
     return margin
 
 
+# record input is prob stat reached as fraction
+# output is prob 0-1
+def generate_prob_stat_reached(record):
+
+    print('\n===Generate Prob Stat Reached===\n')
+
+    print('record: ' + str(record))
+
+    # if we have no record for a given stat val we will pass record=''
+    # bc prob=0
+    prob_stat_reached = 0
+
+    if record != '':
+
+        record_data = record.split('/')
+        num_games_reached = record_data[0]
+        num_games_played = record_data[1]
+        #prob_stat_reached = round((float(num_games_reached) / float(num_games_played)) * 100)
+        prob_stat_reached = round(float(num_games_reached) / float(num_games_played), 2)
+        
+    print('prob_stat_reached: ' + str(prob_stat_reached))
+    return prob_stat_reached
+
+
 # consistency=0.9 is desired probability of player reaching stat val
 #consistent_stat_vals: {'all': {2023: {'regular': {'pts': {'prob val':
-def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9, player_stat_records={}):
+def generate_consistent_stat_vals(player_name, player_stat_dict, player_stat_records={}, consistency=0.9):
     
     print('\n===Generate Consistent Stat Vals===\n')
 
@@ -2283,7 +2295,7 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
 
                 for stat_name, stat_records in season_stat_dicts.items():
                     print("\n===Stat Name " + str(stat_name) + "===\n")
-                    #print('stat_records: ' + str(stat_records))
+                    print('stat_records: ' + str(stat_records))
 
                     # get prob from 0 to 1 to compare to desired consistency
                     consistent_stat_val = 0
@@ -2303,8 +2315,8 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                         consistent_stat_val = stat_val
                         consistent_stat_prob = prob_stat_reached
 
-                    #print('consistent_stat_val: ' + str(consistent_stat_val))
-                    #print('consistent_stat_prob: ' + str(consistent_stat_prob))
+                    print('consistent_stat_val: ' + str(consistent_stat_val))
+                    print('consistent_stat_prob: ' + str(consistent_stat_prob))
 
                     # determine second consistent val
                     # we may want to loop for x consistent vals to see trend and error margin
@@ -2343,7 +2355,8 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
                         record = stat_records[second_consistent_stat_val]
                     second_consistent_stat_prob = generate_prob_stat_reached(record)
 
-
+                    print('second_consistent_stat_val: ' + str(second_consistent_stat_val))
+                    print('second_consistent_stat_prob: ' + str(second_consistent_stat_prob))
 
                     # determine higher and lower stat val probs for ref
 
@@ -2429,8 +2442,8 @@ def generate_consistent_stat_vals(player_name, player_stat_dict, consistency=0.9
 # by adding its key to header of level above
 def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_stat_records, all_player_stat_dicts):
     print("\n===Generate All Consistent Stats Dicts===\n")
-    print('all_player_consistent_stats: ' + str(all_player_consistent_stats))
-    print('all_player_stat_records: ' + str(all_player_stat_records))
+    #print('all_player_consistent_stats: ' + str(all_player_consistent_stats))
+    #print('all_player_stat_records: ' + str(all_player_stat_records))
 
     player_consistent_stat_data_headers = ['Player', 'S Name', 'Stat', 'Prob', '2nd Stat', '2nd Prob', 'PS', 'PP', '2nd PS', '2nd PP', 'OK Val', 'OK P', 'OK PP']
     final_consistent_stats = [player_consistent_stat_data_headers] # player name, stat name, consistent stat, consistent stat prob
@@ -2440,20 +2453,20 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
     consistent_stat_dict = {}
 
     for player_name, player_consistent_stats in all_player_consistent_stats.items():
-        #print(player_name)
+        print('\n===' + player_name.title() + '===\n')
         
 
         # for now, show only conditon=all
         # give option to set condition and sort by condition
         conditions_of_interest = ['all']
         for condition, condition_consistent_stats in player_consistent_stats.items():
-            #print(condition)
+            print('\n===' + condition.title() + '===\n')
 
             if condition in conditions_of_interest:
 
                 years_of_interest = [2023]
                 for year, year_consistent_stats in condition_consistent_stats.items():
-                    #print(year)
+                    print('\n===' + str(year) + '===\n')
 
                     if year in years_of_interest:
 
@@ -2466,7 +2479,7 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
                         season_part_consistent_stats = year_consistent_stats['full'] 
 
                         for stat_name in season_part_consistent_stats.keys():
-                            #print(stat_name)
+                            print('\n===' + stat_name.upper() + '===\n')
 
                             # use consistent_stat_dict to sort
                             consistent_stat_dict = {'player name':player_name, 'stat name':stat_name}
@@ -2476,19 +2489,27 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
 
                             # simply flatten bottom level of dict
                             # by adding its key to header of level above
-                            prob_stat_dict = year_consistent_stats['full'][stat_name]
+                            # eg in this case blank for full season and post for postseason
+                            season_part = 'full'
+                            prob_stat_dict = year_consistent_stats[season_part][stat_name]
                             print('prob_stat_dict: ' + str(prob_stat_dict))
 
-                            full_consistent_stat = prob_stat_dict['prob val']
-                            full_consistent_stat_prob = prob_stat_dict['prob']
+                            prob_stat_key = 'prob val'
+                            prob_val = prob_stat_dict[prob_stat_key]
+                            full_consistent_stat = prob_val
+                            prob_stat_key = 'prob'
+                            prob = prob_stat_dict[prob_stat_key]
+                            print('prob: ' + str(prob))
+                            full_consistent_stat_prob = round(prob * 100)
+                            print('full_consistent_stat_prob: ' + str(full_consistent_stat_prob))
 
                             full_second_consistent_stat = prob_stat_dict['second prob val']
-                            full_second_consistent_stat_prob = prob_stat_dict['second prob']
+                            full_second_consistent_stat_prob = round(prob_stat_dict['second prob'] * 100)
 
                             min_margin = prob_stat_dict['min margin']
                             second_min_margin = prob_stat_dict['second min margin']
-                            mean_margin = prob_stat_dict['mean margin']
-                            second_mean_margin = prob_stat_dict['second mean margin']
+                            mean_margin = round(prob_stat_dict['mean margin'])
+                            second_mean_margin = round(prob_stat_dict['second mean margin'])
 
                             consistent_stat_dict['prob val'] = full_consistent_stat
                             consistent_stat_dict['prob'] = full_consistent_stat_prob
@@ -2503,29 +2524,34 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
 
 
                             # add postseason stat probs separately
+                            season_part = 'postseason'
+
                             post_consistent_stat = 0
                             post_consistent_stat_prob = 0
 
                             post_second_consistent_stat = 0
                             post_second_consistent_stat_prob = 0
 
-                            if 'postseason' in year_consistent_stats.keys():
-                                prob_stat_dict = year_consistent_stats['postseason'][stat_name]
+                            if season_part in year_consistent_stats.keys():
+                                prob_stat_dict = year_consistent_stats[season_part][stat_name]
                                 print('prob_stat_dict: ' + str(prob_stat_dict))
 
-                                post_consistent_stat = prob_stat_dict['prob val']
-                                post_consistent_stat_prob = prob_stat_dict['prob']
+                                prob_stat_key = 'prob val' #defined in loop
+                                post_consistent_stat = prob_stat_dict[prob_stat_key]
+                                post_consistent_stat_prob = round(prob_stat_dict['prob'] * 100)
 
                                 post_second_consistent_stat = prob_stat_dict['second prob val']
-                                post_second_consistent_stat_prob = prob_stat_dict['second prob']
+                                post_second_consistent_stat_prob = round(prob_stat_dict['second prob'] * 100)
 
                                 post_min_margin = prob_stat_dict['min margin']
                                 post_second_min_margin = prob_stat_dict['second min margin']
-                                post_mean_margin = prob_stat_dict['mean margin']
-                                post_second_mean_margin = prob_stat_dict['second mean margin']
+                                post_mean_margin = round(prob_stat_dict['mean margin'])
+                                post_second_mean_margin = round(prob_stat_dict['second mean margin'])
 
-
-                                consistent_stat_dict['post prob val'] = post_consistent_stat
+                                season_part_key = re.sub('season','',season_part)
+                                # prob_stat_key = 'prob val' defined above
+                                prob_val_key = season_part_key + ' ' + prob_stat_key
+                                consistent_stat_dict[prob_val_key] = post_consistent_stat
                                 consistent_stat_dict['post prob'] = post_consistent_stat_prob
                                 consistent_stat_dict['post second prob val'] = post_second_consistent_stat
                                 consistent_stat_dict['post second prob'] = post_second_consistent_stat_prob
@@ -2778,7 +2804,7 @@ def generate_players_outcomes(player_names=[], settings={}, todays_games_date_ob
         # determine the stat val with record above 90%
         # player_consistent_stat_vals = {} same format as player stat records but with single max. consistent val for each stat for each condition
         player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
-        player_consistent_stats = generate_consistent_stat_vals(player_name, player_stat_dict)
+        player_consistent_stats = generate_consistent_stat_vals(player_name, player_stat_dict, player_stat_records)
         #player_stat_records = generate_player_stat_records(player_name, player_stat_dict)
         all_player_consistent_stats[player_name] = player_consistent_stats
         all_player_stat_records[player_name] = player_stat_records
@@ -2788,7 +2814,7 @@ def generate_players_outcomes(player_names=[], settings={}, todays_games_date_ob
     
     all_consistent_stat_dicts = generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_stat_records, all_player_stat_dicts)
     #writer.display_consistent_stats(all_player_consistent_stats, all_player_stat_records)
-    desired_order = ['player name','stat name','ok val','ok pp','ok p']
+    desired_order = ['player name','stat name','ok val','ok val prob','ok val post prob', 'ok val min margin', 'ok val post min margin', 'ok val mean margin', 'ok val post mean margin']
     writer.list_dicts(all_consistent_stat_dicts, desired_order)
 
 

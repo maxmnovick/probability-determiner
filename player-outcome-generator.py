@@ -19,13 +19,13 @@ import generator, writer
 #players_names = ['malik beasley', 'troy brown jr', 'anthony davis', 'wenyan gabriel', 'rui hachimura', 'lebron james', 'austin reaves', 'dangelo russell', 'dennis schroder', 'jarred vanderbilt', 'stephen curry', 'donte divincenzo', 'draymond green', 'jamychal green', 'jonathan kuminga', 'anthony lamb', 'kevon looney', 'moses moody', 'gary payton ii', 'jordan poole', 'klay thompson', 'andrew wiggins', 'rj barrett', 'jalen brunson', 'quentin grimes', 'josh hart', 'isaiah hartenstein', 'immanuel quickley', 'julius randle', 'mitchell robinson', 'obi toppin', 'bam adebayo', 'jimmy butler', 'kevin love', 'kyle lowry', 'caleb martin', 'duncan robinson', 'max strus', 'gabe vincent', 'cody zeller']
 
 # mia bos
-players_names = ['bam adebayo', 'jimmy butler', 'kevin love', 'kyle lowry', 'caleb martin', 'duncan robinson', 'max strus', 'gabe vincent', 'cody zeller', 'malcolm brogdan', 'jaylen brown', 'al horford', 'marcus smart', 'jayson tatum', 'derrick white', 'grant williams', 'robert williams iii']
+#players_names = ['bam adebayo']#, 'jimmy butler', 'kevin love', 'kyle lowry', 'caleb martin', 'duncan robinson', 'max strus', 'gabe vincent', 'cody zeller', 'malcolm brogdan', 'jaylen brown', 'al horford', 'marcus smart', 'jayson tatum', 'derrick white', 'grant williams', 'robert williams iii']
 
 # lal den
-#players_names = ['malik beasley', 'troy brown jr', 'anthony davis', 'wenyan gabriel', 'rui hachimura', 'lebron james', 'austin reaves', 'dangelo russell', 'dennis schroder', 'jarred vanderbilt', 'christian braun', 'bruce brown', 'thomas bryant', 'kentavious caldwell pope', 'vlatko cancar', 'aaron gordon', 'jeff green', 'reggie jackson', 'nikola jokic', 'jamal murray', 'michael porter jr']
+players_names = ['malik beasley', 'troy brown jr', 'anthony davis', 'wenyan gabriel', 'rui hachimura', 'lebron james', 'austin reaves', 'dangelo russell', 'dennis schroder', 'jarred vanderbilt', 'christian braun', 'bruce brown', 'thomas bryant', 'kentavious caldwell pope', 'vlatko cancar', 'aaron gordon', 'jeff green', 'reggie jackson', 'nikola jokic', 'jamal murray', 'michael porter jr']
 
 # test
-#players_names = ['thomas bryant']
+#players_names = ['jeff green']
 
 # settings
 find_matchups = False

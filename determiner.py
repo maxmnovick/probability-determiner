@@ -989,12 +989,14 @@ def determine_ok_val_prob(dict, ok_val, player_stat_records, season_part, stat_n
     if ok_val_post_val_key == '':
         # we can find post prob from stat records
         ok_val_post_prob = determine_prob_of_stat_from_records(ok_val, player_stat_records, season_part, stat_name)
+        ok_val_post_prob = round(ok_val_post_prob * 100)
     else:
         ok_val_post_prob_key = re.sub('val','',ok_val_post_val_key).strip()
 
         if ok_val_post_prob_key in dict.keys():
             ok_val_post_prob = dict[ok_val_post_prob_key]
 
+    
     print('ok_val_post_prob: ' + str(ok_val_post_prob))
     return ok_val_post_prob
 

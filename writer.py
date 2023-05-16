@@ -700,10 +700,15 @@ def list_dicts(dicts, desired_order=[]):
     print('dict_list')
     print(tabulate(dict_list))
 
-    headers = [list(dicts[0].keys())]
+    headers = []#[list(dicts[0].keys())]
+    for key in desired_order:
+        headers.append(key)
+    for key in dicts[0].keys():
+        if key not in desired_order:
+            headers.append(key)
 
 
-    dict_list = headers + dict_list
+    dict_list = [headers] + dict_list
 
     # export
     for row in dict_list:

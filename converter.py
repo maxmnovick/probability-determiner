@@ -4,9 +4,15 @@ def convert_dict_to_list(dict, desired_order=[]):
 
     dict_list = []
 
-    for val in dict.values():
-
+    for key in desired_order:
+        val = dict[key]
         dict_list.append(val)
+
+    # add remaining in the order they come
+    for key, val in dict.items():
+        # if not already added
+        if key not in desired_order:
+            dict_list.append(val)
 
     return dict_list
 
