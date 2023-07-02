@@ -2497,6 +2497,7 @@ def generate_all_consistent_stat_dicts(all_player_consistent_stats, all_player_s
                             prob_stat_key = 'prob val'
                             prob_val = prob_stat_dict[prob_stat_key]
                             full_consistent_stat = prob_val
+                            
                             prob_stat_key = 'prob'
                             prob = prob_stat_dict[prob_stat_key]
                             print('prob: ' + str(prob))
@@ -2822,6 +2823,6 @@ def generate_players_outcomes(player_names=[], settings={}, todays_games_date_ob
     # todo: to fully predict current player stats, must predict teammate and opponent stats and prioritize and align with totals
     
     
-    print('player_outcomes: ' + str(player_outcomes))
+    #print('player_outcomes: ' + str(player_outcomes))
     return player_outcomes
 

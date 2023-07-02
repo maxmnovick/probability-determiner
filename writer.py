@@ -431,11 +431,13 @@ def display_players_outcomes(players_outcomes):
     header_row = []
     header_string = '' # separate by semicolons and delimit in spreadsheet
     if len(player_outcomes_list) > 0:
+        # print header row
         outcome1 = player_outcomes_list[0]
         for key in outcome1.keys():
             header_row.append(key.title())
             header_string += key.title() + ";"
 
+        # print data rows
         game_data = [header_row]
         game_data_strings = []
         for outcome in player_outcomes_list:
@@ -714,6 +716,11 @@ def list_dicts(dicts, desired_order=[]):
     for row in dict_list:
         export_row = ''
         for cell in row:
+            # stop Sheets autoformatting 3pm as 3:00 PM
+            # by adding apostrophe to the front
+            #print('cell: ' + str(cell))
+            if str(cell) == '3pm':
+                cell = '\'3pm'
             export_row += str(cell) + ';'
 
         print(export_row)
